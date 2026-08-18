@@ -1,27 +1,12 @@
 import NextAuth, { NextAuthOptions } from 'next-auth';
-import CredentialsProvider from 'next-auth/providers/credentials';
-import { authenticateUser } from '@/lib/auth';
+import GoogleProvider from 'next-auth/providers/google';
+import { getUserByEmail, createUser } from '@/lib/auth';
 
 export const authOptions: NextAuthOptions = {
   providers: [
-    CredentialsProvider({
-      name: 'Credentials',
-      credentials: {
-        email: { label: 'Email', type: 'email' },
-        password: { label: 'Password', type: 'password' }
-      },
-      async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          return null;
-        }
-
-        const user = await authenticateUser(
-          credentials.email,
-          credentials.password
-        );
-
-        return user;
-      }
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID || '',
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
     })
   ],
   pages: {
@@ -29,7 +14,31 @@ export const authOptions: NextAuthOptions = {
     signOut: '/login'
   },
   callbacks: {
-    async jwt({ token, user }) {
+    async signIn({ user, account, profile }) {
+      if (account?.provider === 'google' && user.email) {
+        // Check if user exists in database
+        let dbUser = await getUserByEmail(user.email);
+
+        // If user doesn't exist, create them
+        if (!dbUser) {
+          try {
+            dbUser = await createUser(
+              user.email,
+              '', // No password for Google users
+              user.name || 'Film Student'
+            );
+          } catch (error) {
+            console.error('Error creating user:', error);
+            return false;
+          }
+        }
+
+        // Store the database ID in the user object
+        user.id = dbUser.id;
+      }
+      return true;
+    },
+    async jwt({ token, user, account }) {
       if (user) {
         token.id = user.id;
         token.email = user.email;
