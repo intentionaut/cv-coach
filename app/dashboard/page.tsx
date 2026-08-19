@@ -61,30 +61,6 @@ function DashboardContent() {
             onClick={() => router.push('/skills')}
             color="bg-green-50 hover:bg-green-100"
           />
-
-          <ActionCard
-            title="Tailor CV"
-            description="Get AI suggestions to customize your CV for specific roles"
-            icon="🎯"
-            onClick={() => router.push('/cv/tailor')}
-            color="bg-orange-50 hover:bg-orange-100"
-          />
-
-          <ActionCard
-            title="View Progress"
-            description="See your improvement over time and coaching recommendations"
-            icon="📈"
-            onClick={() => router.push('/progress')}
-            color="bg-pink-50 hover:bg-pink-100"
-          />
-
-          <ActionCard
-            title="Job Roles"
-            description="Save job descriptions you're interested in"
-            icon="💼"
-            onClick={() => router.push('/roles')}
-            color="bg-indigo-50 hover:bg-indigo-100"
-          />
         </div>
 
         {/* Getting Started Guide */}
@@ -92,10 +68,8 @@ function DashboardContent() {
           <h3 className="text-lg font-semibold text-gray-900 mb-4">🚀 Getting Started</h3>
           <div className="space-y-3">
             <Step number={1} text="Build your CV with your experience, education, and projects" />
-            <Step number={2} text="Add job roles you're interested in from film industry postings" />
-            <Step number={3} text="Use AI to tailor your CV for each specific role" />
-            <Step number={4} text="Practice interview questions and get personalized feedback" />
-            <Step number={5} text="Track your skills and monitor your improvement over time" />
+            <Step number={2} text="Practice interview questions and get personalized feedback" />
+            <Step number={3} text="Track your skills and monitor your improvement over time" />
           </div>
         </div>
       </main>

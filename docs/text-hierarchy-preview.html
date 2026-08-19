@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Text Colour &amp; Hierarchy — Style Guide Preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Epilogue:wght@500;600;700&family=Rosario:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* ---- ATOMS: base palette (fixed) ---- */
+    --bg-main:        #F0E5D0;
+    --bg-surface:      #FBF7EC;
+    --text-primary:   #3D405B;
+    --cta-primary:    #E07A5F;
+    --alert:          #F2CC8F;
+    --success:        #81B29A;
+    --accent-secondary:#F4B6A0;
+    --accent-tertiary: #0B3D5B;
+
+    /* ---- ATOMS: derived text tokens (WCAG AA audited — see docs/text-colour-hierarchy-system.md) ---- */
+    --text-secondary: #616487; /* primary lightened, corrected for AA: 4.57:1 on bg-main */
+    --text-muted:     #7D809F; /* corrected for AA-large only (3.08:1) — large text only, see guide */
+    --text-disabled:  #9FA2BB; /* WCAG-exempt floor, ~2.01:1, deliberately low but perceivable */
+    --text-inverse:   #F7F1E3; /* near-bg, for dark surfaces */
+    --text-link:      #0B3D5B; /* tertiary accent, AA on bg-main */
+    --text-cta:       #B24022; /* darkened cta-primary for text use (link-hover, errors): 4.61:1 on bg-main */
+    --text-on-cta:    #3D405B; /* = text-primary reused; AA-large only, mandatory bold ≥14px */
+    --text-on-success:#1B3A2E; /* darkened for contrast on sage */
+    --text-on-alert:  #4A3612; /* darkened for contrast on warm yellow */
+    --text-on-tertiary:#F0E5D0; /* bg colour reused on navy surfaces */
+    --border-hairline: rgba(61,64,91,0.14);
+
+    --font-display: 'Epilogue', -apple-system, sans-serif;
+    --font-body: 'Rosario', -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+
+  *{ box-sizing:border-box; }
+  body{
+    margin:0;
+    background:var(--bg-main);
+    color:var(--text-primary);
+    font-family:var(--font-body);
+    line-height:1.6;
+  }
+
+  .wrap{ max-width:920px; margin:0 auto; padding:64px 32px 120px; }
+
+  .masthead{ margin-bottom:56px; }
+  .eyebrow{
+    font-family:var(--font-mono);
+    font-size:12px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:var(--text-secondary);
+    margin:0 0 12px;
+  }
+  h1{ font-family:var(--font-display); font-weight:700; font-size:44px; line-height:1.1; margin:0 0 12px; color:var(--text-primary); }
+  .lede{ font-family:var(--font-body); font-size:17px; color:var(--text-secondary); max-width:60ch; margin:0; }
+
+  section{ margin-bottom:64px; }
+  .section-label{
+    font-family:var(--font-mono); font-size:12px; letter-spacing:0.08em; text-transform:uppercase;
+    color:var(--accent-tertiary); border-bottom:1px solid var(--border-hairline); padding-bottom:10px; margin-bottom:28px;
+  }
+
+  /* ---------- ATOMS: swatch grid ---------- */
+  .swatches{ display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:14px; }
+  .swatch{ border-radius:10px; overflow:hidden; border:1px solid var(--border-hairline); background:#fff; }
+  .swatch .chip{ height:64px; }
+  .swatch .meta{ padding:10px 12px; }
+  .swatch .name{ font-family:var(--font-mono); font-size:12px; font-weight:500; color:var(--text-primary); }
+  .swatch .hex{ font-family:var(--font-mono); font-size:11px; color:var(--text-muted); margin-top:2px; }
+
+  /* ---------- MOLECULES: type scale ---------- */
+  .type-row{ display:flex; align-items:baseline; gap:24px; padding:14px 0; border-bottom:1px solid var(--border-hairline); }
+  .type-row:last-child{ border-bottom:none; }
+  .type-tag{ font-family:var(--font-mono); font-size:11px; color:var(--text-muted); width:110px; flex-shrink:0; }
+  .h1-sample{ font-family:var(--font-display); font-size:38px; font-weight:700; color:var(--text-primary); }
+  .h2-sample{ font-family:var(--font-display); font-size:30px; font-weight:700; color:var(--text-primary); }
+  .h3-sample{ font-family:var(--font-display); font-size:23px; font-weight:600; color:var(--text-primary); }
+  .h4-sample{ font-family:var(--font-display); font-size:18px; font-weight:600; color:var(--text-primary); }
+  .body-sample{ font-family:var(--font-body); font-size:16px; color:var(--text-primary); }
+  .body2-sample{ font-family:var(--font-body); font-size:15px; color:var(--text-secondary); }
+  .caption-sample{ font-family:var(--font-body); font-size:13px; color:var(--text-secondary); } /* text-muted is large-text-only; captions use text-secondary */
+  .overline-sample{ font-family:var(--font-mono); font-size:12px; letter-spacing:0.08em; text-transform:uppercase; color:var(--accent-tertiary); font-weight:500; }
+  .link-sample{ font-family:var(--font-body); color:var(--text-link); text-decoration:underline; text-underline-offset:3px; cursor:pointer; }
+  .link-sample:hover{ color:var(--text-cta); }
+  .disabled-sample{ font-family:var(--font-body); color:var(--text-disabled); }
+
+  /* ---------- ORGANISMS ---------- */
+  .grid-2{ display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+  @media(max-width:640px){ .grid-2{ grid-template-columns:1fr; } .wrap{ padding:40px 20px 80px; } h1{ font-size:32px; } }
+
+  .banner{ border-radius:10px; padding:16px 20px; display:flex; gap:12px; align-items:flex-start; }
+  .banner.alert{ background:var(--alert); color:var(--text-on-alert); }
+  .banner.success{ background:var(--success); color:var(--text-on-success); }
+  .banner .b-title{ font-family:var(--font-display); font-weight:600; font-size:14px; margin:0 0 2px; }
+  .banner .b-body{ font-family:var(--font-body); font-size:13.5px; margin:0; opacity:0.92; }
+
+  /* Primary CTA label is mandatory ≥14px bold to stay within AA-large (3.42:1) — see guide §4.6 */
+  .btn{ display:inline-block; border:none; border-radius:8px; padding:12px 22px; font-family:var(--font-display); font-size:14px; font-weight:700; cursor:pointer; }
+  .btn-primary{ background:var(--cta-primary); color:var(--text-on-cta); }
+  .btn-secondary{ background:transparent; color:var(--accent-tertiary); border:1.5px solid var(--accent-tertiary); }
+  .btn-row{ display:flex; gap:12px; margin-top:16px; }
+
+  .card{ background:var(--bg-surface); border:1px solid var(--border-hairline); border-radius:12px; padding:22px; }
+  .card .k{ font-size:12px; font-family:var(--font-mono); color:var(--text-secondary); }
+  .card h4{ font-family:var(--font-display); margin:6px 0 6px; }
+  .card p{ margin:0; color:var(--text-secondary); font-family:var(--font-body); font-size:14px; }
+
+  .field{ margin-bottom:18px; }
+  .field label{ display:block; font-family:var(--font-display); font-size:13px; font-weight:600; color:var(--text-primary); margin-bottom:6px; }
+  .field input{ width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--border-hairline); background:var(--bg-surface); font-family:var(--font-body); font-size:14px; color:var(--text-primary); }
+  .field input::placeholder{ color:var(--text-secondary); }
+  .field.has-error input{ border-color:var(--text-cta); }
+  .field .error-msg{ font-family:var(--font-body); font-size:12.5px; color:var(--text-cta); margin-top:6px; }
+  .field .hint{ font-family:var(--font-body); font-size:12.5px; color:var(--text-secondary); margin-top:6px; }
+
+  .surface-dark{ background:var(--accent-tertiary); border-radius:12px; padding:24px; color:var(--text-on-tertiary); }
+  .surface-dark h4{ margin:0 0 6px; font-family:var(--font-display); font-weight:700; font-size:19px; }
+  .surface-dark p{ margin:0; font-family:var(--font-body); font-size:14px; color:rgba(240,229,208,0.75); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="masthead">
+    <p class="eyebrow">Design system — preview build</p>
+    <h1>Text colour &amp; hierarchy</h1>
+    <p class="lede">A working preview of the token system applied to real UI patterns — dashboard copy, alerts, forms and cards — so hierarchy and contrast can be reviewed in context before sign-off. Headings set in Epilogue, body copy in Rosario.</p>
+  </div>
+
+  <section>
+    <p class="section-label">Atoms — colour tokens</p>
+    <div class="swatches">
+      <div class="swatch"><div class="chip" style="background:var(--bg-main)"></div><div class="meta"><div class="name">bg-main</div><div class="hex">#F0E5D0</div></div></div>
+      <div class="swatch"><div class="chip" style="background:var(--bg-surface)"></div><div class="meta"><div class="name">bg-surface</div><div class="hex">#FBF7EC</div></div></div>
+      <div class="swatch"><div class="chip" style="background:var(--text-primary)"></div><div class="meta"><div class="name">text-primary</div><div class="hex">#3D405B</div></div></div>
+      <div class="swatch"><div class="chip" style="background:var(--text-secondary)"></div><div class="meta"><div class="name">text-secondary</div><div class="hex">#616487</div></div></div>
+      <div class="swatch"><div class="chip" style="background:var(--text-muted)"></div><div class="meta"><div class="name">text-muted</div><div class="hex">#7D809F</div></div></div>
+      <div class="swatch"><div class="chip" style="background:var(--text-disabled)"></div><div class="meta"><div class="name">text-disabled</div><div class="hex">#9FA2BB</div></div></div>
+      <div class="swatch"><div class="chip" style="background:var(--text-cta)"></div><div class="meta"><div class="name">text-cta</div><div class="hex">#B24022</div></div></div>
+      <div class="swatch"><div class="chip" style="background:var(--cta-primary)"></div><div class="meta"><div class="name">cta-primary</div><div class="hex">#E07A5F</div></div></div>
+      <div class="swatch"><div class="chip" style="background:var(--alert)"></div><div class="meta"><div class="name">alert</div><div class="hex">#F2CC8F</div></div></div>
+      <div class="swatch"><div class="chip" style="background:var(--success)"></div><div class="meta"><div class="name">success</div><div class="hex">#81B29A</div></div></div>
+      <div class="swatch"><div class="chip" style="background:var(--accent-secondary)"></div><div class="meta"><div class="name">accent-secondary</div><div class="hex">#F4B6A0</div></div></div>
+      <div class="swatch"><div class="chip" style="background:var(--accent-tertiary)"></div><div class="meta"><div class="name">accent-tertiary</div><div class="hex">#0B3D5B</div></div></div>
+    </div>
+  </section>
+
+  <section>
+    <p class="section-label">Molecules — type scale</p>
+    <div class="type-row"><span class="type-tag">H1 — Epilogue</span><span class="h1-sample">Project dashboard</span></div>
+    <div class="type-row"><span class="type-tag">H2 — Epilogue</span><span class="h2-sample">Team activity</span></div>
+    <div class="type-row"><span class="type-tag">H3 — Epilogue</span><span class="h3-sample">This week's tasks</span></div>
+    <div class="type-row"><span class="type-tag">H4 / label</span><span class="h4-sample">Overdue items</span></div>
+    <div class="type-row"><span class="type-tag">Body — Rosario</span><span class="body-sample">You have 4 tasks due before Friday. Assign an owner to each one so nothing slips through the cracks.</span></div>
+    <div class="type-row"><span class="type-tag">Body — muted</span><span class="body2-sample">Last synced 3 minutes ago from your connected workspace.</span></div>
+    <div class="type-row"><span class="type-tag">Caption</span><span class="caption-sample">Updated automatically every 15 minutes</span></div>
+    <div class="type-row"><span class="type-tag">Overline</span><span class="overline-sample">Sprint 14</span></div>
+    <div class="type-row"><span class="type-tag">Link</span><span class="link-sample">View full changelog</span></div>
+    <div class="type-row"><span class="type-tag">Disabled</span><span class="disabled-sample">Archived — read only</span></div>
+  </section>
+
+  <section>
+    <p class="section-label">Organisms — system messages</p>
+    <div class="grid-2">
+      <div class="banner alert">
+        <div>
+          <p class="b-title">Storage almost full</p>
+          <p class="b-body">You're using 92% of your plan's storage. Free up space or upgrade to avoid disruption.</p>
+        </div>
+      </div>
+      <div class="banner success">
+        <div>
+          <p class="b-title">Changes published</p>
+          <p class="b-body">Your update is now live for all team members across every workspace.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <p class="section-label">Organisms — actions</p>
+    <div class="btn-row">
+      <button class="btn btn-primary">Create project</button>
+      <button class="btn btn-secondary">Import existing</button>
+    </div>
+  </section>
+
+  <section>
+    <p class="section-label">Organisms — form with validation state</p>
+    <div class="grid-2">
+      <div class="field">
+        <label for="email">Work email</label>
+        <input id="email" type="text" value="hello@studio.co">
+        <p class="hint">We'll send confirmation here.</p>
+      </div>
+      <div class="field has-error">
+        <label for="team">Team name</label>
+        <input id="team" type="text" value="A">
+        <p class="error-msg">Team name must be at least 3 characters.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <p class="section-label">Organisms — cards &amp; dark surface</p>
+    <div class="grid-2">
+      <div class="card">
+        <div class="k">Client / Bramble &amp; Co.</div>
+        <h4>Q3 brand refresh</h4>
+        <p>4 of 7 milestones complete. Next review scheduled for Thursday with the full stakeholder group.</p>
+      </div>
+      <div class="surface-dark">
+        <h4>Weekly digest</h4>
+        <p>Text-on-tertiary uses the background cream at reduced opacity for secondary copy on dark surfaces.</p>
+      </div>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>

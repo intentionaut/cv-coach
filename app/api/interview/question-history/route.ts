@@ -66,7 +66,7 @@ export async function GET(req: NextRequest) {
 
     // Group by role to show performance variations
     const byRole: { [key: string]: any[] } = {};
-    responses.forEach(response => {
+    responses.forEach((response: any) => {
       const roleKey = response.role_id || 'general';
       if (!byRole[roleKey]) {
         byRole[roleKey] = [];

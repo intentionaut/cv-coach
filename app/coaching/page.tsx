@@ -38,20 +38,24 @@ function CoachingContent() {
     }
   };
 
-  const startNewSession = async () => {
+  const startNewSession = async (practiceType: 'written' | 'voice') => {
     try {
       const response = await fetch('/api/interview/sessions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          title: 'General Film Industry Practice',
+          title: `General Film Industry Practice (${practiceType === 'voice' ? 'Voice' : 'Written'})`,
           session_type: 'general'
         })
       });
 
       if (response.ok) {
         const data = await response.json();
-        router.push(`/coaching/practice/${data.sessionId}`);
+        if (practiceType === 'voice') {
+          router.push(`/coaching/voice/${data.sessionId}`);
+        } else {
+          router.push(`/coaching/practice/${data.sessionId}`);
+        }
       }
     } catch (error) {
       console.error('Failed to start session:', error);
@@ -79,14 +83,32 @@ function CoachingContent() {
           <div className="max-w-3xl">
             <h2 className="text-3xl font-bold mb-3">Ready to Practice?</h2>
             <p className="text-purple-100 mb-6">
-              Answer 6 common film industry interview questions in writing. Take your time to think through each answer - there's no time pressure.
+              Choose how you'd like to practice: answer questions in writing or simulate a real phone interview.
             </p>
-            <button
-              onClick={startNewSession}
-              className="px-8 py-4 bg-white text-purple-600 rounded-lg text-lg font-semibold hover:bg-gray-100 transition shadow-lg"
-            >
-              Start 30-Minute Practice Session →
-            </button>
+            <div className="flex flex-wrap gap-4">
+              <button
+                onClick={() => startNewSession('written')}
+                className="flex-1 min-w-[200px] px-8 py-4 bg-white text-purple-600 rounded-lg text-lg font-semibold hover:bg-gray-100 transition shadow-lg"
+              >
+                <div className="flex items-center justify-center gap-2">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                  </svg>
+                  <span>Written Practice</span>
+                </div>
+              </button>
+              <button
+                onClick={() => startNewSession('voice')}
+                className="flex-1 min-w-[200px] px-8 py-4 bg-purple-700 text-white rounded-lg text-lg font-semibold hover:bg-purple-800 transition shadow-lg border-2 border-purple-400"
+              >
+                <div className="flex items-center justify-center gap-2">
+                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z" />
+                  </svg>
+                  <span>Phone Interview →</span>
+                </div>
+              </button>
+            </div>
           </div>
         </div>
 
