@@ -184,7 +184,21 @@ function CVEditorContent() {
   const [editableCVText, setEditableCVText] = useState<string>('');
   const [rawCVText, setRawCVText] = useState<string>(''); // Store the original uploaded CV text
   const [summaryCollapsed, setSummaryCollapsed] = useState(false);
-  const [activeTab, setActiveTab] = useState<'overview' | 'improvements'>('overview');
+  const [mainTab, setMainTab] = useState<'cv' | 'analysis'>('cv');
+  const [completedImprovements, setCompletedImprovements] = useState<Set<string>>(new Set());
+
+  // Toggle completion for an improvement
+  const toggleCompletion = (id: string) => {
+    setCompletedImprovements(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
+  };
 
   // CV file upload handlers
   const processFile = async (file: File) => {
@@ -689,11 +703,35 @@ function CVEditorContent() {
         {analysis && (
           <div className="space-y-6">
 
-            {/* Split View: Editable CV (2/3) + Suggestions (1/3) */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Main Tab Navigation */}
+            <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+              <div className="flex border-b border-gray-200">
+                <button
+                  onClick={() => setMainTab('cv')}
+                  className={`flex-1 px-6 py-4 text-sm font-medium transition ${
+                    mainTab === 'cv'
+                      ? 'border-b-2 border-purple-600 text-purple-600 bg-purple-50'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  }`}
+                >
+                  Your CV
+                </button>
+                <button
+                  onClick={() => setMainTab('analysis')}
+                  className={`flex-1 px-6 py-4 text-sm font-medium transition ${
+                    mainTab === 'analysis'
+                      ? 'border-b-2 border-purple-600 text-purple-600 bg-purple-50'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  }`}
+                >
+                  Analysis & Improvements
+                </button>
+              </div>
+            </div>
 
-              {/* Left: Editable CV (2/3 width) */}
-              <div className="lg:col-span-2 space-y-4">
+            {/* Tab Content */}
+            {mainTab === 'cv' && (
+            <div className="space-y-4">
 
                 {/* Collapsible Summary Header */}
                 <div className="bg-white rounded-lg shadow-lg overflow-hidden">
@@ -774,165 +812,194 @@ function CVEditorContent() {
                     placeholder="Your CV content will appear here..."
                   />
                 </div>
-              </div>
+            </div>
+            )}
 
-              {/* Right: Tabbed Sidebar (1/3 width) */}
-              <div className="h-[800px] flex flex-col">
-                {/* Tab Navigation */}
-                <div className="flex border-b border-gray-200 bg-white rounded-t-lg">
-                  <button
-                    onClick={() => setActiveTab('overview')}
-                    className={`flex-1 px-4 py-3 text-sm font-medium transition ${
-                      activeTab === 'overview'
-                        ? 'border-b-2 border-purple-600 text-purple-600'
-                        : 'text-gray-600 hover:text-gray-900'
-                    }`}
-                  >
-                    Overview
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('improvements')}
-                    className={`flex-1 px-4 py-3 text-sm font-medium transition ${
-                      activeTab === 'improvements'
-                        ? 'border-b-2 border-purple-600 text-purple-600'
-                        : 'text-gray-600 hover:text-gray-900'
-                    }`}
-                  >
-                    Improvements
-                  </button>
+            {/* Analysis Tab */}
+            {mainTab === 'analysis' && (
+              <div className="bg-white rounded-lg shadow-lg">
+                {/* Header */}
+                <div className="border-b border-gray-100 px-8 py-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <h2 className="text-3xl font-bold text-gray-900">Your CV Score</h2>
+                      <p className="text-gray-600 mt-3 max-w-2xl">
+                        {analysis.overallScore >= 80 ? (
+                          "You're in great shape! A few refinements will make your CV even stronger."
+                        ) : analysis.overallScore >= 60 ? (
+                          "Good foundation! Most of these improvements are quick formatting and wording tweaks. Focus on the top 3 below and you'll see major progress in 30-45 minutes."
+                        ) : analysis.overallScore >= 40 ? (
+                          "You have solid experience—we just need to showcase it better. The improvements below are straightforward: clearer wording, better formatting, and highlighting your achievements. Start with the top 3 and tackle one at a time."
+                        ) : (
+                          "Every professional CV starts somewhere. These improvements might look like a lot, but they're mostly about presentation, not content. Your experience is valuable—let's help it shine. Start with just the first item below."
+                        )}
+                      </p>
+                    </div>
+                    <div className="text-right ml-8">
+                      <div className="text-5xl font-bold text-purple-600">{analysis.overallScore}</div>
+                      <p className="text-sm text-gray-500 mt-1">out of 100</p>
+                    </div>
+                  </div>
                 </div>
 
-                {/* Tab Content */}
-                <div className="flex-1 overflow-y-auto bg-white rounded-b-lg">
-                  {activeTab === 'overview' && (
-                    <div className="p-4 space-y-4">
-                      {/* Confidence Boosters */}
-                      {analysis.confidenceBoosters && analysis.confidenceBoosters.length > 0 && (
-                        <div className="bg-green-50 border-2 border-green-200 rounded-lg p-4">
-                          <h3 className="font-bold text-green-900 mb-2 flex items-center gap-2">
-                            <span>🌟</span>
-                            What's Great
-                          </h3>
-                          <ul className="space-y-1">
-                            {analysis.confidenceBoosters.map((booster, idx) => (
-                              <li key={idx} className="text-sm text-green-900 flex items-start gap-2">
-                                <span className="text-green-600 mt-0.5">✓</span>
-                                <span>{booster}</span>
-                              </li>
-                            ))}
-                          </ul>
+                {/* Priority Improvements - Top 3 Only */}
+                <div className="px-8 py-6 bg-purple-50 border-b border-purple-100">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900">Start Here</h3>
+                    <span className="text-sm text-gray-600">
+                      {completedImprovements.size > 0 && `${completedImprovements.size} completed`}
+                    </span>
+                  </div>
+                  <div className="space-y-3">
+                    {analysis.priorityImprovements?.slice(0, 3).map((improvement, idx) => {
+                      const improvementId = `priority-${idx}`;
+                      const isCompleted = completedImprovements.has(improvementId);
+                      return (
+                        <div key={idx} className={`bg-white rounded-lg p-4 shadow-sm transition ${isCompleted ? 'opacity-50' : ''}`}>
+                          <div className="flex items-start gap-3">
+                            <button
+                              onClick={() => toggleCompletion(improvementId)}
+                              className="flex-shrink-0 w-8 h-8 rounded-full bg-purple-600 text-white flex items-center justify-center font-bold hover:bg-purple-700 transition cursor-pointer"
+                              aria-label={isCompleted ? 'Mark as incomplete' : 'Mark as complete'}
+                            >
+                              {isCompleted ? '✓' : idx + 1}
+                            </button>
+                            <div className="flex-1">
+                              <h4 className={`font-semibold mb-1 ${isCompleted ? 'text-gray-500 line-through' : 'text-gray-900'}`}>
+                                {improvement.change}
+                              </h4>
+                              <p className={`text-sm ${isCompleted ? 'text-gray-400' : 'text-gray-600'}`}>
+                                {improvement.impact}
+                              </p>
+                            </div>
+                          </div>
                         </div>
-                      )}
+                      );
+                    })}
+                  </div>
+                </div>
 
-                      {/* Priority Improvements */}
-                      {analysis.priorityImprovements && analysis.priorityImprovements.length > 0 && (
-                        <div className="bg-purple-50 border-2 border-purple-200 rounded-lg p-4">
-                          <h3 className="font-bold text-purple-900 mb-2 flex items-center gap-2">
-                            <span>🎯</span>
-                            Top Priorities
-                          </h3>
-                          <div className="space-y-3">
-                            {analysis.priorityImprovements.slice(0, 3).map((improvement) => (
-                              <div key={improvement.priority} className="bg-white rounded p-3">
-                                <div className="flex items-start gap-2">
-                                  <span className="inline-flex items-center justify-center w-5 h-5 bg-purple-600 text-white text-xs font-bold rounded-full flex-shrink-0 mt-0.5">
-                                    {improvement.priority}
-                                  </span>
-                                  <div>
-                                    <p className="text-sm font-semibold text-gray-900">{improvement.change}</p>
-                                    <p className="text-xs text-gray-600 mt-1">{improvement.impact}</p>
-                                  </div>
-                                </div>
+                {/* Simpler Detailed Sections */}
+                <div className="px-8 py-6 border-t border-gray-100">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-6">All Suggestions</h3>
+                  <div className="space-y-6">
+                    {/* Each section - minimal styling */}
+                    {analysis.sections?.summary && analysis.sections.summary.improvements && analysis.sections.summary.improvements.length > 0 && (
+                      <details className="group">
+                        <summary className="cursor-pointer list-none">
+                          <div className="flex items-center justify-between p-4 hover:bg-gray-50 rounded-lg transition">
+                            <div className="flex items-center gap-3">
+                              <span className="text-2xl">📝</span>
+                              <div>
+                                <h4 className="font-semibold text-gray-900">Summary</h4>
+                                <p className="text-sm text-gray-500">{analysis.sections.summary.improvements.length} suggestions</p>
                               </div>
-                            ))}
+                            </div>
+                            <svg className="w-5 h-5 text-gray-400 group-open:rotate-180 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
                           </div>
+                        </summary>
+                        <div className="px-4 pb-4 space-y-2">
+                          {analysis.sections.summary.improvements.map((improvement, idx) => {
+                            const improvementId = `summary-${idx}`;
+                            const isCompleted = completedImprovements.has(improvementId);
+                            return (
+                              <div key={idx} className="flex items-start gap-2">
+                                <input
+                                  type="checkbox"
+                                  checked={isCompleted}
+                                  onChange={() => toggleCompletion(improvementId)}
+                                  className="mt-1 w-4 h-4 text-purple-600 rounded border-gray-300 focus:ring-purple-500 cursor-pointer"
+                                />
+                                <p className={`text-gray-700 flex-1 ${isCompleted ? 'line-through text-gray-400' : ''}`}>
+                                  {improvement}
+                                </p>
+                              </div>
+                            );
+                          })}
                         </div>
-                      )}
+                      </details>
+                    )}
 
-                      {/* Back Button */}
-                      <button
-                        onClick={() => {
-                          setAnalysis(null);
-                          setDismissedImprovements(new Set());
-                        }}
-                        className="w-full px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition"
-                      >
-                        ← New Analysis
-                      </button>
-                    </div>
-                  )}
-
-                  {activeTab === 'improvements' && (
-                    <div className="p-4 space-y-4">
-                      {/* Summary Section */}
-                      {analysis.sections?.summary && (
-                        <div className="bg-purple-50 border-2 border-purple-200 rounded-lg p-4">
-                          <div className="flex items-center justify-between mb-3">
-                            <h3 className="font-bold text-purple-900 text-sm">Summary</h3>
-                            <span className="text-sm font-bold text-purple-600">
-                              {analysis.sections.summary.score}/100
-                            </span>
+                    {analysis.sections?.experience && analysis.sections.experience.improvements && analysis.sections.experience.improvements.length > 0 && (
+                      <details className="group">
+                        <summary className="cursor-pointer list-none">
+                          <div className="flex items-center justify-between p-4 hover:bg-gray-50 rounded-lg transition">
+                            <div className="flex items-center gap-3">
+                              <span className="text-2xl">💼</span>
+                              <div>
+                                <h4 className="font-semibold text-gray-900">Experience</h4>
+                                <p className="text-sm text-gray-500">{analysis.sections.experience.improvements.length} suggestions</p>
+                              </div>
+                            </div>
+                            <svg className="w-5 h-5 text-gray-400 group-open:rotate-180 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
                           </div>
-                          {analysis.sections.summary.improvements && analysis.sections.summary.improvements.length > 0 && (
-                            <ul className="space-y-2">
-                              {analysis.sections.summary.improvements.map((improvement, idx) => (
-                                <li key={idx} className="text-xs text-gray-700 flex items-start gap-2">
-                                  <span className="text-purple-600 mt-0.5">•</span>
-                                  <span>{improvement}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          )}
+                        </summary>
+                        <div className="px-4 pb-4 space-y-2">
+                          {analysis.sections.experience.improvements.map((improvement, idx) => {
+                            const improvementId = `experience-${idx}`;
+                            const isCompleted = completedImprovements.has(improvementId);
+                            return (
+                              <div key={idx} className="flex items-start gap-2">
+                                <input
+                                  type="checkbox"
+                                  checked={isCompleted}
+                                  onChange={() => toggleCompletion(improvementId)}
+                                  className="mt-1 w-4 h-4 text-purple-600 rounded border-gray-300 focus:ring-purple-500 cursor-pointer"
+                                />
+                                <p className={`text-gray-700 flex-1 ${isCompleted ? 'line-through text-gray-400' : ''}`}>
+                                  {improvement}
+                                </p>
+                              </div>
+                            );
+                          })}
                         </div>
-                      )}
+                      </details>
+                    )}
 
-                      {/* Experience Section */}
-                      {analysis.sections?.experience && (
-                        <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4">
-                          <div className="flex items-center justify-between mb-3">
-                            <h3 className="font-bold text-blue-900 text-sm">Experience</h3>
-                            <span className="text-sm font-bold text-blue-600">
-                              {analysis.sections.experience.score}/100
-                            </span>
+                    {analysis.sections?.skills && analysis.sections.skills.improvements && analysis.sections.skills.improvements.length > 0 && (
+                      <details className="group">
+                        <summary className="cursor-pointer list-none">
+                          <div className="flex items-center justify-between p-4 hover:bg-gray-50 rounded-lg transition">
+                            <div className="flex items-center gap-3">
+                              <span className="text-2xl">⚡</span>
+                              <div>
+                                <h4 className="font-semibold text-gray-900">Skills</h4>
+                                <p className="text-sm text-gray-500">{analysis.sections.skills.improvements.length} suggestions</p>
+                              </div>
+                            </div>
+                            <svg className="w-5 h-5 text-gray-400 group-open:rotate-180 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
                           </div>
-                          {analysis.sections.experience.improvements && analysis.sections.experience.improvements.length > 0 && (
-                            <ul className="space-y-2">
-                              {analysis.sections.experience.improvements.map((improvement, idx) => (
-                                <li key={idx} className="text-xs text-gray-700 flex items-start gap-2">
-                                  <span className="text-blue-600 mt-0.5">•</span>
-                                  <span>{improvement}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Skills Section */}
-                      {analysis.sections?.skills && (
-                        <div className="bg-green-50 border-2 border-green-200 rounded-lg p-4">
-                          <div className="flex items-center justify-between mb-3">
-                            <h3 className="font-bold text-green-900 text-sm">Skills</h3>
-                            <span className="text-sm font-bold text-green-600">
-                              {analysis.sections.skills.score}/100
-                            </span>
-                          </div>
-                          {analysis.sections.skills.improvements && analysis.sections.skills.improvements.length > 0 && (
-                            <ul className="space-y-2">
-                              {analysis.sections.skills.improvements.map((improvement, idx) => (
-                                <li key={idx} className="text-xs text-gray-700 flex items-start gap-2">
-                                  <span className="text-green-600 mt-0.5">•</span>
-                                  <span>{improvement}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          )}
+                        </summary>
+                        <div className="px-4 pb-4 space-y-2">
+                          {analysis.sections.skills.improvements.map((improvement, idx) => {
+                            const improvementId = `skills-${idx}`;
+                            const isCompleted = completedImprovements.has(improvementId);
+                            return (
+                              <div key={idx} className="flex items-start gap-2">
+                                <input
+                                  type="checkbox"
+                                  checked={isCompleted}
+                                  onChange={() => toggleCompletion(improvementId)}
+                                  className="mt-1 w-4 h-4 text-purple-600 rounded border-gray-300 focus:ring-purple-500 cursor-pointer"
+                                />
+                                <p className={`text-gray-700 flex-1 ${isCompleted ? 'line-through text-gray-400' : ''}`}>
+                                  {improvement}
+                                </p>
+                              </div>
+                            );
+                          })}
                           {analysis.sections.skills.missingSkills && analysis.sections.skills.missingSkills.length > 0 && (
-                            <div className="mt-3 pt-3 border-t border-green-300">
-                              <p className="text-xs font-semibold text-green-900 mb-2">Consider Adding:</p>
-                              <div className="flex flex-wrap gap-1">
+                            <div className="pt-3 mt-3 border-t border-gray-200">
+                              <p className="text-sm font-medium text-gray-900 mb-2">Skills to consider:</p>
+                              <div className="flex flex-wrap gap-2">
                                 {analysis.sections.skills.missingSkills.map((skill, idx) => (
-                                  <span key={idx} className="px-2 py-1 bg-white rounded text-xs text-gray-700">
+                                  <span key={idx} className="px-2 py-1 bg-gray-100 rounded text-sm text-gray-700">
                                     {skill}
                                   </span>
                                 ))}
@@ -940,129 +1007,23 @@ function CVEditorContent() {
                             </div>
                           )}
                         </div>
-                      )}
-
-                      {/* Education Section */}
-                      {analysis.sections?.education && (
-                        <div className="bg-yellow-50 border-2 border-yellow-200 rounded-lg p-4">
-                          <div className="flex items-center justify-between mb-3">
-                            <h3 className="font-bold text-yellow-900 text-sm">Education</h3>
-                            <span className="text-sm font-bold text-yellow-700">
-                              {analysis.sections.education.score}/100
-                            </span>
-                          </div>
-                          {analysis.sections.education.improvements && analysis.sections.education.improvements.length > 0 && (
-                            <ul className="space-y-2">
-                              {analysis.sections.education.improvements.map((improvement, idx) => (
-                                <li key={idx} className="text-xs text-gray-700 flex items-start gap-2">
-                                  <span className="text-yellow-600 mt-0.5">•</span>
-                                  <span>{improvement}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Projects Section */}
-                      {analysis.sections?.projects && (
-                        <div className="bg-pink-50 border-2 border-pink-200 rounded-lg p-4">
-                          <div className="flex items-center justify-between mb-3">
-                            <h3 className="font-bold text-pink-900 text-sm">Projects</h3>
-                            <span className="text-sm font-bold text-pink-600">
-                              {analysis.sections.projects.score}/100
-                            </span>
-                          </div>
-                          {analysis.sections.projects.improvements && analysis.sections.projects.improvements.length > 0 && (
-                            <ul className="space-y-2">
-                              {analysis.sections.projects.improvements.map((improvement, idx) => (
-                                <li key={idx} className="text-xs text-gray-700 flex items-start gap-2">
-                                  <span className="text-pink-600 mt-0.5">•</span>
-                                  <span>{improvement}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Quantification Prompts */}
-                      {analysis.quantificationPrompts && analysis.quantificationPrompts.length > 0 && (
-                        <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4">
-                          <h3 className="font-bold text-blue-900 mb-3 text-sm flex items-center gap-2">
-                            <span>📊</span>
-                            Add Measurable Details
-                          </h3>
-                          <div className="space-y-3">
-                            {analysis.quantificationPrompts.map((prompt, idx) => (
-                              <div key={idx} className="bg-white rounded p-3">
-                                <p className="text-xs font-semibold text-gray-900 mb-1">
-                                  {prompt.section}: {prompt.item}
-                                </p>
-                                <ul className="space-y-1">
-                                  {prompt.questions.map((question, qIdx) => (
-                                    <li key={qIdx} className="text-xs text-gray-600 flex items-start gap-2">
-                                      <span className="text-blue-600 mt-0.5">?</span>
-                                      <span>{question}</span>
-                                    </li>
-                                  ))}
-                                </ul>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Language Upgrades */}
-                      {analysis.languageUpgrades && analysis.languageUpgrades.length > 0 && (
-                        <div className="bg-purple-50 border-2 border-purple-200 rounded-lg p-4">
-                          <h3 className="font-bold text-purple-900 mb-3 text-sm flex items-center gap-2">
-                            <span>✍️</span>
-                            Stronger Language
-                          </h3>
-                          <div className="space-y-3">
-                            {analysis.languageUpgrades.map((upgrade, idx) => (
-                              <div key={idx} className="bg-white rounded p-3">
-                                <div className="space-y-2">
-                                  <div>
-                                    <p className="text-xs font-semibold text-gray-500 mb-0.5">Current:</p>
-                                    <p className="text-xs text-gray-700 italic">&ldquo;{upgrade.current}&rdquo;</p>
-                                  </div>
-                                  <div>
-                                    <p className="text-xs font-semibold text-purple-600 mb-0.5">Suggested:</p>
-                                    <p className="text-xs text-gray-900 font-medium">&ldquo;{upgrade.suggested}&rdquo;</p>
-                                  </div>
-                                  <p className="text-xs text-gray-600">{upgrade.reason}</p>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Formatting Tips */}
-                      {analysis.formattingTips && analysis.formattingTips.length > 0 && (
-                        <div className="bg-gray-50 border-2 border-gray-200 rounded-lg p-4">
-                          <h3 className="font-bold text-gray-900 mb-3 text-sm flex items-center gap-2">
-                            <span>🎨</span>
-                            Formatting & Presentation
-                          </h3>
-                          <ul className="space-y-2">
-                            {analysis.formattingTips.map((tip, idx) => (
-                              <li key={idx} className="text-xs text-gray-700 flex items-start gap-2">
-                                <span className="text-gray-600 mt-0.5">•</span>
-                                <span>{tip}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                    </div>
-                  )}
+                      </details>
+                    )}
+                  </div>
                 </div>
 
+                {/* Footer */}
+                <div className="px-8 py-6 bg-gray-50 border-t border-gray-200 flex justify-between items-center">
+                  <button
+                    onClick={() => setMainTab('cv')}
+                    className="px-6 py-3 text-purple-600 hover:text-purple-700 font-semibold transition"
+                  >
+                    ← Back to CV
+                  </button>
+                  <p className="text-sm text-gray-500">Make changes one at a time for best results</p>
+                </div>
               </div>
-            </div>
+            )}
 
           </div>
         )}
