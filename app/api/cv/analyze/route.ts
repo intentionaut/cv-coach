@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
 
     // Use Claude to analyze the CV and provide improvement suggestions
     const message = await anthropic.messages.create({
-      model: 'claude-3-5-sonnet-20241022',
+      model: 'claude-sonnet-5',
       max_tokens: 8192,
       messages: [
         {
@@ -42,6 +42,8 @@ ${JSON.stringify(cvData, null, 2)}
 Available Film/Theatre Industry Skills for Reference:
 ${JSON.stringify(availableSkills, null, 2)}
 
+IMPORTANT: First identify any MISSING essential information (email, phone, location, professional summary) and include tasks to add these in your recommendations.
+
 Please analyze the CV and provide:
 
 1. **Overall Score** (0-100): Rate the CV's effectiveness for film/theatre industry roles
@@ -53,7 +55,7 @@ Please analyze the CV and provide:
    - Education: Score (0-100) and how to better highlight relevant coursework/projects
    - Projects: Score (0-100) and suggestions for better storytelling
 
-4. **Priority Improvements**: Top 3-5 changes that will have the biggest impact
+4. **Priority Improvements**: Top 3-5 changes that will have the biggest impact (MUST include any missing essential contact info or summary as high priority tasks)
 5. **Achievement Quantification Prompts**: Questions to help them add measurable details
    - e.g., "What was the budget?" "How many crew members?" "What was the audience size?"
 6. **Missing Skills**: Industry-relevant skills they should consider adding (from the skills database)
@@ -93,15 +95,36 @@ Return ONLY the JSON object, no additional text.`
       throw new Error('No text response from Claude');
     }
 
-    // Parse Claude's JSON response
-    const analysis = JSON.parse(textContent.text);
+    // Parse Claude's JSON response - strip markdown code fences and extract JSON
+    let jsonText = textContent.text.trim();
+
+    // Remove markdown code fences if present
+    if (jsonText.startsWith('```')) {
+      jsonText = jsonText.replace(/^```(?:json)?\n?/g, '').replace(/\n?```$/g, '');
+    }
+
+    // Extract just the JSON object (find first { to last })
+    const firstBrace = jsonText.indexOf('{');
+    const lastBrace = jsonText.lastIndexOf('}');
+    if (firstBrace !== -1 && lastBrace !== -1) {
+      jsonText = jsonText.substring(firstBrace, lastBrace + 1);
+    }
+
+    const analysis = JSON.parse(jsonText);
 
     // Store analysis in database
     await db.query(
       `INSERT INTO coaching_recommendations (
-        user_id, recommendation_type, content, target_role, created_at
-      ) VALUES ($1, $2, $3, $4, NOW())`,
-      [session.user.id, 'cv_analysis', JSON.stringify(analysis), targetRole || 'General']
+        user_id, type, priority, title, description, action_items, created_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, NOW())`,
+      [
+        session.user.id,
+        'cv_analysis',
+        'high',
+        `CV Analysis for ${targetRole || 'Film/Theatre'}`,
+        `Overall Score: ${analysis.overallScore}/100`,
+        JSON.stringify(analysis.priorityImprovements || [])
+      ]
     );
 
     return NextResponse.json({

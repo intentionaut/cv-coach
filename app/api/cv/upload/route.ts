@@ -24,61 +24,103 @@ export async function POST(req: NextRequest) {
 
     // Read file content
     const buffer = await file.arrayBuffer();
-    const content = Buffer.from(buffer).toString('utf-8');
+    let content = '';
+    let isPDF = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
 
-    // Use Claude to parse the CV into structured data
+    // For PDFs, first extract text verbatim
+    if (isPDF) {
+      const extractMessage = await anthropic.messages.create({
+        model: 'claude-sonnet-5',
+        max_tokens: 4096,
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'document',
+                source: {
+                  type: 'base64',
+                  media_type: 'application/pdf',
+                  data: Buffer.from(buffer).toString('base64'),
+                },
+              },
+              {
+                type: 'text',
+                text: 'Extract ALL text from this PDF exactly as written. Return ONLY the extracted text with no additional commentary or formatting.',
+              },
+            ],
+          },
+        ],
+      });
+      const extractedText = extractMessage.content.find(block => block.type === 'text');
+      if (extractedText && extractedText.type === 'text') {
+        content = extractedText.text;
+      }
+    } else {
+      // For text files, read as UTF-8
+      content = Buffer.from(buffer).toString('utf-8');
+    }
+
+    // Now use Claude to parse the extracted text into structured data
     const message = await anthropic.messages.create({
-      model: 'claude-3-5-sonnet-20241022',
+      model: 'claude-sonnet-5',
       max_tokens: 4096,
       messages: [
         {
           role: 'user',
-          content: `You are a CV parser for film and theatre industry professionals. Parse this CV and extract structured information.
+          content: `You are a CV parser. Extract ALL information from this CV into structured JSON.
 
 CV Content:
 ${content}
 
-Please extract and return a JSON object with the following structure:
+Parse ALL the content and populate this JSON structure:
+
 {
   "contact": {
-    "name": "string",
-    "email": "string",
-    "phone": "string",
-    "location": "string"
+    "name": "full name",
+    "email": "email address if present",
+    "phone": "phone number if present",
+    "location": "location/address if present"
   },
-  "summary": "string - professional summary or objective",
+  "summary": "the profile/summary/objective section text - extract the full paragraph",
   "experience": [
     {
-      "title": "string",
-      "company": "string",
-      "location": "string",
-      "startDate": "string",
-      "endDate": "string or 'Present'",
-      "description": "string",
-      "achievements": ["array of strings"]
+      "title": "job title",
+      "company": "company/organization name",
+      "location": "work location if mentioned",
+      "startDate": "start date/year",
+      "endDate": "end date/year or 'Present'",
+      "description": "combine all description text and bullet points into one paragraph",
+      "achievements": []
     }
   ],
   "education": [
     {
-      "degree": "string",
-      "institution": "string",
-      "location": "string",
-      "year": "string",
-      "details": "string"
+      "degree": "degree or certification name",
+      "institution": "school/institution name",
+      "location": "school location if present",
+      "year": "graduation year or date range",
+      "details": "any additional details"
     }
   ],
-  "skills": ["array of skills"],
+  "skills": ["extract ALL skills mentioned - include technical skills, soft skills, equipment, software, etc."],
   "projects": [
     {
-      "title": "string",
-      "role": "string",
-      "description": "string",
-      "year": "string"
+      "title": "project name",
+      "role": "role in project",
+      "description": "project description",
+      "year": "year if mentioned"
     }
   ]
 }
 
-Return ONLY the JSON object, no additional text.`
+IMPORTANT:
+- Extract ALL text content from each section
+- Combine bullet points into the description field
+- Include ALL skills listed (even if under headings like "Key Skills", "Technical Skills", etc.)
+- If education is not present, use empty array []
+- If projects are not present, use empty array []
+- Return ONLY the JSON object, no markdown, no additional text`
         }
       ]
     });
@@ -88,23 +130,73 @@ Return ONLY the JSON object, no additional text.`
       throw new Error('No text response from Claude');
     }
 
-    // Parse Claude's JSON response
-    const cvData = JSON.parse(textContent.text);
+    // Parse Claude's JSON response - strip markdown code fences and extract JSON
+    let jsonText = textContent.text.trim();
 
-    // Store in database
-    const result = await db.query(
-      `INSERT INTO cv_data (user_id, raw_text, structured_data, file_name, updated_at)
-       VALUES ($1, $2, $3, $4, NOW())
-       ON CONFLICT (user_id)
-       DO UPDATE SET raw_text = $2, structured_data = $3, file_name = $4, updated_at = NOW()
-       RETURNING id`,
-      [session.user.id, content, JSON.stringify(cvData), file.name]
+    // Remove markdown code fences if present
+    if (jsonText.startsWith('```')) {
+      jsonText = jsonText.replace(/^```(?:json)?\n?/g, '').replace(/\n?```$/g, '');
+    }
+
+    // Extract just the JSON object (find first { to last })
+    const firstBrace = jsonText.indexOf('{');
+    const lastBrace = jsonText.lastIndexOf('}');
+    if (firstBrace !== -1 && lastBrace !== -1) {
+      jsonText = jsonText.substring(firstBrace, lastBrace + 1);
+    }
+
+    const cvData = JSON.parse(jsonText);
+
+    // Debug: Log extracted CV data
+    console.log('Extracted CV data:', JSON.stringify(cvData, null, 2));
+
+    // Check if user already has CV data
+    const existing = await db.query(
+      `SELECT id FROM cv_data WHERE user_id = $1`,
+      [session.user.id]
     );
+
+    let result;
+    if (existing.rows.length > 0) {
+      // Update existing CV
+      result = await db.query(
+        `UPDATE cv_data
+         SET personal_info = $1, summary = $2, experience = $3, education = $4, skills = $5, projects = $6, updated_at = NOW()
+         WHERE user_id = $7
+         RETURNING id`,
+        [
+          JSON.stringify(cvData.contact || {}),
+          cvData.summary || '',
+          JSON.stringify(cvData.experience || []),
+          JSON.stringify(cvData.education || []),
+          JSON.stringify(cvData.skills || []),
+          JSON.stringify(cvData.projects || []),
+          session.user.id
+        ]
+      );
+    } else {
+      // Insert new CV
+      result = await db.query(
+        `INSERT INTO cv_data (user_id, personal_info, summary, experience, education, skills, projects, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
+         RETURNING id`,
+        [
+          session.user.id,
+          JSON.stringify(cvData.contact || {}),
+          cvData.summary || '',
+          JSON.stringify(cvData.experience || []),
+          JSON.stringify(cvData.education || []),
+          JSON.stringify(cvData.skills || []),
+          JSON.stringify(cvData.projects || [])
+        ]
+      );
+    }
 
     return NextResponse.json({
       success: true,
       cvId: result.rows[0].id,
-      data: cvData
+      data: cvData,
+      rawText: content // Return the raw extracted text
     });
   } catch (error: any) {
     console.error('CV upload error:', error);
