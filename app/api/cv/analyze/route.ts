@@ -1,0 +1,118 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import Anthropic from '@anthropic-ai/sdk';
+import db from '@/lib/db/client';
+import { FILM_THEATRE_SKILLS } from '@/lib/data/film-skills';
+
+const anthropic = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY || '',
+});
+
+export async function POST(req: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { cvData, targetRole } = await req.json();
+
+    if (!cvData) {
+      return NextResponse.json({ error: 'No CV data provided' }, { status: 400 });
+    }
+
+    // Get all available film/theatre skills for context
+    const availableSkills = FILM_THEATRE_SKILLS;
+
+    // Use Claude to analyze the CV and provide improvement suggestions
+    const message = await anthropic.messages.create({
+      model: 'claude-3-5-sonnet-20241022',
+      max_tokens: 8192,
+      messages: [
+        {
+          role: 'user',
+          content: `You are an expert film and theatre industry career coach. Analyze this CV and provide detailed, actionable improvement suggestions to help this candidate build confidence and land their first professional role.
+
+Target Role: ${targetRole || 'Film/Theatre Production'}
+
+Current CV Data:
+${JSON.stringify(cvData, null, 2)}
+
+Available Film/Theatre Industry Skills for Reference:
+${JSON.stringify(availableSkills, null, 2)}
+
+Please analyze the CV and provide:
+
+1. **Overall Score** (0-100): Rate the CV's effectiveness for film/theatre industry roles
+2. **Confidence Boosters**: Identify 3-5 strong points the candidate should feel proud of
+3. **Section-by-Section Analysis**:
+   - Summary/Objective: Score (0-100) and specific improvements
+   - Experience: Score (0-100) and specific improvements for each role
+   - Skills: Score (0-100), missing industry-relevant skills, suggestions for better presentation
+   - Education: Score (0-100) and how to better highlight relevant coursework/projects
+   - Projects: Score (0-100) and suggestions for better storytelling
+
+4. **Priority Improvements**: Top 3-5 changes that will have the biggest impact
+5. **Achievement Quantification Prompts**: Questions to help them add measurable details
+   - e.g., "What was the budget?" "How many crew members?" "What was the audience size?"
+6. **Missing Skills**: Industry-relevant skills they should consider adding (from the skills database)
+7. **Formatting & Presentation**: Specific suggestions for visual improvements
+8. **Confidence Building**: Specific language changes to make accomplishments sound stronger without exaggerating
+
+Return a JSON object with this structure:
+{
+  "overallScore": number,
+  "confidenceBoosters": ["string"],
+  "sections": {
+    "summary": { "score": number, "improvements": ["string"] },
+    "experience": { "score": number, "improvements": ["string"] },
+    "skills": { "score": number, "improvements": ["string"], "missingSkills": ["string"] },
+    "education": { "score": number, "improvements": ["string"] },
+    "projects": { "score": number, "improvements": ["string"] }
+  },
+  "priorityImprovements": [
+    { "priority": number, "section": "string", "change": "string", "impact": "string" }
+  ],
+  "quantificationPrompts": [
+    { "section": "string", "item": "string", "questions": ["string"] }
+  ],
+  "formattingTips": ["string"],
+  "languageUpgrades": [
+    { "current": "string", "suggested": "string", "reason": "string" }
+  ]
+}
+
+Return ONLY the JSON object, no additional text.`
+        }
+      ]
+    });
+
+    const textContent = message.content.find(block => block.type === 'text');
+    if (!textContent || textContent.type !== 'text') {
+      throw new Error('No text response from Claude');
+    }
+
+    // Parse Claude's JSON response
+    const analysis = JSON.parse(textContent.text);
+
+    // Store analysis in database
+    await db.query(
+      `INSERT INTO coaching_recommendations (
+        user_id, recommendation_type, content, target_role, created_at
+      ) VALUES ($1, $2, $3, $4, NOW())`,
+      [session.user.id, 'cv_analysis', JSON.stringify(analysis), targetRole || 'General']
+    );
+
+    return NextResponse.json({
+      success: true,
+      analysis
+    });
+  } catch (error: any) {
+    console.error('CV analysis error:', error);
+    return NextResponse.json(
+      { error: 'Failed to analyze CV', details: error.message },
+      { status: 500 }
+    );
+  }
+}
