@@ -1118,6 +1118,39 @@ function CVEditorContent() {
                   </div>
                 </div>
 
+                {/* Completion Celebration - Show when all improvements are checked off */}
+                {(() => {
+                  // Calculate total improvements
+                  const totalImprovements =
+                    (analysis.priorityImprovements?.slice(0, 3).length || 0) +
+                    (analysis.sections?.summary?.improvements?.length || 0) +
+                    (analysis.sections?.experience?.improvements?.length || 0) +
+                    (analysis.sections?.skills?.improvements?.length || 0);
+
+                  const allCompleted = totalImprovements > 0 && completedImprovements.size >= totalImprovements;
+
+                  if (allCompleted) {
+                    return (
+                      <div className="px-8 py-6 bg-gradient-to-r from-green-50 to-emerald-50 border-t border-green-200">
+                        <div className="text-center">
+                          <div className="text-6xl mb-4">🎉</div>
+                          <h3 className="text-2xl font-bold text-gray-900 mb-2">CV Complete!</h3>
+                          <p className="text-gray-700 mb-6 max-w-2xl mx-auto">
+                            You've worked through all the improvements. Your CV is looking strong! Ready to practice answering interview questions?
+                          </p>
+                          <button
+                            onClick={() => router.push('/coaching')}
+                            className="px-8 py-4 bg-purple-600 text-white rounded-lg text-lg font-semibold hover:bg-purple-700 transition shadow-lg hover:shadow-xl transform hover:scale-105"
+                          >
+                            Start Interview Practice →
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
+
                 {/* Footer */}
                 <div className="px-8 py-6 bg-gray-50 border-t border-gray-200 flex justify-between items-center">
                   <button
