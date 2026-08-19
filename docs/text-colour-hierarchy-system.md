@@ -38,7 +38,7 @@ The brief left several states undefined. The following reasonable, palette-consi
 3. **Visited links reuse `text-secondary`.** No separate accent exists in the fixed palette for a visited state without inventing a new hue. `text-secondary` is already AA-compliant on both surfaces (§4) and is visually distinct from both the unvisited (`text-link`) and hover (`text-cta`) states, satisfying the "don't rely on colour alone" guidance since link states are additionally carried by underline styling.
 4. **Text-on-secondary-accent (`accent-secondary`, #F4B6A0) uses `text-primary`.** Verified at 5.78:1 — passes AA-normal. No new token needed; this is a direct reuse.
 5. **CTA hover surface is a fill-darken of `cta-primary`, not a new hue.** See §4.6 for the contrast conflict this resolves.
-6. **Overline text reuses `accent-tertiary`** directly as a text colour (already true in the preview) — verified at 9.18:1 on `bg-main`, so no change needed.
+6. **Overline text reuses `accent-tertiary`** directly as a text colour (already true in the preview) — verified at 10.01:1 on `bg-main`, so no change needed.
 
 ---
 
@@ -64,7 +64,7 @@ This is a font-family change only — it does not alter any colour token, contra
 
 | Token | Hex | Role |
 |---|---|---|
-| `bg-main` | `#F0E5D0` | Main background |
+| `bg-main` | `#F5EFE4` | Main background |
 | `text-primary` | `#3D405B` | Main text |
 | `cta-primary` | `#E07A5F` | Primary CTA (fill colour, not for use as text — see §4.6) |
 | `alert` | `#F2CC8F` | Alert / system message surface |
@@ -84,7 +84,7 @@ Three tokens from the original preview **failed formal contrast audit** and have
 
 | Token | Preview hex (provisional) | **Final hex** | Change | Rationale |
 |---|---|---|---|---|
-| `text-secondary` | `#63668A` | **`#616487`** | −1% lightness | Preview value failed AA-normal on `bg-main` at 4.43:1 (needs 4.5:1). A 1-point lightness nudge clears it at 4.57:1 with no visible change to the token's role. |
+| `text-secondary` | `#63668A` | **`#616487`** | −1% lightness | Preview value failed AA-normal on `bg-main` at 4.43:1 (needs 4.5:1). A 1-point lightness nudge clears it comfortably (4.98:1 against the current `bg-main`) with no visible change to the token's role. |
 | `text-muted` | `#9497B0` | **`#7D809F`** | −8% lightness | Preview value hard-failed at 2.3:1. Reaching full AA-normal (4.5:1) would require darkening to `#606483` — within 1% lightness of `text-secondary`, collapsing the primary/secondary/muted hierarchy. Instead, darkened to the **AA-large threshold** (3.08:1) and its usage is **restricted to large text only** (≥18.66px regular or ≥14px bold) — see usage note below. |
 | `text-disabled` | `#B7B9CC` | **`#9FA2BB`** | −8% lightness | WCAG exempts disabled/inactive text from contrast requirements, so this is not a PASS/FAIL token — it's a deliberate design floor. Preview value (1.55:1) was borderline imperceptible against `bg-main`. Nudged to ~2.01:1: still clearly de-emphasised (disabled should look disabled) but legible as text rather than a colour smear. |
 
@@ -95,16 +95,16 @@ Three tokens from the original preview **failed formal contrast audit** and have
 | Token | Hex | Derivation | Contrast check |
 |---|---|---|---|
 | `text-inverse` | `#F7F1E3` | Near-`bg-main`, lightened toward white (92.9% L) | 10.17:1 on `accent-tertiary` — pass |
-| `text-link` | `#0B3D5B` | = `accent-tertiary`, reused | 9.18:1 on `bg-main` — pass |
+| `text-link` | `#0B3D5B` | = `accent-tertiary`, reused | 10.01:1 on `bg-main` — pass |
 | `text-on-success` | `#1B3A2E` | `success` hue darkened to 16.7% lightness | 5.18:1 on `success` — pass |
 | `text-on-alert` | `#4A3612` | `alert` hue darkened to 18% lightness | 7.56:1 on `alert` — pass |
-| `text-on-tertiary` | `#F0E5D0` | = `bg-main`, reused on navy surfaces | 9.18:1 on `accent-tertiary` — pass |
+| `text-on-tertiary` | `#F5EFE4` | = `bg-main`, reused on navy surfaces | 10.01:1 on `accent-tertiary` — pass |
 
 ### 3.5 Corrected/new derived tokens
 
 | Token | Hex | Derivation | Rationale |
 |---|---|---|---|
-| `text-cta` | **`#B24022`** | `cta-primary` darkened by 21% lightness (62.5% → ~41.5% L), same hue/saturation family | **Replaces two broken preview tokens at once.** The preview used raw `cta-primary` (#E07A5F) directly as text colour in two places — the `link-hover` state and the form `error-msg` colour — both of which failed AA-normal (2.36:1 / 2.76:1) because `#E07A5F` was designed as a *fill* colour, not a text colour on cream. `text-cta` is the single accessible "CTA colour, but as text" token: 4.61:1 on `bg-main`, 5.38:1 on `bg-surface`. Use it anywhere the brand's CTA hue needs to appear as legible text (link hover state, error messaging, destructive-action text). |
+| `text-cta` | **`#B24022`** | `cta-primary` darkened by 21% lightness (62.5% → ~41.5% L), same hue/saturation family | **Replaces two broken preview tokens at once.** The preview used raw `cta-primary` (#E07A5F) directly as text colour in two places — the `link-hover` state and the form `error-msg` colour — both of which failed AA-normal (2.36:1 / 2.76:1) because `#E07A5F` was designed as a *fill* colour, not a text colour on cream. `text-cta` is the single accessible "CTA colour, but as text" token: 5.03:1 on `bg-main`, 5.38:1 on `bg-surface`. Use it anywhere the brand's CTA hue needs to appear as legible text (link hover state, error messaging, destructive-action text). |
 | `text-on-cta` | **`#3D405B`** *(= `text-primary`, reused)* | No new hex — reuses the existing dark token | **Resolves an unfixable conflict:** no light colour reaches AA on `cta-primary` — even pure white only reaches 2.95:1. The preview's near-white `#FDF8F0` reached just 2.79:1. Dark `text-primary` reaches **3.42:1**, which clears the **AA-large** threshold (3:1) but not AA-normal (4.5:1). **Decision (confirmed):** primary CTA button labels must always be set at large-text size (≥14px bold, the typical button-label treatment) to stay within AA-large compliance. This is now a hard constraint on the primary-button component, not just a colour choice — flagged clearly in §4.6. |
 
 ---
@@ -117,9 +117,9 @@ Every text/background pairing in the system, checked against WCAG 2.1 Success Cr
 
 | Pairing | Ratio | AA-normal | AA-large |
 |---|---|---|---|
-| `text-primary` on `bg-main` | 8.08:1 | ✅ PASS | ✅ PASS |
+| `text-primary` on `bg-main` | 8.81:1 | ✅ PASS | ✅ PASS |
 | `text-primary` on `bg-surface` | 9.42:1 | ✅ PASS | ✅ PASS |
-| `text-secondary` on `bg-main` | 4.57:1 | ✅ PASS | ✅ PASS |
+| `text-secondary` on `bg-main` | 4.98:1 | ✅ PASS | ✅ PASS |
 | `text-secondary` on `bg-surface` | 5.33:1 | ✅ PASS | ✅ PASS |
 | `text-muted` on `bg-main` | 3.08:1 | ❌ FAIL | ✅ PASS *(large text only — see §3.3)* |
 | `text-muted` on `bg-surface` | 3.59:1 | ❌ FAIL | ✅ PASS *(large text only)* |
@@ -129,11 +129,11 @@ Every text/background pairing in the system, checked against WCAG 2.1 Success Cr
 
 | Pairing | Ratio | AA-normal | AA-large |
 |---|---|---|---|
-| `text-link` (default) on `bg-main` | 9.18:1 | ✅ PASS | ✅ PASS |
+| `text-link` (default) on `bg-main` | 10.01:1 | ✅ PASS | ✅ PASS |
 | `text-link` (default) on `bg-surface` | 10.7:1 | ✅ PASS | ✅ PASS |
-| `text-cta` (hover) on `bg-main` | 4.61:1 | ✅ PASS | ✅ PASS |
+| `text-cta` (hover) on `bg-main` | 5.03:1 | ✅ PASS | ✅ PASS |
 | `text-cta` (hover) on `bg-surface` | 5.38:1 | ✅ PASS | ✅ PASS |
-| `text-secondary` (visited) on `bg-main` | 4.57:1 | ✅ PASS | ✅ PASS |
+| `text-secondary` (visited) on `bg-main` | 4.98:1 | ✅ PASS | ✅ PASS |
 
 ### 4.3 Text on coloured surfaces (banners, buttons, dark panel)
 
@@ -142,10 +142,10 @@ Every text/background pairing in the system, checked against WCAG 2.1 Success Cr
 | `text-on-cta` on `cta-primary` | 3.42:1 | ❌ FAIL | ✅ PASS *(mandatory large text — see §4.6)* |
 | `text-on-success` on `success` | 5.18:1 | ✅ PASS | ✅ PASS |
 | `text-on-alert` on `alert` | 7.56:1 | ✅ PASS | ✅ PASS |
-| `text-on-tertiary` on `accent-tertiary` | 9.18:1 | ✅ PASS | ✅ PASS |
+| `text-on-tertiary` on `accent-tertiary` | 10.01:1 | ✅ PASS | ✅ PASS |
 | `text-inverse` on `accent-tertiary` | 10.17:1 | ✅ PASS | ✅ PASS |
 | `text-primary` on `accent-secondary` | 5.78:1 | ✅ PASS | ✅ PASS |
-| `accent-tertiary` (as overline text) on `bg-main` | 9.18:1 | ✅ PASS | ✅ PASS |
+| `accent-tertiary` (as overline text) on `bg-main` | 10.01:1 | ✅ PASS | ✅ PASS |
 
 ### 4.4 Flagged: `text-primary` on `success`
 
@@ -158,6 +158,8 @@ Not used by default anywhere in this system (§4.3 uses the dedicated `text-on-s
 **Rule:** always use `text-on-success`, never `text-primary`, on the `success` surface.
 
 ### 4.5 Original palette pairings that failed (summary)
+
+*Ratios below are as audited at the time against the original `bg-main` (`#F0E5D0`), a historical record of what was fixed and why — not the current live figures. `bg-main` was subsequently updated to `#F5EFE4` (§9); all current ratios use the new value and are restated throughout §3–§4.4 and the §8 summary table.*
 
 | Pairing (as originally proposed) | Ratio | Failure | Resolution |
 |---|---|---|---|
@@ -206,7 +208,7 @@ Each typographic role below specifies its **default token**, and any **state var
 | **Text on success surface** | `text-on-success` | n/a | |
 | **Text on alert surface** | `text-on-alert` | n/a | |
 | **Error message text** | `text-cta` (`#B24022`) | n/a | Corrected from raw `cta-primary` (§3.5) — form errors are validated against `bg-main`/`bg-surface`, never appear on a dark surface in this system |
-| **Success message text (inline, not banner)** | `success`-adjacent — reuse `text-on-success` (`#1B3A2E`) on `bg-main`/`bg-surface` | n/a | Verify: `#1B3A2E` on `#F0E5D0` = high contrast dark-on-light, passes comfortably; included for completeness where a success *message* appears as inline text rather than inside a filled banner |
+| **Success message text (inline, not banner)** | `success`-adjacent — reuse `text-on-success` (`#1B3A2E`) on `bg-main`/`bg-surface` | n/a | Verify: `#1B3A2E` on `#F5EFE4` = high contrast dark-on-light, passes comfortably; included for completeness where a success *message* appears as inline text rather than inside a filled banner |
 
 ---
 
@@ -234,12 +236,12 @@ Each typographic role below specifies its **default token**, and any **state var
 ### 6.4 Secondary (outline) CTA button
 
 - **Surface:** transparent, sits on `bg-main`
-- **Border + text:** `accent-tertiary` (`#0B3D5B`) — 9.18:1 on `bg-main`, passes AA-normal at any size
+- **Border + text:** `accent-tertiary` (`#0B3D5B`) — 10.01:1 on `bg-main`, passes AA-normal at any size
 - **Why:** unchanged from preview; already fully compliant and has no size restriction, making it the safer choice for compact/dense button contexts where the primary CTA's large-text rule can't be met.
 
 ### 6.5 Form field — default state
 
-- **Label:** `text-primary` on `bg-surface`/`bg-main` — 9.42:1 / 8.08:1
+- **Label:** `text-primary` on `bg-surface`/`bg-main` — 9.42:1 / 8.81:1
 - **Input text (value):** `text-primary`
 - **Placeholder:** `text-secondary` by default (see molecule table, §5) — safer than `text-muted` at typical 14–16px regular input text
 - **Hint text:** `text-secondary` *(changed from `text-muted}` in the preview, which used `text-muted` at 12.5px — below the large-text floor)*
@@ -247,7 +249,7 @@ Each typographic role below specifies its **default token**, and any **state var
 ### 6.6 Form field — error state
 
 - **Input border:** `text-cta` (`#B24022`) *(changed from raw `cta-primary` — the preview used the unmodified brand CTA hex as the border colour; borders fall under the 3:1 **UI component** contrast requirement (SC 1.4.11), not the 4.5:1 text requirement, so this specific usage was technically already compliant at 2.36:1... only if checked as a non-text UI boundary. Standardising on `text-cta` here anyway for one consistent "this is the error colour" token across border + message text, avoiding two different reds in the same field.)*
-- **Error message text:** `text-cta` (`#B24022`) on `bg-main`/`bg-surface` — 4.61:1 / 5.38:1, passes AA-normal. **This was the concrete failure in the original preview** (raw `cta-primary` at 2.36–2.76:1).
+- **Error message text:** `text-cta` (`#B24022`) on `bg-main`/`bg-surface` — 5.03:1 / 5.38:1, passes AA-normal. **This was the concrete failure in the original preview** (raw `cta-primary` at 2.36–2.76:1).
 
 ### 6.7 Card on main background
 
@@ -259,7 +261,7 @@ Each typographic role below specifies its **default token**, and any **state var
 ### 6.8 Dark surface panel (e.g. "weekly digest" pattern)
 
 - **Surface:** `accent-tertiary` (`#0B3D5B`)
-- **Heading:** `text-on-tertiary` (`#F0E5D0`) — 9.18:1
+- **Heading:** `text-on-tertiary` (`#F5EFE4`) — 10.01:1
 - **Body:** `text-inverse` at 75% opacity — base ratio 10.17:1 has enough headroom that a 25% opacity reduction still clears AA-normal comfortably (~7.6:1 effective against the navy surface)
 
 ---
@@ -276,31 +278,31 @@ Each typographic role below specifies its **default token**, and any **state var
 
 | Token | Hex | Usage | Contrast ratio | AA-normal | AA-large |
 |---|---|---|---|---|---|
-| `bg-main` | `#F0E5D0` | Page background | — | — | — |
+| `bg-main` | `#F5EFE4` | Page background | — | — | — |
 | `bg-surface` | `#FBF7EC` | Card/panel surface | — | — | — |
 | `cta-primary` | `#E07A5F` | Primary CTA fill (not for text use) | — | — | — |
 | `alert` | `#F2CC8F` | Alert banner surface | — | — | — |
 | `success` | `#81B29A` | Success banner surface | — | — | — |
 | `accent-secondary` | `#F4B6A0` | Secondary accent surface | — | — | — |
 | `accent-tertiary` | `#0B3D5B` | Tertiary accent / dark surface / default link | — | — | — |
-| `text-primary` | `#3D405B` | Headings, body, labels — on `bg-main` | 8.08:1 | ✅ PASS | ✅ PASS |
+| `text-primary` | `#3D405B` | Headings, body, labels — on `bg-main` | 8.81:1 | ✅ PASS | ✅ PASS |
 | `text-primary` | `#3D405B` | — on `bg-surface` | 9.42:1 | ✅ PASS | ✅ PASS |
-| `text-secondary` | `#616487` *(corrected)* | Secondary body, caption, hint, visited link — on `bg-main` | 4.57:1 | ✅ PASS | ✅ PASS |
+| `text-secondary` | `#616487` *(corrected)* | Secondary body, caption, hint, visited link — on `bg-main` | 4.98:1 | ✅ PASS | ✅ PASS |
 | `text-secondary` | `#616487` | — on `bg-surface` | 5.33:1 | ✅ PASS | ✅ PASS |
 | `text-muted` | `#7D809F` *(corrected)* | Muted text — **large text only** — on `bg-main` | 3.08:1 | ❌ FAIL | ✅ PASS |
 | `text-muted` | `#7D809F` | — on `bg-surface` | 3.59:1 | ❌ FAIL | ✅ PASS |
 | `text-disabled` | `#9FA2BB` *(corrected)* | Disabled text — on `bg-main` | 2.01:1 | ⚪ EXEMPT | ⚪ EXEMPT |
 | `text-inverse` | `#F7F1E3` | Text on dark/tertiary surfaces | 10.17:1 | ✅ PASS | ✅ PASS |
-| `text-link` | `#0B3D5B` | Default link — on `bg-main` | 9.18:1 | ✅ PASS | ✅ PASS |
+| `text-link` | `#0B3D5B` | Default link — on `bg-main` | 10.01:1 | ✅ PASS | ✅ PASS |
 | `text-link` | `#0B3D5B` | — on `bg-surface` | 10.7:1 | ✅ PASS | ✅ PASS |
-| `text-cta` | `#B24022` *(new, corrected)* | Link hover, error text — on `bg-main` | 4.61:1 | ✅ PASS | ✅ PASS |
+| `text-cta` | `#B24022` *(new, corrected)* | Link hover, error text — on `bg-main` | 5.03:1 | ✅ PASS | ✅ PASS |
 | `text-cta` | `#B24022` | — on `bg-surface` | 5.38:1 | ✅ PASS | ✅ PASS |
 | `text-on-cta` | `#3D405B` *(= `text-primary`, corrected)* | Primary button label — **mandatory ≥14px bold** | 3.42:1 | ❌ FAIL | ✅ PASS |
 | `text-on-success` | `#1B3A2E` | Text on success surface | 5.18:1 | ✅ PASS | ✅ PASS |
 | `text-on-alert` | `#4A3612` | Text on alert surface | 7.56:1 | ✅ PASS | ✅ PASS |
-| `text-on-tertiary` | `#F0E5D0` *(= `bg-main`)* | Heading text on dark/tertiary surface | 9.18:1 | ✅ PASS | ✅ PASS |
+| `text-on-tertiary` | `#F5EFE4` *(= `bg-main`)* | Heading text on dark/tertiary surface | 10.01:1 | ✅ PASS | ✅ PASS |
 | `text-primary` | `#3D405B` | On `accent-secondary` | 5.78:1 | ✅ PASS | ✅ PASS |
-| `accent-tertiary` | `#0B3D5B` | Overline text — on `bg-main` | 9.18:1 | ✅ PASS | ✅ PASS |
+| `accent-tertiary` | `#0B3D5B` | Overline text — on `bg-main` | 10.01:1 | ✅ PASS | ✅ PASS |
 | `text-primary` | `#3D405B` | ⚠️ On `success` — **do not use, fails** | 4.21:1 | ❌ FAIL | ✅ PASS |
 
 ---
@@ -317,3 +319,4 @@ Each typographic role below specifies its **default token**, and any **state var
 | *(new)* `text-cta` | — | `#B24022` | Introduced to replace two broken preview usages (link-hover text, error-message text) with one consistent, compliant token |
 | *(new)* `bg-surface` | inline `#FBF7EC` | `#FBF7EC` (formalised as token) | Was hardcoded in the preview; promoted to a proper token |
 | Caption role | used `text-muted` | now uses `text-secondary` | `text-muted` is no longer valid at caption size (13px, below the large-text floor) |
+| `bg-main` | `#F0E5D0` | **`#F5EFE4`** | Design review: the original value read as visually muted against the navy `accent-tertiary` surface (e.g. the "Ready to Practice?" headline, which uses `text-on-tertiary` = `bg-main` reused on dark surfaces). Lightened within the same hue family (38–39° hue, near-identical saturation) — not a new hue. Re-audited against every dependent pairing (§4.1–§4.4); all pass at equal or better ratios than before, no new failures introduced. `text-on-tertiary` updated to match, since it is `bg-main` reused. |

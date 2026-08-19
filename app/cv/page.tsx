@@ -424,16 +424,16 @@ function CVEditorContent() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50">
+    <div className="min-h-screen bg-bg-main">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">CV Editor</h1>
-          <p className="text-gray-600">Upload your CV and get personalized improvement suggestions</p>
+          <h1 className="font-display text-4xl font-bold text-text-primary mb-2">CV Editor</h1>
+          <p className="font-body text-text-secondary">Upload your CV and get personalized improvement suggestions</p>
           <div className="flex gap-4 mt-4">
             <button
               onClick={() => router.push('/dashboard')}
-              className="text-purple-600 hover:text-purple-700 font-medium"
+              className="font-body text-text-link hover:text-text-cta font-medium"
             >
               ← Back to Dashboard
             </button>
@@ -448,7 +448,7 @@ function CVEditorContent() {
                   setRawCVText('');
                   setEditableCVText('');
                 }}
-                className="text-gray-600 hover:text-gray-700 font-medium"
+                className="font-body text-text-secondary hover:text-text-primary font-medium"
               >
                 ↻ Upload New CV
               </button>
@@ -458,20 +458,20 @@ function CVEditorContent() {
 
         {/* Upload Section - only show when no CV uploaded */}
         {!masterCV && (
-          <div className="bg-white rounded-lg shadow-lg p-8 max-w-4xl mx-auto">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Get Started</h2>
+          <div className="bg-bg-surface rounded-lg shadow-lg p-8 max-w-4xl mx-auto border border-border-hairline">
+            <h2 className="font-display text-2xl font-bold text-text-primary mb-6">Get Started</h2>
 
             {/* Unified Split Upload Container */}
-            <div className="border-2 border-gray-200 rounded-lg overflow-hidden">
-              <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-gray-200">
+            <div className="border-2 border-border-hairline rounded-lg overflow-hidden">
+              <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border-hairline">
 
                 {/* CV Upload - Left Panel */}
                 <div className="p-6">
                   <div className="flex items-center gap-2 mb-3">
-                    <span className="flex items-center justify-center w-6 h-6 rounded-full bg-purple-100 text-purple-600 text-sm font-semibold">1</span>
-                    <h3 className="text-lg font-semibold text-gray-900">Upload Your CV</h3>
+                    <span className="font-body flex items-center justify-center w-6 h-6 rounded-full bg-accent-secondary/30 text-accent-tertiary text-sm font-semibold">1</span>
+                    <h3 className="font-display text-lg font-bold text-text-primary">Upload Your CV</h3>
                   </div>
-                  <p className="text-sm text-gray-600 mb-4">
+                  <p className="font-body text-sm text-text-secondary mb-4">
                     Upload your existing CV and we&apos;ll extract your experience, skills, and projects.
                   </p>
 
@@ -481,8 +481,8 @@ function CVEditorContent() {
                     onDrop={handleCVDrop}
                     className={`border-2 border-dashed rounded-lg p-8 text-center transition-all ${
                       isDraggingCV
-                        ? 'border-purple-500 bg-purple-50 scale-105'
-                        : 'border-gray-300 bg-gray-50'
+                        ? 'border-accent-tertiary bg-accent-secondary/20 scale-105'
+                        : 'border-border-hairline bg-bg-main'
                     }`}
                   >
                     <input
@@ -496,7 +496,7 @@ function CVEditorContent() {
 
                     <div className="mb-4">
                       <svg
-                        className={`mx-auto h-12 w-12 ${isDraggingCV ? 'text-purple-500' : 'text-gray-400'}`}
+                        className={`mx-auto h-12 w-12 ${isDraggingCV ? 'text-accent-tertiary' : 'text-text-secondary'}`}
                         stroke="currentColor"
                         fill="none"
                         viewBox="0 0 48 48"
@@ -512,26 +512,26 @@ function CVEditorContent() {
 
                     <label
                       htmlFor="cv-upload"
-                      className={`cursor-pointer inline-flex items-center gap-2 px-6 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition ${
+                      className={`font-body cursor-pointer inline-flex items-center gap-2 px-6 py-3 bg-cta-primary text-text-on-cta rounded-lg font-semibold hover:opacity-90 transition ${
                         uploading ? 'opacity-50 cursor-not-allowed' : ''
                       }`}
                     >
                       {uploading ? 'Processing...' : 'Choose File'}
                     </label>
 
-                    <p className="mt-4 text-sm text-gray-600">or drag and drop</p>
-                    <p className="mt-1 text-xs text-gray-500">TXT, PDF, DOCX</p>
+                    <p className="font-body mt-4 text-sm text-text-secondary">or drag and drop</p>
+                    <p className="font-body mt-1 text-xs text-text-secondary">TXT, PDF, DOCX</p>
                   </div>
                 </div>
 
                 {/* Job Description - Right Panel */}
                 <div className="p-6">
                   <div className="flex items-center gap-2 mb-3">
-                    <span className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-blue-600 text-sm font-semibold">2</span>
-                    <h3 className="text-lg font-semibold text-gray-900">Job Description</h3>
-                    <span className="text-xs text-gray-500 ml-auto">(Optional)</span>
+                    <span className="font-body flex items-center justify-center w-6 h-6 rounded-full bg-accent-secondary/30 text-accent-tertiary text-sm font-semibold">2</span>
+                    <h3 className="font-display text-lg font-bold text-text-primary">Job Description</h3>
+                    <span className="font-body text-xs text-text-secondary ml-auto">(Optional)</span>
                   </div>
-                  <p className="text-sm text-gray-600 mb-4">
+                  <p className="font-body text-sm text-text-secondary mb-4">
                     Paste or upload a job posting to get tailored suggestions.
                   </p>
 
@@ -540,15 +540,15 @@ function CVEditorContent() {
                     onChange={(e) => setJobDescription(e.target.value)}
                     placeholder="Paste job description here..."
                     rows={6}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-sm"
+                    className="font-body w-full px-3 py-2 border border-border-hairline rounded-lg focus:ring-2 focus:ring-accent-tertiary focus:border-transparent resize-none text-sm bg-bg-surface text-text-primary"
                   />
 
                   <div className="relative my-4">
                     <div className="absolute inset-0 flex items-center">
-                      <div className="w-full border-t border-gray-200"></div>
+                      <div className="w-full border-t border-border-hairline"></div>
                     </div>
                     <div className="relative flex justify-center">
-                      <span className="px-2 bg-white text-xs text-gray-500">or upload file</span>
+                      <span className="font-body px-2 bg-bg-surface text-xs text-text-secondary">or upload file</span>
                     </div>
                   </div>
 
@@ -558,8 +558,8 @@ function CVEditorContent() {
                     onDrop={handleJobDrop}
                     className={`border-2 border-dashed rounded-lg p-4 text-center transition-all ${
                       isDraggingJob
-                        ? 'border-blue-500 bg-blue-50'
-                        : 'border-gray-300 bg-gray-50'
+                        ? 'border-accent-tertiary bg-accent-secondary/20'
+                        : 'border-border-hairline bg-bg-main'
                     }`}
                   >
                     <input
@@ -573,13 +573,13 @@ function CVEditorContent() {
 
                     <label
                       htmlFor="job-upload"
-                      className={`cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition ${
+                      className={`font-body cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-accent-tertiary text-text-on-tertiary rounded-lg text-sm font-semibold hover:opacity-90 transition ${
                         uploadingJob ? 'opacity-50 cursor-not-allowed' : ''
                       }`}
                     >
                       {uploadingJob ? 'Processing...' : '📎 Upload File'}
                     </label>
-                    <p className="mt-2 text-xs text-gray-500">TXT, PDF, DOCX</p>
+                    <p className="font-body mt-2 text-xs text-text-secondary">TXT, PDF, DOCX</p>
                   </div>
                 </div>
 
@@ -594,14 +594,14 @@ function CVEditorContent() {
 
             {/* Left: Raw CV Text (2/3 width) */}
             <div className="lg:col-span-2">
-              <div className="bg-white rounded-lg shadow-lg overflow-hidden h-[800px] flex flex-col">
-                <div className="bg-gradient-to-r from-purple-600 to-blue-600 px-6 py-4">
-                  <h2 className="text-2xl font-bold text-white">Your CV - Uploaded Successfully ✓</h2>
-                  <p className="text-purple-100 text-sm mt-1">This is exactly what we received from your file</p>
+              <div className="bg-bg-surface rounded-lg shadow-lg overflow-hidden h-[800px] flex flex-col border border-border-hairline">
+                <div className="bg-accent-tertiary px-6 py-4">
+                  <h2 className="font-display text-2xl font-bold text-text-on-tertiary">Your CV - Uploaded Successfully ✓</h2>
+                  <p className="font-body text-text-inverse/75 text-sm mt-1">This is exactly what we received from your file</p>
                 </div>
 
                 <div className="flex-1 overflow-hidden">
-                  <pre className="h-full overflow-auto p-6 font-mono text-sm leading-relaxed whitespace-pre-wrap bg-gray-50" style={{ color: '#1C1C1C' }}>
+                  <pre className="h-full overflow-auto p-6 font-mono text-sm leading-relaxed whitespace-pre-wrap bg-bg-main text-text-primary">
                     {rawCVText || 'No content extracted yet...'}
                   </pre>
                 </div>
@@ -610,10 +610,10 @@ function CVEditorContent() {
 
             {/* Right: Hidden structured preview for now - we'll remove this section */}
             <div className="hidden lg:col-span-2">
-              <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-                <div className="bg-gradient-to-r from-purple-600 to-blue-600 px-6 py-4">
-                  <h2 className="text-2xl font-bold text-white">Structured Data (Debug)</h2>
-                  <p className="text-purple-100 text-sm mt-1">What our parser extracted</p>
+              <div className="bg-bg-surface rounded-lg shadow-lg overflow-hidden border border-border-hairline">
+                <div className="bg-accent-tertiary px-6 py-4">
+                  <h2 className="font-display text-2xl font-bold text-text-on-tertiary">Structured Data (Debug)</h2>
+                  <p className="font-body text-text-inverse/75 text-sm mt-1">What our parser extracted</p>
                 </div>
 
                 <div className="p-6 space-y-6 max-h-[700px] overflow-y-auto">
@@ -621,33 +621,33 @@ function CVEditorContent() {
                   {/* Contact Information */}
                   {cvData?.contact && (
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                        <span className="w-1 h-6 bg-purple-600 rounded"></span>
+                      <h3 className="font-display text-lg font-bold text-text-primary mb-3 flex items-center gap-2">
+                        <span className="w-1 h-6 bg-accent-tertiary rounded"></span>
                         Contact Information
                       </h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 ml-3">
                         {cvData.contact.name && (
-                          <div className="flex items-start gap-2">
-                            <span className="text-gray-500 text-sm font-medium min-w-[80px]">Name:</span>
-                            <span className="text-gray-900">{cvData.contact.name}</span>
+                          <div className="font-body flex items-start gap-2">
+                            <span className="text-text-secondary text-sm font-medium min-w-[80px]">Name:</span>
+                            <span className="text-text-primary">{cvData.contact.name}</span>
                           </div>
                         )}
                         {cvData.contact.email && (
-                          <div className="flex items-start gap-2">
-                            <span className="text-gray-500 text-sm font-medium min-w-[80px]">Email:</span>
-                            <span className="text-gray-900">{cvData.contact.email}</span>
+                          <div className="font-body flex items-start gap-2">
+                            <span className="text-text-secondary text-sm font-medium min-w-[80px]">Email:</span>
+                            <span className="text-text-primary">{cvData.contact.email}</span>
                           </div>
                         )}
                         {cvData.contact.phone && (
-                          <div className="flex items-start gap-2">
-                            <span className="text-gray-500 text-sm font-medium min-w-[80px]">Phone:</span>
-                            <span className="text-gray-900">{cvData.contact.phone}</span>
+                          <div className="font-body flex items-start gap-2">
+                            <span className="text-text-secondary text-sm font-medium min-w-[80px]">Phone:</span>
+                            <span className="text-text-primary">{cvData.contact.phone}</span>
                           </div>
                         )}
                         {cvData.contact.location && (
-                          <div className="flex items-start gap-2">
-                            <span className="text-gray-500 text-sm font-medium min-w-[80px]">Location:</span>
-                            <span className="text-gray-900">{cvData.contact.location}</span>
+                          <div className="font-body flex items-start gap-2">
+                            <span className="text-text-secondary text-sm font-medium min-w-[80px]">Location:</span>
+                            <span className="text-text-primary">{cvData.contact.location}</span>
                           </div>
                         )}
                       </div>
@@ -657,38 +657,38 @@ function CVEditorContent() {
                   {/* Professional Summary */}
                   {cvData?.summary && (
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                        <span className="w-1 h-6 bg-purple-600 rounded"></span>
+                      <h3 className="font-display text-lg font-bold text-text-primary mb-3 flex items-center gap-2">
+                        <span className="w-1 h-6 bg-accent-tertiary rounded"></span>
                         Professional Summary
                       </h3>
-                      <p className="text-gray-700 ml-3 leading-relaxed">{cvData.summary}</p>
+                      <p className="font-body text-text-secondary ml-3 leading-relaxed">{cvData.summary}</p>
                     </div>
                   )}
 
                   {/* Experience */}
                   {cvData?.experience && cvData.experience.length > 0 && (
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                        <span className="w-1 h-6 bg-purple-600 rounded"></span>
+                      <h3 className="font-display text-lg font-bold text-text-primary mb-3 flex items-center gap-2">
+                        <span className="w-1 h-6 bg-accent-tertiary rounded"></span>
                         Experience
                       </h3>
                       <div className="space-y-4 ml-3">
                         {cvData.experience.map((exp, idx) => (
-                          <div key={idx} className="border-l-2 border-gray-200 pl-4 pb-4">
-                            <h4 className="font-semibold text-gray-900">{exp.title}</h4>
-                            <p className="text-gray-600 text-sm">{exp.company}</p>
+                          <div key={idx} className="border-l-2 border-border-hairline pl-4 pb-4">
+                            <h4 className="font-display font-bold text-text-primary">{exp.title}</h4>
+                            <p className="font-body text-text-secondary text-sm">{exp.company}</p>
                             {(exp.startDate || exp.endDate || exp.location) && (
-                              <p className="text-gray-500 text-sm mt-1">
+                              <p className="font-body text-text-secondary text-sm mt-1">
                                 {exp.startDate && exp.endDate ? `${exp.startDate} - ${exp.endDate}` : (exp.startDate || exp.endDate)}
                                 {exp.location && ` • ${exp.location}`}
                               </p>
                             )}
-                            <p className="text-gray-700 mt-2 text-sm leading-relaxed">{exp.description}</p>
+                            <p className="font-body text-text-secondary mt-2 text-sm leading-relaxed">{exp.description}</p>
                             {exp.achievements && exp.achievements.length > 0 && (
                               <ul className="mt-2 space-y-1">
                                 {exp.achievements.map((achievement, aidx) => (
-                                  <li key={aidx} className="text-gray-700 text-sm flex items-start gap-2">
-                                    <span className="text-purple-600 mt-1">•</span>
+                                  <li key={aidx} className="font-body text-text-secondary text-sm flex items-start gap-2">
+                                    <span className="text-accent-tertiary mt-1">•</span>
                                     <span>{achievement}</span>
                                   </li>
                                 ))}
@@ -703,22 +703,22 @@ function CVEditorContent() {
                   {/* Education */}
                   {cvData?.education && cvData.education.length > 0 && (
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                        <span className="w-1 h-6 bg-purple-600 rounded"></span>
+                      <h3 className="font-display text-lg font-bold text-text-primary mb-3 flex items-center gap-2">
+                        <span className="w-1 h-6 bg-accent-tertiary rounded"></span>
                         Education
                       </h3>
                       <div className="space-y-3 ml-3">
                         {cvData.education.map((edu, idx) => (
                           <div key={idx}>
-                            <h4 className="font-semibold text-gray-900">{edu.degree}</h4>
-                            <p className="text-gray-600 text-sm">{edu.institution}</p>
+                            <h4 className="font-display font-bold text-text-primary">{edu.degree}</h4>
+                            <p className="font-body text-text-secondary text-sm">{edu.institution}</p>
                             {(edu.year || edu.location) && (
-                              <p className="text-gray-500 text-sm">
+                              <p className="font-body text-text-secondary text-sm">
                                 {edu.year}
                                 {edu.location && ` • ${edu.location}`}
                               </p>
                             )}
-                            {edu.details && <p className="text-gray-700 text-sm mt-1">{edu.details}</p>}
+                            {edu.details && <p className="font-body text-text-secondary text-sm mt-1">{edu.details}</p>}
                           </div>
                         ))}
                       </div>
@@ -728,15 +728,15 @@ function CVEditorContent() {
                   {/* Skills */}
                   {cvData?.skills && cvData.skills.length > 0 && (
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                        <span className="w-1 h-6 bg-purple-600 rounded"></span>
+                      <h3 className="font-display text-lg font-bold text-text-primary mb-3 flex items-center gap-2">
+                        <span className="w-1 h-6 bg-accent-tertiary rounded"></span>
                         Skills
                       </h3>
                       <div className="flex flex-wrap gap-2 ml-3">
                         {cvData.skills.map((skill, idx) => (
                           <span
                             key={idx}
-                            className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-medium"
+                            className="font-body px-3 py-1 bg-accent-secondary/25 text-accent-tertiary rounded-full text-sm font-medium"
                           >
                             {skill}
                           </span>
@@ -748,17 +748,17 @@ function CVEditorContent() {
                   {/* Projects */}
                   {cvData?.projects && cvData.projects.length > 0 && (
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                        <span className="w-1 h-6 bg-purple-600 rounded"></span>
+                      <h3 className="font-display text-lg font-bold text-text-primary mb-3 flex items-center gap-2">
+                        <span className="w-1 h-6 bg-accent-tertiary rounded"></span>
                         Projects
                       </h3>
                       <div className="space-y-3 ml-3">
                         {cvData.projects.map((project, idx) => (
                           <div key={idx}>
-                            <h4 className="font-semibold text-gray-900">{project.title}</h4>
-                            {project.role && <p className="text-gray-600 text-sm">{project.role}</p>}
-                            {project.year && <p className="text-gray-500 text-sm">{project.year}</p>}
-                            <p className="text-gray-700 text-sm mt-1">{project.description}</p>
+                            <h4 className="font-display font-bold text-text-primary">{project.title}</h4>
+                            {project.role && <p className="font-body text-text-secondary text-sm">{project.role}</p>}
+                            {project.year && <p className="font-body text-text-secondary text-sm">{project.year}</p>}
+                            <p className="font-body text-text-secondary text-sm mt-1">{project.description}</p>
                           </div>
                         ))}
                       </div>
@@ -770,9 +770,9 @@ function CVEditorContent() {
             </div>
 
             {/* Right: Target Role & CTA (1/3 width) */}
-            <div className="bg-white rounded-lg shadow-lg p-6 h-fit sticky top-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">Target Role</h3>
-              <p className="text-sm text-gray-600 mb-4">
+            <div className="bg-bg-surface rounded-lg shadow-lg p-6 h-fit sticky top-6 border border-border-hairline">
+              <h3 className="font-display text-lg font-bold text-text-primary mb-3">Target Role</h3>
+              <p className="font-body text-sm text-text-secondary mb-4">
                 Add a job description to get tailored suggestions
               </p>
 
@@ -781,13 +781,13 @@ function CVEditorContent() {
                 onChange={(e) => setJobDescription(e.target.value)}
                 placeholder="Paste job description here..."
                 rows={8}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none text-sm mb-4"
+                className="font-body w-full px-3 py-2 border border-border-hairline rounded-lg focus:ring-2 focus:ring-accent-tertiary focus:border-transparent resize-none text-sm mb-4 bg-bg-main text-text-primary"
               />
 
               <button
                 onClick={handleAnalyze}
                 disabled={analyzing}
-                className="w-full px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg font-semibold hover:from-purple-700 hover:to-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                className="font-body w-full px-6 py-3 bg-cta-primary text-text-on-cta rounded-lg font-semibold hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {analyzing ? (
                   <span className="flex items-center justify-center gap-2">
@@ -810,24 +810,24 @@ function CVEditorContent() {
           <div className="space-y-6">
 
             {/* Main Tab Navigation */}
-            <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-              <div className="flex border-b border-gray-200">
+            <div className="bg-bg-surface rounded-lg shadow-lg overflow-hidden border border-border-hairline">
+              <div className="flex border-b border-border-hairline">
                 <button
                   onClick={() => setMainTab('cv')}
-                  className={`flex-1 px-6 py-4 text-sm font-medium transition ${
+                  className={`font-body flex-1 px-6 py-4 text-sm font-medium transition ${
                     mainTab === 'cv'
-                      ? 'border-b-2 border-purple-600 text-purple-600 bg-purple-50'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                      ? 'border-b-2 border-accent-tertiary text-accent-tertiary bg-accent-secondary/15'
+                      : 'text-text-secondary hover:text-text-primary hover:bg-bg-main'
                   }`}
                 >
                   Your CV
                 </button>
                 <button
                   onClick={() => setMainTab('analysis')}
-                  className={`flex-1 px-6 py-4 text-sm font-medium transition ${
+                  className={`font-body flex-1 px-6 py-4 text-sm font-medium transition ${
                     mainTab === 'analysis'
-                      ? 'border-b-2 border-purple-600 text-purple-600 bg-purple-50'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                      ? 'border-b-2 border-accent-tertiary text-accent-tertiary bg-accent-secondary/15'
+                      : 'text-text-secondary hover:text-text-primary hover:bg-bg-main'
                   }`}
                 >
                   Analysis & Improvements
@@ -840,15 +840,15 @@ function CVEditorContent() {
             <div className="space-y-4">
 
                 {/* Collapsible Summary Header */}
-                <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+                <div className="bg-bg-surface rounded-lg shadow-lg overflow-hidden border border-border-hairline">
                   <button
                     onClick={() => setSummaryCollapsed(!summaryCollapsed)}
-                    className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition"
+                    className="w-full px-6 py-4 flex items-center justify-between hover:bg-bg-main transition"
                   >
                     <div className="flex items-center gap-4">
                       <div className="text-left">
-                        <h2 className="text-xl font-bold text-gray-900">Overall Score</h2>
-                        <p className="text-sm text-gray-600 mt-0.5">
+                        <h2 className="font-display text-xl font-bold text-text-primary">Overall Score</h2>
+                        <p className="font-body text-sm text-text-secondary mt-0.5">
                           {summaryCollapsed ? 'Click to expand' : 'Click to collapse'}
                         </p>
                       </div>
@@ -857,22 +857,22 @@ function CVEditorContent() {
                       <div className="text-right">
                         {analysis.overallScore >= 70 ? (
                           <>
-                            <div className="text-3xl font-bold text-purple-600">{analysis.overallScore}</div>
-                            <p className="text-xs text-purple-600 font-semibold">
+                            <div className="font-display text-3xl font-bold text-accent-tertiary">{analysis.overallScore}</div>
+                            <p className="font-body text-xs text-accent-tertiary font-semibold">
                               {getScoreMessage(analysis.overallScore)}
                             </p>
                           </>
                         ) : (
                           <>
-                            <div className="text-xl font-bold text-purple-600">
+                            <div className="font-display text-xl font-bold text-accent-tertiary">
                               {getScoreTier(analysis.overallScore)}
                             </div>
-                            <p className="text-xs text-gray-600">Keep improving!</p>
+                            <p className="font-body text-xs text-text-secondary">Keep improving!</p>
                           </>
                         )}
                       </div>
                       <svg
-                        className={`w-6 h-6 text-gray-400 transition-transform ${summaryCollapsed ? '' : 'rotate-180'}`}
+                        className={`w-6 h-6 text-text-secondary transition-transform ${summaryCollapsed ? '' : 'rotate-180'}`}
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -883,17 +883,17 @@ function CVEditorContent() {
                   </button>
 
                   {!summaryCollapsed && (
-                    <div className="px-6 pb-6 border-t border-gray-200">
+                    <div className="px-6 pb-6 border-t border-border-hairline">
                       <div className="pt-4 space-y-3">
                         {/* Show top 3 priority improvements as actionable items */}
                         {analysis.priorityImprovements && analysis.priorityImprovements.slice(0, 3).map((improvement, idx) => (
-                          <div key={idx} className="flex items-start gap-3 p-3 bg-purple-50 rounded-lg">
-                            <div className="flex-shrink-0 w-6 h-6 rounded-full bg-purple-600 text-white flex items-center justify-center text-sm font-bold">
+                          <div key={idx} className="flex items-start gap-3 p-3 bg-accent-secondary/15 rounded-lg">
+                            <div className="flex-shrink-0 w-6 h-6 rounded-full bg-accent-tertiary text-text-on-tertiary flex items-center justify-center text-sm font-bold">
                               {idx + 1}
                             </div>
                             <div className="flex-1">
-                              <p className="text-sm font-semibold text-gray-900">{improvement.section}</p>
-                              <p className="text-sm text-gray-700 mt-1">{improvement.change}</p>
+                              <p className="font-body text-sm font-semibold text-text-primary">{improvement.section}</p>
+                              <p className="font-body text-sm text-text-secondary mt-1">{improvement.change}</p>
                             </div>
                           </div>
                         ))}
@@ -903,18 +903,17 @@ function CVEditorContent() {
                 </div>
 
                 {/* CV Editor */}
-                <div className="bg-white rounded-lg shadow-lg overflow-hidden h-[600px] flex flex-col">
-                  <div className="bg-gradient-to-r from-gray-800 to-gray-900 px-4 py-3 border-b border-gray-700 flex items-center justify-between">
-                    <h3 className="font-semibold text-white">Your CV</h3>
-                    <button className="text-sm text-purple-300 hover:text-purple-200 font-medium">
+                <div className="bg-bg-surface rounded-lg shadow-lg overflow-hidden h-[600px] flex flex-col border border-border-hairline">
+                  <div className="bg-accent-tertiary px-4 py-3 border-b border-border-hairline flex items-center justify-between">
+                    <h3 className="font-display font-bold text-text-on-tertiary">Your CV</h3>
+                    <button className="font-body text-sm text-text-inverse/75 hover:text-text-inverse font-medium">
                       Download
                     </button>
                   </div>
                   <textarea
                     value={editableCVText}
                     onChange={(e) => setEditableCVText(e.target.value)}
-                    className="flex-1 p-6 font-mono text-sm leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-inset bg-white"
-                    style={{ color: '#1C1C1C' }}
+                    className="flex-1 p-6 font-mono text-sm leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-accent-tertiary focus:ring-inset bg-bg-surface text-text-primary"
                     placeholder="Your CV content will appear here..."
                   />
                 </div>
@@ -923,13 +922,13 @@ function CVEditorContent() {
 
             {/* Analysis Tab */}
             {mainTab === 'analysis' && (
-              <div className="bg-white rounded-lg shadow-lg">
+              <div className="bg-bg-surface rounded-lg shadow-lg border border-border-hairline">
                 {/* Header */}
-                <div className="border-b border-gray-100 px-8 py-6">
+                <div className="border-b border-border-hairline px-8 py-6">
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
-                      <h2 className="text-3xl font-bold text-gray-900">Your CV Score</h2>
-                      <p className="text-gray-600 mt-3 max-w-2xl">
+                      <h2 className="font-display text-3xl font-bold text-text-primary">Your CV Score</h2>
+                      <p className="font-body text-text-secondary mt-3 max-w-2xl">
                         {analysis.overallScore >= 80 ? (
                           "You're in great shape! A few refinements will make your CV even stronger."
                         ) : analysis.overallScore >= 60 ? (
@@ -942,17 +941,17 @@ function CVEditorContent() {
                       </p>
                     </div>
                     <div className="text-right ml-8">
-                      <div className="text-5xl font-bold text-purple-600">{analysis.overallScore}</div>
-                      <p className="text-sm text-gray-500 mt-1">out of 100</p>
+                      <div className="font-display text-5xl font-bold text-accent-tertiary">{analysis.overallScore}</div>
+                      <p className="font-body text-sm text-text-secondary mt-1">out of 100</p>
                     </div>
                   </div>
                 </div>
 
                 {/* Priority Improvements - Top 3 Only */}
-                <div className="px-8 py-6 bg-purple-50 border-b border-purple-100">
+                <div className="px-8 py-6 bg-accent-secondary/15 border-b border-border-hairline">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-gray-900">Start Here</h3>
-                    <span className="text-sm text-gray-600">
+                    <h3 className="font-display text-lg font-bold text-text-primary">Start Here</h3>
+                    <span className="font-body text-sm text-text-secondary">
                       {completedImprovements.size > 0 && `${completedImprovements.size} completed`}
                     </span>
                   </div>
@@ -961,20 +960,20 @@ function CVEditorContent() {
                       const improvementId = `priority-${idx}`;
                       const isCompleted = completedImprovements.has(improvementId);
                       return (
-                        <div key={idx} className={`bg-white rounded-lg p-4 shadow-sm transition ${isCompleted ? 'opacity-50' : ''}`}>
+                        <div key={idx} className={`bg-bg-surface rounded-lg p-4 shadow-sm transition ${isCompleted ? 'opacity-50' : ''}`}>
                           <div className="flex items-start gap-3">
                             <button
                               onClick={() => toggleCompletion(improvementId)}
-                              className="flex-shrink-0 w-8 h-8 rounded-full bg-purple-600 text-white flex items-center justify-center font-bold hover:bg-purple-700 transition cursor-pointer"
+                              className="flex-shrink-0 w-8 h-8 rounded-full bg-accent-tertiary text-text-on-tertiary flex items-center justify-center font-bold hover:opacity-90 transition cursor-pointer"
                               aria-label={isCompleted ? 'Mark as incomplete' : 'Mark as complete'}
                             >
                               {isCompleted ? '✓' : idx + 1}
                             </button>
                             <div className="flex-1">
-                              <h4 className={`font-semibold mb-1 ${isCompleted ? 'text-gray-500 line-through' : 'text-gray-900'}`}>
+                              <h4 className={`font-display font-bold mb-1 ${isCompleted ? 'text-text-disabled line-through' : 'text-text-primary'}`}>
                                 {improvement.change}
                               </h4>
-                              <p className={`text-sm ${isCompleted ? 'text-gray-400' : 'text-gray-600'}`}>
+                              <p className={`font-body text-sm ${isCompleted ? 'text-text-disabled' : 'text-text-secondary'}`}>
                                 {improvement.impact}
                               </p>
                             </div>
@@ -986,22 +985,22 @@ function CVEditorContent() {
                 </div>
 
                 {/* Simpler Detailed Sections */}
-                <div className="px-8 py-6 border-t border-gray-100">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-6">All Suggestions</h3>
+                <div className="px-8 py-6 border-t border-border-hairline">
+                  <h3 className="font-display text-lg font-bold text-text-primary mb-6">All Suggestions</h3>
                   <div className="space-y-6">
                     {/* Each section - minimal styling */}
                     {analysis.sections?.summary && analysis.sections.summary.improvements && analysis.sections.summary.improvements.length > 0 && (
                       <details className="group">
                         <summary className="cursor-pointer list-none">
-                          <div className="flex items-center justify-between p-4 hover:bg-gray-50 rounded-lg transition">
+                          <div className="flex items-center justify-between p-4 hover:bg-bg-main rounded-lg transition">
                             <div className="flex items-center gap-3">
                               <span className="text-2xl">📝</span>
                               <div>
-                                <h4 className="font-semibold text-gray-900">Summary</h4>
-                                <p className="text-sm text-gray-500">{analysis.sections.summary.improvements.length} suggestions</p>
+                                <h4 className="font-display font-bold text-text-primary">Summary</h4>
+                                <p className="font-body text-sm text-text-secondary">{analysis.sections.summary.improvements.length} suggestions</p>
                               </div>
                             </div>
-                            <svg className="w-5 h-5 text-gray-400 group-open:rotate-180 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-5 h-5 text-text-secondary group-open:rotate-180 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                             </svg>
                           </div>
@@ -1016,9 +1015,9 @@ function CVEditorContent() {
                                   type="checkbox"
                                   checked={isCompleted}
                                   onChange={() => toggleCompletion(improvementId)}
-                                  className="mt-1 w-4 h-4 text-purple-600 rounded border-gray-300 focus:ring-purple-500 cursor-pointer"
+                                  className="mt-1 w-4 h-4 text-accent-tertiary rounded border-border-hairline focus:ring-accent-tertiary cursor-pointer"
                                 />
-                                <p className={`text-gray-700 flex-1 ${isCompleted ? 'line-through text-gray-400' : ''}`}>
+                                <p className={`font-body text-text-secondary flex-1 ${isCompleted ? 'line-through text-text-disabled' : ''}`}>
                                   {improvement}
                                 </p>
                               </div>
@@ -1031,15 +1030,15 @@ function CVEditorContent() {
                     {analysis.sections?.experience && analysis.sections.experience.improvements && analysis.sections.experience.improvements.length > 0 && (
                       <details className="group">
                         <summary className="cursor-pointer list-none">
-                          <div className="flex items-center justify-between p-4 hover:bg-gray-50 rounded-lg transition">
+                          <div className="flex items-center justify-between p-4 hover:bg-bg-main rounded-lg transition">
                             <div className="flex items-center gap-3">
                               <span className="text-2xl">💼</span>
                               <div>
-                                <h4 className="font-semibold text-gray-900">Experience</h4>
-                                <p className="text-sm text-gray-500">{analysis.sections.experience.improvements.length} suggestions</p>
+                                <h4 className="font-display font-bold text-text-primary">Experience</h4>
+                                <p className="font-body text-sm text-text-secondary">{analysis.sections.experience.improvements.length} suggestions</p>
                               </div>
                             </div>
-                            <svg className="w-5 h-5 text-gray-400 group-open:rotate-180 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-5 h-5 text-text-secondary group-open:rotate-180 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                             </svg>
                           </div>
@@ -1054,9 +1053,9 @@ function CVEditorContent() {
                                   type="checkbox"
                                   checked={isCompleted}
                                   onChange={() => toggleCompletion(improvementId)}
-                                  className="mt-1 w-4 h-4 text-purple-600 rounded border-gray-300 focus:ring-purple-500 cursor-pointer"
+                                  className="mt-1 w-4 h-4 text-accent-tertiary rounded border-border-hairline focus:ring-accent-tertiary cursor-pointer"
                                 />
-                                <p className={`text-gray-700 flex-1 ${isCompleted ? 'line-through text-gray-400' : ''}`}>
+                                <p className={`font-body text-text-secondary flex-1 ${isCompleted ? 'line-through text-text-disabled' : ''}`}>
                                   {improvement}
                                 </p>
                               </div>
@@ -1069,15 +1068,15 @@ function CVEditorContent() {
                     {analysis.sections?.skills && analysis.sections.skills.improvements && analysis.sections.skills.improvements.length > 0 && (
                       <details className="group">
                         <summary className="cursor-pointer list-none">
-                          <div className="flex items-center justify-between p-4 hover:bg-gray-50 rounded-lg transition">
+                          <div className="flex items-center justify-between p-4 hover:bg-bg-main rounded-lg transition">
                             <div className="flex items-center gap-3">
                               <span className="text-2xl">⚡</span>
                               <div>
-                                <h4 className="font-semibold text-gray-900">Skills</h4>
-                                <p className="text-sm text-gray-500">{analysis.sections.skills.improvements.length} suggestions</p>
+                                <h4 className="font-display font-bold text-text-primary">Skills</h4>
+                                <p className="font-body text-sm text-text-secondary">{analysis.sections.skills.improvements.length} suggestions</p>
                               </div>
                             </div>
-                            <svg className="w-5 h-5 text-gray-400 group-open:rotate-180 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-5 h-5 text-text-secondary group-open:rotate-180 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                             </svg>
                           </div>
@@ -1092,20 +1091,20 @@ function CVEditorContent() {
                                   type="checkbox"
                                   checked={isCompleted}
                                   onChange={() => toggleCompletion(improvementId)}
-                                  className="mt-1 w-4 h-4 text-purple-600 rounded border-gray-300 focus:ring-purple-500 cursor-pointer"
+                                  className="mt-1 w-4 h-4 text-accent-tertiary rounded border-border-hairline focus:ring-accent-tertiary cursor-pointer"
                                 />
-                                <p className={`text-gray-700 flex-1 ${isCompleted ? 'line-through text-gray-400' : ''}`}>
+                                <p className={`font-body text-text-secondary flex-1 ${isCompleted ? 'line-through text-text-disabled' : ''}`}>
                                   {improvement}
                                 </p>
                               </div>
                             );
                           })}
                           {analysis.sections.skills.missingSkills && analysis.sections.skills.missingSkills.length > 0 && (
-                            <div className="pt-3 mt-3 border-t border-gray-200">
-                              <p className="text-sm font-medium text-gray-900 mb-2">Skills to consider:</p>
+                            <div className="pt-3 mt-3 border-t border-border-hairline">
+                              <p className="font-body text-sm font-medium text-text-primary mb-2">Skills to consider:</p>
                               <div className="flex flex-wrap gap-2">
                                 {analysis.sections.skills.missingSkills.map((skill, idx) => (
-                                  <span key={idx} className="px-2 py-1 bg-gray-100 rounded text-sm text-gray-700">
+                                  <span key={idx} className="font-body px-2 py-1 bg-bg-main rounded text-sm text-text-secondary">
                                     {skill}
                                   </span>
                                 ))}
@@ -1131,16 +1130,16 @@ function CVEditorContent() {
 
                   if (allCompleted) {
                     return (
-                      <div className="px-8 py-6 bg-gradient-to-r from-green-50 to-emerald-50 border-t border-green-200">
+                      <div className="px-8 py-6 bg-success/15 border-t border-success/30">
                         <div className="text-center">
                           <div className="text-6xl mb-4">🎉</div>
-                          <h3 className="text-2xl font-bold text-gray-900 mb-2">CV Complete!</h3>
-                          <p className="text-gray-700 mb-6 max-w-2xl mx-auto">
+                          <h3 className="font-display text-2xl font-bold text-text-on-success mb-2">CV Complete!</h3>
+                          <p className="font-body text-text-on-success mb-6 max-w-2xl mx-auto">
                             You've worked through all the improvements. Your CV is looking strong! Ready to practice answering interview questions?
                           </p>
                           <button
                             onClick={() => router.push('/coaching')}
-                            className="px-8 py-4 bg-purple-600 text-white rounded-lg text-lg font-semibold hover:bg-purple-700 transition shadow-lg hover:shadow-xl transform hover:scale-105"
+                            className="font-body px-8 py-4 bg-cta-primary text-text-on-cta rounded-lg text-lg font-semibold hover:opacity-90 transition shadow-lg hover:shadow-xl transform hover:scale-105"
                           >
                             Start Interview Practice →
                           </button>
@@ -1152,14 +1151,14 @@ function CVEditorContent() {
                 })()}
 
                 {/* Footer */}
-                <div className="px-8 py-6 bg-gray-50 border-t border-gray-200 flex justify-between items-center">
+                <div className="px-8 py-6 bg-bg-main border-t border-border-hairline flex justify-between items-center">
                   <button
                     onClick={() => setMainTab('cv')}
-                    className="px-6 py-3 text-purple-600 hover:text-purple-700 font-semibold transition"
+                    className="font-body px-6 py-3 text-text-link hover:text-text-cta font-semibold transition"
                   >
                     ← Back to CV
                   </button>
-                  <p className="text-sm text-gray-500">Make changes one at a time for best results</p>
+                  <p className="font-body text-sm text-text-secondary">Make changes one at a time for best results</p>
                 </div>
               </div>
             )}

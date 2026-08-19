@@ -9,17 +9,17 @@ function DashboardContent() {
   const router = useRouter();
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-bg-main">
       {/* Header */}
-      <header className="bg-white shadow-sm">
+      <header className="bg-bg-surface shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">CV Coach</h1>
-            <p className="text-sm text-gray-600">Welcome back, {session?.user?.name}</p>
+            <h1 className="font-display text-2xl font-bold text-text-primary">Friday</h1>
+            <p className="font-body text-sm text-text-secondary">Welcome back, {session?.user?.name}</p>
           </div>
           <button
             onClick={() => signOut({ callbackUrl: '/login' })}
-            className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition"
+            className="font-body px-4 py-2 text-sm text-text-secondary hover:bg-bg-main rounded-lg transition"
           >
             Sign Out
           </button>
@@ -29,9 +29,9 @@ function DashboardContent() {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Welcome Section */}
-        <div className="bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg p-8 text-white mb-8">
-          <h2 className="text-3xl font-bold mb-2">Your Film Career Journey</h2>
-          <p className="text-purple-100">
+        <div className="bg-accent-tertiary rounded-lg p-8 text-text-on-tertiary mb-8">
+          <h2 className="font-display text-3xl font-bold mb-2">Your Film Career Journey</h2>
+          <p className="font-body text-text-inverse/75">
             AI-powered coaching to help you land your first gig in the film industry
           </p>
         </div>
@@ -43,7 +43,6 @@ function DashboardContent() {
             description="Create and manage your professional CV with your experience and projects"
             icon="📝"
             onClick={() => router.push('/cv')}
-            color="bg-blue-50 hover:bg-blue-100"
           />
 
           <ActionCard
@@ -51,7 +50,6 @@ function DashboardContent() {
             description="Answer film industry questions and get AI-powered feedback"
             icon="🎤"
             onClick={() => router.push('/coaching')}
-            color="bg-purple-50 hover:bg-purple-100"
           />
 
           <ActionCard
@@ -59,13 +57,12 @@ function DashboardContent() {
             description="Track your technical, creative, and soft skills progress"
             icon="⭐"
             onClick={() => router.push('/skills')}
-            color="bg-green-50 hover:bg-green-100"
           />
         </div>
 
         {/* Getting Started Guide */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">🚀 Getting Started</h3>
+        <div className="bg-bg-surface rounded-lg shadow p-6">
+          <h3 className="font-display text-lg font-bold text-text-primary mb-4">🚀 Getting Started</h3>
           <div className="space-y-3">
             <Step number={1} text="Build your CV with your experience, education, and projects" />
             <Step number={2} text="Practice interview questions and get personalized feedback" />
@@ -77,21 +74,20 @@ function DashboardContent() {
   );
 }
 
-function ActionCard({ title, description, icon, onClick, color }: {
+function ActionCard({ title, description, icon, onClick }: {
   title: string;
   description: string;
   icon: string;
   onClick: () => void;
-  color: string;
 }) {
   return (
     <button
       onClick={onClick}
-      className={`${color} rounded-lg p-6 text-left transition transform hover:scale-105 border border-gray-200`}
+      className="bg-bg-surface hover:bg-bg-main rounded-lg p-6 text-left transition transform hover:scale-105 border border-border-hairline border-l-4 border-l-accent-tertiary"
     >
       <div className="text-4xl mb-3">{icon}</div>
-      <h3 className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
-      <p className="text-sm text-gray-600">{description}</p>
+      <h3 className="font-display text-lg font-bold text-text-primary mb-2">{title}</h3>
+      <p className="font-body text-sm text-text-secondary">{description}</p>
     </button>
   );
 }
@@ -99,10 +95,10 @@ function ActionCard({ title, description, icon, onClick, color }: {
 function Step({ number, text }: { number: number; text: string }) {
   return (
     <div className="flex items-start">
-      <div className="flex-shrink-0 w-8 h-8 bg-purple-500 text-white rounded-full flex items-center justify-center font-semibold text-sm">
+      <div className="flex-shrink-0 w-8 h-8 bg-accent-tertiary text-text-on-tertiary rounded-full flex items-center justify-center font-semibold text-sm">
         {number}
       </div>
-      <p className="ml-3 text-gray-700">{text}</p>
+      <p className="font-body ml-3 text-text-primary">{text}</p>
     </div>
   );
 }

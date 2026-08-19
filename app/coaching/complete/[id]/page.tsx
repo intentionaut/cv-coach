@@ -46,46 +46,46 @@ function SessionCompletionContent() {
   }) => (
     <button
       onClick={onClick}
-      className={`flex flex-col items-center justify-center p-4 rounded-lg border-2 transition ${
+      className={`font-body flex flex-col items-center justify-center p-4 rounded-lg border-2 transition ${
         selected
-          ? 'border-purple-600 bg-purple-50'
-          : 'border-gray-300 hover:border-purple-400 hover:bg-gray-50'
+          ? 'border-accent-tertiary bg-accent-secondary/20'
+          : 'border-border-hairline hover:border-accent-tertiary hover:bg-bg-main'
       }`}
     >
-      <span className={`text-2xl font-bold mb-1 ${selected ? 'text-purple-600' : 'text-gray-700'}`}>
+      <span className={`font-display text-2xl font-bold mb-1 ${selected ? 'text-accent-tertiary' : 'text-text-secondary'}`}>
         {value}
       </span>
-      <span className="text-xs text-gray-600">{label}</span>
+      <span className="font-body text-xs text-text-secondary">{label}</span>
     </button>
   );
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-sm">
+    <div className="min-h-screen bg-bg-main">
+      <header className="bg-bg-surface shadow-sm">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <h1 className="text-2xl font-bold text-gray-900">Session Complete!</h1>
-          <p className="text-sm text-gray-600">How did you feel about your performance?</p>
+          <h1 className="font-display text-2xl font-bold text-text-primary">Session Complete!</h1>
+          <p className="font-body text-sm text-text-secondary">How did you feel about your performance?</p>
         </div>
       </header>
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white rounded-lg shadow-lg p-8">
+        <div className="bg-bg-surface rounded-lg shadow-lg p-8">
           <div className="text-center mb-8">
             <div className="text-6xl mb-4">🎉</div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            <h2 className="font-display text-2xl font-bold text-text-primary mb-2">
               Great work completing the practice session!
             </h2>
-            <p className="text-gray-600">
+            <p className="font-body text-text-secondary">
               Take a moment to reflect on how confident and clear you felt overall.
             </p>
           </div>
 
           {/* Overall Confidence Rating */}
           <div className="mb-8">
-            <label className="block text-lg font-semibold text-gray-900 mb-4">
+            <label className="font-display block text-lg font-bold text-text-primary mb-4">
               Overall Confidence
             </label>
-            <p className="text-sm text-gray-600 mb-4">
+            <p className="font-body text-sm text-text-secondary mb-4">
               How confident did you feel answering these questions?
             </p>
             <div className="grid grid-cols-5 gap-3">
@@ -124,10 +124,10 @@ function SessionCompletionContent() {
 
           {/* Overall Clarity Rating */}
           <div className="mb-8">
-            <label className="block text-lg font-semibold text-gray-900 mb-4">
+            <label className="font-display block text-lg font-bold text-text-primary mb-4">
               Overall Clarity
             </label>
-            <p className="text-sm text-gray-600 mb-4">
+            <p className="font-body text-sm text-text-secondary mb-4">
               How clear and well-structured were your answers?
             </p>
             <div className="grid grid-cols-5 gap-3">
@@ -166,16 +166,16 @@ function SessionCompletionContent() {
 
           {/* Notes */}
           <div className="mb-8">
-            <label className="block text-lg font-semibold text-gray-900 mb-4">
+            <label className="font-display block text-lg font-bold text-text-primary mb-4">
               Notes (Optional)
             </label>
-            <p className="text-sm text-gray-600 mb-4">
+            <p className="font-body text-sm text-text-secondary mb-4">
               Any thoughts or observations from this session?
             </p>
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              className="w-full h-32 p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+              className="font-body w-full h-32 p-4 border border-border-hairline rounded-lg focus:ring-2 focus:ring-accent-tertiary focus:border-transparent resize-none bg-bg-surface text-text-primary"
               placeholder="e.g., 'Struggled with technical questions but felt good about teamwork examples...'"
             />
           </div>
@@ -184,14 +184,14 @@ function SessionCompletionContent() {
           <div className="flex gap-4">
             <button
               onClick={() => router.push('/coaching')}
-              className="flex-1 px-6 py-4 text-gray-700 bg-white border-2 border-gray-300 rounded-lg font-semibold hover:bg-gray-50 transition"
+              className="font-body flex-1 px-6 py-4 text-text-secondary bg-bg-surface border-2 border-border-hairline rounded-lg font-semibold hover:bg-bg-main transition"
             >
               Skip for Now
             </button>
             <button
               onClick={completeSession}
               disabled={submitting || !overallConfidence || !overallClarity}
-              className="flex-1 px-6 py-4 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              className="font-body flex-1 px-6 py-4 bg-cta-primary text-text-on-cta rounded-lg font-semibold hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition"
             >
               {submitting ? 'Saving...' : 'Complete & Review Session'}
             </button>

@@ -1,26 +1,68 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* ---- Design tokens: atoms — base palette ---- */
+  --color-bg-main: #F5EFE4; /* updated from #F0E5D0 — lightened per design review, see docs/text-colour-hierarchy-system.md changelog */
+  --color-bg-surface: #FBF7EC;
+  --color-text-primary: #3D405B;
+  --color-cta-primary: #E07A5F;
+  --color-alert: #F2CC8F;
+  --color-success: #81B29A;
+  --color-accent-secondary: #F4B6A0;
+  --color-accent-tertiary: #0B3D5B;
+
+  /* ---- Design tokens: atoms — derived text tokens (WCAG AA audited) ---- */
+  --color-text-secondary: #616487;
+  --color-text-muted: #7D809F;   /* large text only (>=18.66px regular / >=14px bold) — see docs/text-colour-hierarchy-system.md */
+  --color-text-disabled: #9FA2BB; /* WCAG-exempt floor for disabled state */
+  --color-text-inverse: #F7F1E3;
+  --color-text-link: #0B3D5B;
+  --color-text-cta: #B24022;      /* accessible text-weight version of cta-primary (link-hover, errors) */
+  --color-text-on-cta: #3D405B;   /* mandatory >=14px bold — AA-large only, see docs */
+  --color-text-on-success: #1B3A2E;
+  --color-text-on-alert: #4A3612;
+  --color-text-on-tertiary: #F0E5D0;
+  --color-border-hairline: rgba(61, 64, 91, 0.14);
+
+  --background: var(--color-bg-main);
+  --foreground: var(--color-text-primary);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+
+  /* Expose design tokens as Tailwind utilities, e.g. bg-bg-main, text-text-primary */
+  --color-bg-main: var(--color-bg-main);
+  --color-bg-surface: var(--color-bg-surface);
+  --color-text-primary: var(--color-text-primary);
+  --color-text-secondary: var(--color-text-secondary);
+  --color-text-muted: var(--color-text-muted);
+  --color-text-disabled: var(--color-text-disabled);
+  --color-text-inverse: var(--color-text-inverse);
+  --color-text-link: var(--color-text-link);
+  --color-text-cta: var(--color-text-cta);
+  --color-text-on-cta: var(--color-text-on-cta);
+  --color-text-on-success: var(--color-text-on-success);
+  --color-text-on-alert: var(--color-text-on-alert);
+  --color-text-on-tertiary: var(--color-text-on-tertiary);
+  --color-cta-primary: var(--color-cta-primary);
+  --color-alert: var(--color-alert);
+  --color-success: var(--color-success);
+  --color-accent-secondary: var(--color-accent-secondary);
+  --color-accent-tertiary: var(--color-accent-tertiary);
+  --color-border-hairline: var(--color-border-hairline);
+
+  --font-sans: var(--font-body);
+  --font-display: var(--font-display);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+/* This app uses a single fixed light palette (cream/navy/terracotta) —
+   no dark-mode variant is defined, matching the approved design system. */
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-body), -apple-system, sans-serif;
 }

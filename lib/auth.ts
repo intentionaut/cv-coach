@@ -2,7 +2,7 @@ import { compare, hash } from 'bcryptjs';
 import db from './db/client';
 
 /**
- * Authentication utilities for CV Coach
+ * Authentication utilities for Friday
  * Simple email/password authentication for single user
  */
 

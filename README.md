@@ -1,10 +1,10 @@
-# CV Coach - Film Industry Interview & Career Platform
+# Friday - Film Industry Interview & Career Platform
 
-CV Coach is a personalized web application designed to help a film student land their first industry gig through AI-powered CV tailoring, skills assessment, and interview coaching.
+Friday is a personalized web application designed to help a film student land their first industry gig through AI-powered CV tailoring, skills assessment, and interview coaching.
 
 ## Overview
 
-CV Coach provides:
+Friday provides:
 - **CV Tailoring**: AI-powered CV customization for specific film industry roles
 - **Skills Assessment**: Track and evaluate technical, creative, and soft skills
 - **Interview Coaching**: Practice with industry-specific questions
@@ -81,7 +81,7 @@ Open http://localhost:3000
 ```bash
 git init
 git add .
-git commit -m "Initial CV Coach setup"
+git commit -m "Initial Friday setup"
 git branch -M main
 git remote add origin https://github.com/YOUR_USERNAME/cv-coach.git
 git push -u origin main

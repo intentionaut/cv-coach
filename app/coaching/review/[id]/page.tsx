@@ -70,10 +70,10 @@ function SessionReviewContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-bg-main flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading session...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent-tertiary mx-auto mb-4"></div>
+          <p className="font-body text-text-secondary">Loading session...</p>
         </div>
       </div>
     );
@@ -81,12 +81,12 @@ function SessionReviewContent() {
 
   if (!data) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-bg-main flex items-center justify-center">
         <div className="text-center">
-          <p className="text-gray-600">Session not found</p>
+          <p className="font-body text-text-secondary">Session not found</p>
           <button
             onClick={() => router.push('/coaching')}
-            className="mt-4 text-purple-600 hover:text-purple-700"
+            className="font-body mt-4 text-text-link hover:text-text-cta"
           >
             ← Back to Coaching
           </button>
@@ -96,17 +96,17 @@ function SessionReviewContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-sm">
+    <div className="min-h-screen bg-bg-main">
+      <header className="bg-bg-surface shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <button
             onClick={() => router.push('/coaching')}
-            className="text-purple-600 hover:text-purple-700 mb-2"
+            className="font-body text-text-link hover:text-text-cta mb-2"
           >
             ← Back to Coaching
           </button>
-          <h1 className="text-2xl font-bold text-gray-900">{data.session.title}</h1>
-          <p className="text-sm text-gray-600">
+          <h1 className="font-display text-2xl font-bold text-text-primary">{data.session.title}</h1>
+          <p className="font-body text-sm text-text-secondary">
             {new Date(data.session.started_at).toLocaleDateString()} •{' '}
             {data.responses.length} questions answered
           </p>
@@ -115,67 +115,67 @@ function SessionReviewContent() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Session Summary */}
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Session Summary</h2>
+        <div className="bg-bg-surface rounded-lg shadow p-6 mb-6">
+          <h2 className="font-display text-lg font-bold text-text-primary mb-4">Session Summary</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {data.session.overall_confidence && (
-              <div className="text-center p-4 bg-purple-50 rounded-lg">
-                <div className="text-sm text-gray-600 mb-1">Overall Confidence</div>
-                <div className="text-3xl font-bold text-purple-600">
+              <div className="text-center p-4 bg-accent-secondary/20 rounded-lg">
+                <div className="font-body text-sm text-text-secondary mb-1">Overall Confidence</div>
+                <div className="font-display text-3xl font-bold text-accent-tertiary">
                   {data.session.overall_confidence}/5
                 </div>
               </div>
             )}
             {data.session.overall_clarity && (
-              <div className="text-center p-4 bg-blue-50 rounded-lg">
-                <div className="text-sm text-gray-600 mb-1">Overall Clarity</div>
-                <div className="text-3xl font-bold text-blue-600">
+              <div className="text-center p-4 bg-bg-main border border-border-hairline rounded-lg">
+                <div className="font-body text-sm text-text-secondary mb-1">Overall Clarity</div>
+                <div className="font-display text-3xl font-bold text-text-cta">
                   {data.session.overall_clarity}/5
                 </div>
               </div>
             )}
-            <div className="text-center p-4 bg-green-50 rounded-lg">
-              <div className="text-sm text-gray-600 mb-1">Questions Answered</div>
-              <div className="text-3xl font-bold text-green-600">
+            <div className="text-center p-4 bg-success/15 rounded-lg">
+              <div className="font-body text-sm text-text-secondary mb-1">Questions Answered</div>
+              <div className="font-display text-3xl font-bold text-text-on-success">
                 {data.responses.length}
               </div>
             </div>
           </div>
           {data.session.notes && (
-            <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-              <div className="text-sm font-medium text-gray-700 mb-2">Your Notes:</div>
-              <p className="text-gray-600">{data.session.notes}</p>
+            <div className="mt-4 p-4 bg-bg-main rounded-lg">
+              <div className="font-body text-sm font-medium text-text-secondary mb-2">Your Notes:</div>
+              <p className="font-body text-text-secondary">{data.session.notes}</p>
             </div>
           )}
         </div>
 
         {/* Question Responses */}
         <div className="space-y-4">
-          <h2 className="text-lg font-semibold text-gray-900">Your Answers</h2>
+          <h2 className="font-display text-lg font-bold text-text-primary">Your Answers</h2>
           {data.responses.map((response, idx) => {
             const isExpanded = expandedQuestions.has(response.id);
             const feedback = response.ai_feedback;
 
             return (
-              <div key={response.id} className="bg-white rounded-lg shadow overflow-hidden">
+              <div key={response.id} className="bg-bg-surface rounded-lg shadow overflow-hidden border border-border-hairline">
                 <button
                   onClick={() => toggleQuestion(response.id)}
-                  className="w-full px-6 py-4 text-left hover:bg-gray-50 transition"
+                  className="w-full px-6 py-4 text-left hover:bg-bg-main transition"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
-                        <span className="inline-flex items-center justify-center w-6 h-6 bg-purple-600 text-white rounded-full text-sm font-bold">
+                        <span className="font-body inline-flex items-center justify-center w-6 h-6 bg-accent-tertiary text-text-on-tertiary rounded-full text-sm font-bold">
                           {idx + 1}
                         </span>
-                        <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs font-medium">
+                        <span className="font-body px-2 py-1 bg-bg-main text-text-secondary rounded text-xs font-medium">
                           {response.question_category}
                         </span>
                       </div>
-                      <h3 className="font-semibold text-gray-900">{response.question}</h3>
+                      <h3 className="font-display font-bold text-text-primary">{response.question}</h3>
                     </div>
                     <svg
-                      className={`w-5 h-5 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                      className={`w-5 h-5 text-text-secondary transition-transform ${isExpanded ? 'rotate-180' : ''}`}
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -186,12 +186,12 @@ function SessionReviewContent() {
                 </button>
 
                 {isExpanded && (
-                  <div className="px-6 pb-6 border-t border-gray-200">
+                  <div className="px-6 pb-6 border-t border-border-hairline">
                     {/* Your Answer */}
                     <div className="mt-4 mb-6">
-                      <h4 className="font-semibold text-gray-900 mb-2">Your Answer:</h4>
-                      <div className="p-4 bg-gray-50 rounded-lg">
-                        <p className="text-gray-700 whitespace-pre-wrap">{response.written_answer}</p>
+                      <h4 className="font-display font-bold text-text-primary mb-2">Your Answer:</h4>
+                      <div className="p-4 bg-bg-main rounded-lg">
+                        <p className="font-body text-text-secondary whitespace-pre-wrap">{response.written_answer}</p>
                       </div>
                     </div>
 
@@ -199,20 +199,20 @@ function SessionReviewContent() {
                     {feedback && (
                       <div className="space-y-4">
                         {feedback.overallImpression && (
-                          <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded">
-                            <p className="text-gray-800">{feedback.overallImpression}</p>
+                          <div className="bg-accent-secondary/15 border-l-4 border-accent-secondary p-4 rounded">
+                            <p className="font-body text-text-primary">{feedback.overallImpression}</p>
                           </div>
                         )}
 
                         {feedback.strengths && feedback.strengths.length > 0 && (
                           <div>
-                            <h4 className="font-semibold text-green-900 mb-2 flex items-center gap-2">
+                            <h4 className="font-display font-bold text-text-on-success mb-2 flex items-center gap-2">
                               <span className="text-xl">✓</span> Strengths
                             </h4>
                             <ul className="space-y-2">
                               {feedback.strengths.map((strength: string, idx: number) => (
-                                <li key={idx} className="flex items-start gap-2 text-gray-700">
-                                  <span className="text-green-600 mt-1">•</span>
+                                <li key={idx} className="font-body flex items-start gap-2 text-text-secondary">
+                                  <span className="text-success mt-1">•</span>
                                   <span>{strength}</span>
                                 </li>
                               ))}
@@ -222,13 +222,13 @@ function SessionReviewContent() {
 
                         {feedback.improvements && feedback.improvements.length > 0 && (
                           <div>
-                            <h4 className="font-semibold text-orange-900 mb-2 flex items-center gap-2">
+                            <h4 className="font-display font-bold text-text-on-alert mb-2 flex items-center gap-2">
                               <span className="text-xl">→</span> Areas to Improve
                             </h4>
                             <ul className="space-y-2">
                               {feedback.improvements.map((improvement: string, idx: number) => (
-                                <li key={idx} className="flex items-start gap-2 text-gray-700">
-                                  <span className="text-orange-600 mt-1">•</span>
+                                <li key={idx} className="font-body flex items-start gap-2 text-text-secondary">
+                                  <span className="text-cta-primary mt-1">•</span>
                                   <span>{improvement}</span>
                                 </li>
                               ))}
@@ -237,9 +237,9 @@ function SessionReviewContent() {
                         )}
 
                         {feedback.suggestedRevision && (
-                          <div className="bg-purple-50 border-l-4 border-purple-400 p-4 rounded">
-                            <h4 className="font-semibold text-purple-900 mb-2">Suggested Revision</h4>
-                            <p className="text-gray-700">{feedback.suggestedRevision}</p>
+                          <div className="bg-accent-secondary/15 border-l-4 border-accent-tertiary p-4 rounded">
+                            <h4 className="font-display font-bold text-accent-tertiary mb-2">Suggested Revision</h4>
+                            <p className="font-body text-text-secondary">{feedback.suggestedRevision}</p>
                           </div>
                         )}
                       </div>
@@ -255,13 +255,13 @@ function SessionReviewContent() {
         <div className="mt-8 flex gap-4">
           <button
             onClick={() => router.push('/coaching')}
-            className="flex-1 px-6 py-3 bg-white border-2 border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition"
+            className="font-body flex-1 px-6 py-3 bg-bg-surface border-2 border-border-hairline text-text-secondary rounded-lg font-semibold hover:bg-bg-main transition"
           >
             Back to Sessions
           </button>
           <button
             onClick={() => router.push('/coaching')}
-            className="flex-1 px-6 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition"
+            className="font-body flex-1 px-6 py-3 bg-cta-primary text-text-on-cta rounded-lg font-semibold hover:opacity-90 transition"
           >
             Start New Practice
           </button>

@@ -113,8 +113,8 @@ function VoicePracticeContent() {
 
   if (questions.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-white text-xl">Loading questions...</div>
+      <div className="min-h-screen bg-accent-tertiary flex items-center justify-center">
+        <div className="font-body text-text-inverse text-xl">Loading questions...</div>
       </div>
     );
   }

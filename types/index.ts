@@ -1,4 +1,4 @@
-// Core data types for CV Coach
+// Core data types for Friday
 
 export interface User {
   id: string;

@@ -17,18 +17,18 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-xl p-8 w-full max-w-md">
+    <div className="min-h-screen bg-bg-main flex items-center justify-center p-4">
+      <div className="bg-bg-surface rounded-lg shadow-xl p-8 w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Friday, the Film Career Coach</h1>
-          <p className="text-gray-600">Film Industry Career Platform</p>
+          <h1 className="font-display text-3xl font-bold text-text-primary mb-2">Friday, the Film Career Coach</h1>
+          <p className="font-body text-text-secondary">Film Industry Career Platform</p>
         </div>
 
         <div className="space-y-4">
           <button
             onClick={handleGoogleSignIn}
             disabled={loading}
-            className="w-full flex items-center justify-center gap-3 bg-white border-2 border-gray-300 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-50 hover:border-gray-400 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            className="font-body w-full flex items-center justify-center gap-3 bg-bg-surface border-2 border-border-hairline text-text-primary py-3 px-4 rounded-lg font-medium hover:bg-bg-main transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
               <path
@@ -52,9 +52,9 @@ export default function LoginPage() {
           </button>
         </div>
 
-        <div className="mt-8 text-center text-sm text-gray-600">
+        <div className="font-body mt-8 text-center text-sm text-text-secondary">
           <p>Your personalized film career coach</p>
-          <p className="mt-2 text-xs text-gray-500">
+          <p className="mt-2 text-xs text-text-secondary">
             AI-powered CV tailoring and interview practice
           </p>
         </div>

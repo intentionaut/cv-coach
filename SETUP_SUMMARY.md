@@ -1,4 +1,4 @@
-# CV Coach - Setup Summary
+# Friday - Setup Summary
 
 **Created**: August 18, 2026
 **Status**: Core Infrastructure Complete - Ready for UI Implementation
@@ -168,7 +168,7 @@ The backend infrastructure is complete. Frontend components needed:
 ```bash
 cd /Users/saielledasilva/ClaudeProjects/cv-coach
 git add .
-git commit -m "Initial CV Coach infrastructure"
+git commit -m "Initial Friday infrastructure"
 git branch -M main
 # Create repo on GitHub, then:
 git remote add origin https://github.com/YOUR_USERNAME/cv-coach.git
