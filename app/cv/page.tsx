@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { useRouter } from 'next/navigation';
 
@@ -198,6 +198,112 @@ function CVEditorContent() {
       }
       return newSet;
     });
+  };
+
+  // Load existing CV data on mount
+  useEffect(() => {
+    const loadExistingCV = async () => {
+      try {
+        const response = await fetch('/api/cv');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.exists && data.cv) {
+            // Set CV data
+            setCvData(data.cv);
+
+            // Generate editable text from CV data
+            const cvText = generateCVText(data.cv);
+            setEditableCVText(cvText);
+            setRawCVText(cvText);
+
+            // If there's existing analysis, load it
+            if (data.analysis && data.analysis.priorityImprovements) {
+              // We need to reconstruct the full analysis object
+              // For now, we'll just trigger a fresh analysis
+              // Future: store full analysis in database
+              const analyzeResponse = await fetch('/api/cv/analyze', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ cvData: data.cv })
+              });
+
+              if (analyzeResponse.ok) {
+                const analyzeData = await analyzeResponse.json();
+                setAnalysis(analyzeData.analysis);
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load existing CV:', error);
+      }
+    };
+
+    loadExistingCV();
+  }, []);
+
+  // Helper to generate readable CV text from structured data
+  const generateCVText = (cv: CVData): string => {
+    let text = '';
+
+    // Contact info
+    if (cv.contact) {
+      if (cv.contact.name) text += `${cv.contact.name}\n`;
+      if (cv.contact.email) text += `${cv.contact.email}\n`;
+      if (cv.contact.phone) text += `${cv.contact.phone}\n`;
+      if (cv.contact.location) text += `${cv.contact.location}\n`;
+      text += '\n';
+    }
+
+    // Summary
+    if (cv.summary) {
+      text += `PROFESSIONAL SUMMARY\n${cv.summary}\n\n`;
+    }
+
+    // Experience
+    if (cv.experience && cv.experience.length > 0) {
+      text += 'EXPERIENCE\n';
+      cv.experience.forEach(exp => {
+        text += `\n${exp.title} - ${exp.company}\n`;
+        if (exp.location) text += `${exp.location}\n`;
+        if (exp.startDate || exp.endDate) {
+          text += `${exp.startDate || ''} - ${exp.endDate || ''}\n`;
+        }
+        text += `${exp.description}\n`;
+      });
+      text += '\n';
+    }
+
+    // Education
+    if (cv.education && cv.education.length > 0) {
+      text += 'EDUCATION\n';
+      cv.education.forEach(edu => {
+        text += `\n${edu.degree} - ${edu.institution}\n`;
+        if (edu.location) text += `${edu.location}\n`;
+        if (edu.year) text += `${edu.year}\n`;
+        if (edu.details) text += `${edu.details}\n`;
+      });
+      text += '\n';
+    }
+
+    // Skills
+    if (cv.skills && cv.skills.length > 0) {
+      text += `SKILLS\n${cv.skills.join(', ')}\n\n`;
+    }
+
+    // Projects
+    if (cv.projects && cv.projects.length > 0) {
+      text += 'PROJECTS\n';
+      cv.projects.forEach(proj => {
+        text += `\n${proj.title}`;
+        if (proj.role) text += ` - ${proj.role}`;
+        text += '\n';
+        if (proj.year) text += `${proj.year}\n`;
+        text += `${proj.description}\n`;
+      });
+    }
+
+    return text;
   };
 
   // CV file upload handlers
