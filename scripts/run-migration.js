@@ -9,6 +9,12 @@ async function runMigration() {
     process.exit(1);
   }
 
+  const migrationFile = process.argv[2];
+  if (!migrationFile) {
+    console.error('❌ Usage: node scripts/run-migration.js <filename in lib/db/migrations/>');
+    process.exit(1);
+  }
+
   // Use pg's Pool instead of Neon's template tag syntax for migrations
   const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
@@ -16,9 +22,9 @@ async function runMigration() {
   });
 
   try {
-    console.log('Running migration: 001_interview_practice_sessions.sql');
+    console.log(`Running migration: ${migrationFile}`);
 
-    const migrationPath = path.join(__dirname, '../lib/db/migrations/001_interview_practice_sessions.sql');
+    const migrationPath = path.join(__dirname, '../lib/db/migrations', migrationFile);
     const migrationSQL = fs.readFileSync(migrationPath, 'utf8');
 
     // Execute the entire migration file

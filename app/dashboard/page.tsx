@@ -18,6 +18,14 @@ function DashboardContent() {
             <p className="font-body text-sm text-text-secondary">Welcome back, {session?.user?.name}</p>
           </div>
           <div className="flex items-center gap-2">
+            {session?.user?.email === 'dasilvasaielle@gmail.com' && (
+              <button
+                onClick={() => router.push('/admin/invite')}
+                className="font-body px-4 py-2 text-sm text-text-secondary hover:bg-bg-main rounded-lg transition"
+              >
+                Invite User
+              </button>
+            )}
             <button
               onClick={() => router.push('/settings')}
               className="font-body px-4 py-2 text-sm text-text-secondary hover:bg-bg-main rounded-lg transition"

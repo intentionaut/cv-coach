@@ -1,5 +1,8 @@
 import { compare, hash } from 'bcryptjs';
+import { randomBytes } from 'crypto';
 import db from './db/client';
+
+const RESET_TOKEN_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 /**
  * Authentication utilities for Friday
@@ -123,4 +126,93 @@ export async function updateUserPassword(
     `UPDATE users SET password_hash = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2`,
     [passwordHash, userId]
   );
+}
+
+/**
+ * Find an existing user by email, or create one with no password set
+ * (password_hash = ''), for use by the admin invite flow.
+ */
+export async function findOrCreateUserForInvite(
+  email: string,
+  name: string
+): Promise<AuthUser> {
+  const existing = await getUserByEmail(email);
+  if (existing) {
+    return {
+      id: existing.id,
+      email: existing.email,
+      name: existing.name
+    };
+  }
+
+  return createUser(email, '', name);
+}
+
+/**
+ * Create a one-time, 24-hour set-password token for a user and return the
+ * raw token string (to be embedded in the invite link — not stored in
+ * plaintext form anywhere else).
+ */
+export async function createPasswordResetToken(userId: string): Promise<string> {
+  const token = randomBytes(32).toString('hex');
+  const expiresAt = new Date(Date.now() + RESET_TOKEN_TTL_MS);
+
+  await db.query(
+    `INSERT INTO password_reset_tokens (user_id, token, expires_at)
+     VALUES ($1, $2, $3)`,
+    [userId, token, expiresAt]
+  );
+
+  return token;
+}
+
+/**
+ * Validate a set-password token: must exist, be unexpired, and unused.
+ * Returns the associated user id, or null if invalid.
+ */
+export async function validatePasswordResetToken(token: string): Promise<string | null> {
+  const result = await db.query(
+    `SELECT user_id, expires_at, used_at FROM password_reset_tokens WHERE token = $1`,
+    [token]
+  );
+
+  if (result.rowCount === 0) {
+    return null;
+  }
+
+  const row = result.rows[0] as any;
+
+  if (row.used_at) {
+    return null;
+  }
+
+  if (new Date(row.expires_at) < new Date()) {
+    return null;
+  }
+
+  return row.user_id as string;
+}
+
+/**
+ * Mark a set-password token as used and set the user's new password,
+ * in a single call (token is consumed once, regardless of outcome).
+ */
+export async function consumePasswordResetToken(
+  token: string,
+  newPassword: string
+): Promise<boolean> {
+  const userId = await validatePasswordResetToken(token);
+
+  if (!userId) {
+    return false;
+  }
+
+  await updateUserPassword(userId, newPassword);
+
+  await db.query(
+    `UPDATE password_reset_tokens SET used_at = CURRENT_TIMESTAMP WHERE token = $1`,
+    [token]
+  );
+
+  return true;
 }
