@@ -4,6 +4,8 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import Anthropic from '@anthropic-ai/sdk';
 import mammoth from 'mammoth';
 import db from '@/lib/db/client';
+import { getUserTier } from '@/lib/auth';
+import { getModelForTier } from '@/lib/tier';
 
 const DOCX_MIME_TYPE = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 
@@ -17,6 +19,9 @@ export async function POST(req: NextRequest) {
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const tier = await getUserTier(session.user.id);
+    const model = getModelForTier(tier);
 
     const formData = await req.formData();
     const file = formData.get('file') as File;
@@ -43,7 +48,7 @@ export async function POST(req: NextRequest) {
     // For PDFs, first extract text verbatim
     if (isPDF) {
       const extractMessage = await anthropic.messages.create({
-        model: 'claude-sonnet-5',
+        model,
         max_tokens: 4096,
         messages: [
           {
@@ -101,7 +106,7 @@ export async function POST(req: NextRequest) {
 
     // Now use Claude to parse the extracted text into structured data
     const message = await anthropic.messages.create({
-      model: 'claude-sonnet-5',
+      model,
       max_tokens: 4096,
       messages: [
         {

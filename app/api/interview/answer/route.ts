@@ -3,6 +3,8 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import Anthropic from '@anthropic-ai/sdk';
 import db from '@/lib/db/client';
+import { getUserTier } from '@/lib/auth';
+import { getModelForTier } from '@/lib/tier';
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY || '',
@@ -15,6 +17,9 @@ export async function POST(req: NextRequest) {
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const tier = await getUserTier(session.user.id);
+    const model = getModelForTier(tier);
 
     const {
       practice_session_id,
@@ -37,7 +42,7 @@ export async function POST(req: NextRequest) {
 
     // Get AI feedback on the answer
     const feedbackMessage = await anthropic.messages.create({
-      model: 'claude-sonnet-4',
+      model,
       max_tokens: 2048,
       messages: [
         {

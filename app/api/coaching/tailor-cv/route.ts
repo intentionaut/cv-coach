@@ -1,5 +1,9 @@
 import { NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import Anthropic from '@anthropic-ai/sdk';
+import { getUserTier } from '@/lib/auth';
+import { getModelForTier } from '@/lib/tier';
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY || ''
@@ -7,6 +11,14 @@ const anthropic = new Anthropic({
 
 export async function POST(request: Request) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const tier = await getUserTier(session.user.id);
+    const model = getModelForTier(tier);
+
     const { cvData, jobDescription, jobRequirements } = await request.json();
 
     if (!process.env.ANTHROPIC_API_KEY) {
@@ -46,7 +58,7 @@ Please provide:
 Return as JSON with keys: tailoredSummary, highlightedExperience, highlightedSkills, matchScore, suggestions`;
 
     const message = await anthropic.messages.create({
-      model: 'claude-3-5-sonnet-20241022',
+      model,
       max_tokens: 2048,
       messages: [{
         role: 'user',

@@ -4,6 +4,8 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import db from '@/lib/db/client';
 import Anthropic from '@anthropic-ai/sdk';
 import { DeepgramClient } from '@deepgram/sdk';
+import { getUserTier } from '@/lib/auth';
+import { getModelForTier } from '@/lib/tier';
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY!
@@ -17,6 +19,9 @@ export async function POST(req: NextRequest) {
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const tier = await getUserTier(session.user.id);
+    const model = getModelForTier(tier);
 
     const formData = await req.formData();
     const audioFile = formData.get('audio') as File;
@@ -65,7 +70,7 @@ export async function POST(req: NextRequest) {
 
     // Step 2: Get AI feedback on the transcribed answer using Claude
     const feedbackMessage = await anthropic.messages.create({
-      model: 'claude-sonnet-5',
+      model,
       max_tokens: 2048,
       tools: [{
         name: 'submit_feedback',

@@ -4,6 +4,8 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import Anthropic from '@anthropic-ai/sdk';
 import db from '@/lib/db/client';
 import { FILM_THEATRE_SKILLS } from '@/lib/data/film-skills';
+import { getUserTier } from '@/lib/auth';
+import { getModelForTier } from '@/lib/tier';
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY || '',
@@ -16,6 +18,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const tier = await getUserTier(session.user.id);
+    const model = getModelForTier(tier);
+
     const { cvData, targetRole } = await req.json();
 
     if (!cvData) {
@@ -27,7 +32,7 @@ export async function POST(req: NextRequest) {
 
     // Use Claude to analyze the CV and provide improvement suggestions
     const message = await anthropic.messages.create({
-      model: 'claude-sonnet-5',
+      model,
       max_tokens: 8192,
       messages: [
         {

@@ -1,6 +1,8 @@
 import { compare, hash } from 'bcryptjs';
 import { randomBytes } from 'crypto';
 import db from './db/client';
+import type { Tier } from './tier';
+import { isValidTier } from './tier';
 
 const RESET_TOKEN_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
@@ -82,6 +84,28 @@ export async function getUserById(id: string): Promise<AuthUser | null> {
   }
 
   return result.rows[0] as AuthUser;
+}
+
+/**
+ * Get a user's pricing tier. Defaults to 'free' if the user or the tier
+ * value is somehow missing/invalid, so callers always get a safe value.
+ */
+export async function getUserTier(userId: string): Promise<Tier> {
+  const result = await db.query(`SELECT tier FROM users WHERE id = $1`, [userId]);
+
+  const tier = result.rows[0]?.tier;
+  return isValidTier(tier) ? tier : 'free';
+}
+
+/**
+ * Set a user's pricing tier. Admin-only operation - there is no
+ * self-serve billing yet, so this is the only way a tier changes.
+ */
+export async function setUserTier(userId: string, tier: Tier): Promise<void> {
+  await db.query(`UPDATE users SET tier = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2`, [
+    tier,
+    userId
+  ]);
 }
 
 /**
