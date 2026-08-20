@@ -322,3 +322,18 @@ Each typographic role below specifies its **default token**, and any **state var
 | *(new)* `bg-surface` | inline `#FBF7EC` | `#FBF7EC` (formalised as token) | Was hardcoded in the preview; promoted to a proper token |
 | Caption role | used `text-muted` | now uses `text-secondary` | `text-muted` is no longer valid at caption size (13px, below the large-text floor) |
 | `bg-main` | `#F0E5D0` | **`#F5EFE4`** | Design review: the original value read as visually muted against the navy `accent-tertiary` surface (e.g. the "Ready to Practice?" headline, which uses `text-on-tertiary` = `bg-main` reused on dark surfaces). Lightened within the same hue family (38–39° hue, near-identical saturation) — not a new hue. Re-audited against every dependent pairing (§4.1–§4.4); all pass at equal or better ratios than before, no new failures introduced. `text-on-tertiary` updated to match, since it is `bg-main` reused. |
+
+---
+
+## 10. Brand assets
+
+**Added 2026-08-20.** Out of scope for the text/colour audit above, but recorded here as the canonical reference for the Friday wordmark icon until a dedicated brand-assets doc exists.
+
+| Asset | File | Background | Use |
+|---|---|---|---|
+| Logo (SVG, vector) | `/public/friday-logo.svg` | None (no background in the file) | **In-app header lockups** — the icon-plus-wordmark next to "Friday" on `/`, `/dashboard`, `/pricing`. Preferred over the PNGs for any in-app placement: scales cleanly at any size, smaller file, fill colours match design tokens exactly (`#E07A5F` = `cta-primary`). |
+| Logo (opaque PNG) | `/public/friday-logo.png` | Cream (`bg-main`/`bg-surface`-matched, baked into the PNG) | **Favicon source only** (`/app/icon.png` is a copy of this file). Not used in-page — the SVG replaced it there. |
+| Logo (transparent PNG) | `/public/friday-logo-transparent.png` | None (alpha channel) | Fallback raster option for anywhere an SVG can't be used (e.g. `og:image`, email templates) — otherwise superseded by the SVG for in-app use. |
+| Favicon | `/app/icon.png` | Cream (same source as the opaque PNG) | Browser tab icon, via Next.js's `app/icon.png` file convention — no manual `<link>` tag needed. |
+
+Both PNGs are 400×400 source files; the SVG is a 400×400 viewBox, infinitely scalable. Current in-app usage is a small (24–28px) icon-plus-wordmark lockup next to the "Friday" text heading — see `app/page.tsx`, `app/dashboard/page.tsx`, and `app/pricing/PricingContent.tsx`, all using the SVG. The favicon intentionally stays on the opaque PNG (colour background wanted for browser-tab visibility); the SVG is for in-page placements only.

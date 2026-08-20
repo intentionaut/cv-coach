@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
+import Image from 'next/image';
 
 export default function Home() {
   const router = useRouter();
@@ -19,7 +20,10 @@ export default function Home() {
       <div className="min-h-screen flex items-center justify-center bg-bg-main">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-accent-tertiary mx-auto mb-4"></div>
-          <h2 className="font-display text-xl font-bold text-text-primary">Friday</h2>
+          <div className="flex items-center justify-center gap-2">
+            <Image src="/friday-logo.svg" alt="" width={31} height={31} />
+            <h2 className="font-display text-xl font-bold text-text-primary">Friday</h2>
+          </div>
           <p className="font-body text-text-secondary mt-2">Loading...</p>
         </div>
       </div>
@@ -30,7 +34,10 @@ export default function Home() {
     <div className="min-h-screen bg-bg-main">
       <header className="bg-bg-surface shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-          <h1 className="font-display text-2xl font-bold text-text-primary">Friday</h1>
+          <div className="flex items-center gap-2">
+            <Image src="/friday-logo.svg" alt="" width={50} height={50} />
+            <h1 className="font-display text-2xl font-bold text-text-primary">Friday</h1>
+          </div>
           <button
             onClick={() => router.push('/login')}
             className="font-body bg-cta-primary text-text-on-cta px-5 py-2 rounded-lg font-bold hover:opacity-90 transition"

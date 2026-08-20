@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 type Frequency = 'monthly' | 'yearly';
 
@@ -22,10 +23,9 @@ const TIERS: Tier[] = [
     monthlyPrice: 0,
     cta: 'Get Started with Free',
     features: [
-      '1 CV, with edits',
-      'Basic CV templates',
-      'AI-powered CV analysis',
-      'Skills tracking'
+      '1 CV with edits (limited length)',
+      'Basic AI model',
+      'Export change checklist'
     ]
   },
   {
@@ -38,10 +38,8 @@ const TIERS: Tier[] = [
     features: [
       'Everything in Free',
       '3 different CVs, unlimited refinements',
-      'Custom CV templates',
       'Written interview practice',
-      'AI-powered feedback',
-      'Progress tracking over time'
+      'AI-powered feedback'
     ]
   },
   {
@@ -54,6 +52,7 @@ const TIERS: Tier[] = [
       'Everything in Starter',
       'Phone call interview practice',
       'Voice-based AI feedback',
+      'Progress tracking over time',
       'Priority support'
     ]
   }
@@ -81,7 +80,8 @@ export default function PricingContent() {
     <div className="min-h-screen bg-bg-main">
       <header className="bg-bg-surface shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-          <Link href="/" className="font-display text-2xl font-bold text-text-primary">
+          <Link href="/" className="flex items-center gap-2 font-display text-2xl font-bold text-text-primary">
+            <Image src="/friday-logo.svg" alt="" width={36} height={36} />
             Friday
           </Link>
           <Link

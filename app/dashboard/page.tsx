@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
 interface DashboardStatus {
@@ -52,7 +53,10 @@ function DashboardContent() {
       <header className="bg-bg-surface shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
           <div>
-            <h1 className="font-display text-2xl font-bold text-text-primary">Friday</h1>
+            <div className="flex items-center gap-2">
+              <Image src="/friday-logo.svg" alt="" width={31} height={31} />
+              <h1 className="font-display text-2xl font-bold text-text-primary">Friday</h1>
+            </div>
             <p className="font-body text-sm text-text-secondary">
               {sessionStatus === 'loading' ? ' ' : `Welcome back, ${session?.user?.name}`}
             </p>
