@@ -120,6 +120,17 @@ export default function LoginPage() {
           <p className="mt-2 text-xs text-text-secondary">
             AI-powered CV tailoring and interview practice
           </p>
+          <p className="mt-4 text-xs text-text-secondary">
+            By using Friday, you agree to our{' '}
+            <a href="/terms" className="text-text-link underline">
+              Terms &amp; Conditions
+            </a>{' '}
+            and{' '}
+            <a href="/privacy" className="text-text-link underline">
+              Privacy Policy
+            </a>
+            .
+          </p>
         </div>
       </div>
     </div>
