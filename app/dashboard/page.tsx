@@ -10,12 +10,14 @@ interface DashboardStatus {
   interviewSessionCount: number;
   latestInterviewAt: string | null;
   skillsAssessedCount: number;
+  gettingStartedDismissed: boolean;
 }
 
 function DashboardContent() {
   const { data: session, status: sessionStatus } = useSession();
   const router = useRouter();
   const [status, setStatus] = useState<DashboardStatus | null>(null);
+  const [dismissing, setDismissing] = useState(false);
 
   useEffect(() => {
     fetch('/api/dashboard/status')
@@ -24,10 +26,19 @@ function DashboardContent() {
       .catch((err) => console.error('Failed to load dashboard status:', err));
   }, []);
 
+  const handleDismissGettingStarted = () => {
+    setDismissing(true);
+    setStatus((prev) => (prev ? { ...prev, gettingStartedDismissed: true } : prev));
+    fetch('/api/dashboard/dismiss-getting-started', { method: 'POST' }).catch((err) => {
+      console.error('Failed to dismiss getting-started:', err);
+    });
+  };
+
   const hasCv = status?.hasCv ?? false;
   const hasInterviewed = (status?.interviewSessionCount ?? 0) > 0;
   const hasSkillsAssessed = (status?.skillsAssessedCount ?? 0) > 0;
   const allStepsDone = status !== null && hasCv && hasInterviewed && hasSkillsAssessed;
+  const showGettingStarted = status !== null && !status.gettingStartedDismissed && !allStepsDone;
 
   const heroSubtitle = status === null
     ? 'AI-powered coaching to help you land your first gig in the film industry'
@@ -125,9 +136,17 @@ function DashboardContent() {
           />
         </div>
 
-        {/* Getting Started Guide - hidden once everything's been started */}
-        {!allStepsDone && (
-          <div className="bg-bg-surface rounded-lg shadow p-6">
+        {/* Getting Started Guide - shown until dismissed or all steps are done */}
+        {showGettingStarted && (
+          <div className="bg-bg-surface rounded-lg shadow p-6 relative">
+            <button
+              onClick={handleDismissGettingStarted}
+              disabled={dismissing}
+              aria-label="Dismiss Getting Started guide"
+              className="absolute top-4 right-4 text-text-secondary hover:text-text-primary transition text-lg leading-none disabled:opacity-50"
+            >
+              &times;
+            </button>
             <h3 className="font-display text-lg font-bold text-text-primary mb-4">
               <span aria-hidden="true">🚀</span> Getting Started
             </h3>

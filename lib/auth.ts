@@ -112,6 +112,17 @@ export async function authenticateUser(
 }
 
 /**
+ * Mark the dashboard's "Getting Started" guide as dismissed for a user.
+ * Persisted per-account so it stays dismissed across devices/sessions.
+ */
+export async function dismissGettingStarted(userId: string): Promise<void> {
+  await db.query(
+    `UPDATE users SET getting_started_dismissed_at = CURRENT_TIMESTAMP WHERE id = $1`,
+    [userId]
+  );
+}
+
+/**
  * Set or change a user's password by id.
  * Used to add password login to an account that was created via Google
  * (which stores an empty password_hash), or to change an existing password.
