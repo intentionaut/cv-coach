@@ -261,7 +261,7 @@ function SessionReviewContent() {
           </button>
           <button
             onClick={() => router.push('/coaching')}
-            className="font-body flex-1 px-6 py-3 bg-cta-primary text-text-on-cta rounded-lg font-semibold hover:opacity-90 transition"
+            className="font-body flex-1 px-6 py-3 bg-cta-primary text-text-on-cta rounded-lg font-bold hover:opacity-90 transition"
           >
             Start New Practice
           </button>

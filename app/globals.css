@@ -18,7 +18,7 @@
   --color-text-inverse: #F7F1E3;
   --color-text-link: #0B3D5B;
   --color-text-cta: #B24022;      /* accessible text-weight version of cta-primary (link-hover, errors) */
-  --color-text-on-cta: #3D405B;   /* mandatory >=14px bold — AA-large only, see docs */
+  --color-text-on-cta: #FFFFFF;   /* white on orange, deliberately not WCAG-audited — always pair with font-bold, see docs */
   --color-text-on-success: #1B3A2E;
   --color-text-on-alert: #4A3612;
   --color-text-on-tertiary: #F0E5D0;

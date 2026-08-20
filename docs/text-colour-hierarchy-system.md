@@ -1,5 +1,7 @@
 # Text Colour & Hierarchy System
 
+> **⚠️ Override notice (2026-08-20):** `text-on-cta` no longer follows this document's §4.6/§7 decision below. Per explicit product direction, it is now `#FFFFFF` (white, bold) rather than the WCAG-AA-large-compliant `text-primary` (`#3D405B`) described throughout this file. This was a deliberate choice to prioritize brand contrast over the audited result — white-on-`cta-primary` measures **below AA-large** (see the 2.95:1 figure already noted in §7 for pure white). The rest of this document's `text-on-cta` analysis is kept for historical reference but is **no longer the implemented value**.
+
 **Status:** Formal specification, audited against WCAG 2.1 AA
 **Scope:** Atomic design tokens (atoms), text style combinations (molecules), applied UI patterns (organisms)
 **Supersedes:** the original `text-hierarchy-preview.html` provisional tokens (visual direction approved; colour values corrected below). A corrected preview implementing every fix in this document — plus the Epilogue/Rosario typeface pairing (§2a) — lives alongside this file at `docs/text-hierarchy-preview.html`.

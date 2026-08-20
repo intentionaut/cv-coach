@@ -512,7 +512,7 @@ function CVEditorContent() {
 
                     <label
                       htmlFor="cv-upload"
-                      className={`font-body cursor-pointer inline-flex items-center gap-2 px-6 py-3 bg-cta-primary text-text-on-cta rounded-lg font-semibold hover:opacity-90 transition ${
+                      className={`font-body cursor-pointer inline-flex items-center gap-2 px-6 py-3 bg-cta-primary text-text-on-cta rounded-lg font-bold hover:opacity-90 transition ${
                         uploading ? 'opacity-50 cursor-not-allowed' : ''
                       }`}
                     >
@@ -787,7 +787,7 @@ function CVEditorContent() {
               <button
                 onClick={handleAnalyze}
                 disabled={analyzing}
-                className="font-body w-full px-6 py-3 bg-cta-primary text-text-on-cta rounded-lg font-semibold hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                className="font-body w-full px-6 py-3 bg-cta-primary text-text-on-cta rounded-lg font-bold hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {analyzing ? (
                   <span className="flex items-center justify-center gap-2">
@@ -1139,7 +1139,7 @@ function CVEditorContent() {
                           </p>
                           <button
                             onClick={() => router.push('/coaching')}
-                            className="font-body px-8 py-4 bg-cta-primary text-text-on-cta rounded-lg text-lg font-semibold hover:opacity-90 transition shadow-lg hover:shadow-xl transform hover:scale-105"
+                            className="font-body px-8 py-4 bg-cta-primary text-text-on-cta rounded-lg text-lg font-bold hover:opacity-90 transition shadow-lg hover:shadow-xl transform hover:scale-105"
                           >
                             Start Interview Practice →
                           </button>

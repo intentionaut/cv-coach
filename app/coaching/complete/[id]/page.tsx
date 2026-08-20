@@ -191,7 +191,7 @@ function SessionCompletionContent() {
             <button
               onClick={completeSession}
               disabled={submitting || !overallConfidence || !overallClarity}
-              className="font-body flex-1 px-6 py-4 bg-cta-primary text-text-on-cta rounded-lg font-semibold hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              className="font-body flex-1 px-6 py-4 bg-cta-primary text-text-on-cta rounded-lg font-bold hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition"
             >
               {submitting ? 'Saving...' : 'Complete & Review Session'}
             </button>

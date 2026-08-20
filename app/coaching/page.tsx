@@ -98,10 +98,10 @@ function CoachingContent() {
                   <span>Written Practice</span>
                 </div>
               </button>
-              {/* Primary CTA: bg-cta-primary requires text-on-cta at >=14px bold for AA-large compliance — text-lg font-semibold already satisfies this */}
+              {/* Primary CTA: text-on-cta is white — deliberately not WCAG-audited, see globals.css */}
               <button
                 onClick={() => startNewSession('voice')}
-                className="font-body flex-1 min-w-[200px] px-8 py-4 bg-cta-primary text-text-on-cta rounded-lg text-lg font-semibold hover:opacity-90 transition shadow-lg border-2 border-cta-primary"
+                className="font-body flex-1 min-w-[200px] px-8 py-4 bg-cta-primary text-text-on-cta rounded-lg text-lg font-bold hover:opacity-90 transition shadow-lg border-2 border-cta-primary"
               >
                 <div className="flex items-center justify-center gap-2">
                   <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">

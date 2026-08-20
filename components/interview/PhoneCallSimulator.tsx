@@ -472,7 +472,7 @@ export default function PhoneCallSimulator({
                   {/* Stop & Submit Button */}
                   <button
                     onClick={stopRecording}
-                    className="font-body w-full px-8 py-4 bg-cta-primary text-text-on-cta rounded-full font-semibold hover:opacity-90 transition shadow-lg"
+                    className="font-body w-full px-8 py-4 bg-cta-primary text-text-on-cta rounded-full font-bold hover:opacity-90 transition shadow-lg"
                   >
                     Stop & Submit Answer
                   </button>
@@ -513,7 +513,7 @@ export default function PhoneCallSimulator({
                   {onRetry && (
                     <button
                       onClick={onRetry}
-                      className="font-body w-full px-8 py-4 bg-cta-primary text-text-on-cta rounded-full text-lg font-semibold hover:opacity-90 transition shadow-lg"
+                      className="font-body w-full px-8 py-4 bg-cta-primary text-text-on-cta rounded-full text-lg font-bold hover:opacity-90 transition shadow-lg"
                     >
                       Try Again
                     </button>

@@ -33,7 +33,7 @@ export default function Home() {
           <h1 className="font-display text-2xl font-bold text-text-primary">Friday</h1>
           <button
             onClick={() => router.push('/login')}
-            className="font-body bg-cta-primary text-text-on-cta px-5 py-2 rounded-lg font-medium hover:opacity-90 transition"
+            className="font-body bg-cta-primary text-text-on-cta px-5 py-2 rounded-lg font-bold hover:opacity-90 transition"
           >
             Sign In
           </button>
@@ -53,7 +53,7 @@ export default function Home() {
             </p>
             <button
               onClick={() => router.push('/login')}
-              className="font-body bg-cta-primary text-text-on-cta px-8 py-3 rounded-lg font-medium hover:opacity-90 transition text-lg"
+              className="font-body bg-cta-primary text-text-on-cta px-8 py-3 rounded-lg font-bold hover:opacity-90 transition text-lg"
             >
               Get Started
             </button>
@@ -94,7 +94,7 @@ export default function Home() {
             </p>
             <button
               onClick={() => router.push('/login')}
-              className="font-body bg-cta-primary text-text-on-cta px-8 py-3 rounded-lg font-medium hover:opacity-90 transition text-lg"
+              className="font-body bg-cta-primary text-text-on-cta px-8 py-3 rounded-lg font-bold hover:opacity-90 transition text-lg"
             >
               Sign In
             </button>

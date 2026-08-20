@@ -193,7 +193,7 @@ function PracticeSessionContent() {
               <button
                 onClick={() => submitAnswer(null, null)}
                 disabled={!currentAnswer.trim() || submitting}
-                className="font-body px-8 py-3 bg-cta-primary text-text-on-cta rounded-lg font-semibold hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                className="font-body px-8 py-3 bg-cta-primary text-text-on-cta rounded-lg font-bold hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition"
               >
                 {submitting ? 'Submitting...' : isLastQuestion ? 'Submit Final Answer' : 'Submit & Continue'}
               </button>
@@ -262,7 +262,7 @@ function PracticeSessionContent() {
 
             <button
               onClick={nextQuestion}
-              className="font-body w-full px-8 py-4 bg-cta-primary text-text-on-cta rounded-lg text-lg font-semibold hover:opacity-90 transition"
+              className="font-body w-full px-8 py-4 bg-cta-primary text-text-on-cta rounded-lg text-lg font-bold hover:opacity-90 transition"
             >
               {isLastQuestion ? 'Complete Session →' : 'Next Question →'}
             </button>

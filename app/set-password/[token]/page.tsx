@@ -88,7 +88,7 @@ export default function SetPasswordPage() {
           <button
             type="submit"
             disabled={status === 'saving'}
-            className="font-body w-full bg-cta-primary text-text-on-cta py-3 px-4 rounded-lg font-medium hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            className="font-body w-full bg-cta-primary text-text-on-cta py-3 px-4 rounded-lg font-bold hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {status === 'saving' ? 'Saving...' : 'Set Password'}
           </button>

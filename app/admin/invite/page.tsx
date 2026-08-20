@@ -104,7 +104,7 @@ function InviteContent() {
             <button
               type="submit"
               disabled={inviteStatus === 'sending'}
-              className="font-body w-full bg-cta-primary text-text-on-cta py-3 px-4 rounded-lg font-medium hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              className="font-body w-full bg-cta-primary text-text-on-cta py-3 px-4 rounded-lg font-bold hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {inviteStatus === 'sending' ? 'Sending...' : 'Send Invite'}
             </button>
