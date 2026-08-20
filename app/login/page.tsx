@@ -5,6 +5,9 @@ import { useState } from 'react';
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
 
   const handleGoogleSignIn = async () => {
     setLoading(true);
@@ -12,6 +15,31 @@ export default function LoginPage() {
       await signIn('google', { callbackUrl: '/dashboard' });
     } catch (error) {
       console.error('Sign in error:', error);
+      setLoading(false);
+    }
+  };
+
+  const handlePasswordSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+    try {
+      const result = await signIn('credentials', {
+        email,
+        password,
+        redirect: false
+      });
+
+      if (result?.error) {
+        setError('Incorrect email or password.');
+        setLoading(false);
+        return;
+      }
+
+      window.location.href = '/dashboard';
+    } catch (error) {
+      console.error('Sign in error:', error);
+      setError('Something went wrong. Please try again.');
       setLoading(false);
     }
   };
@@ -50,6 +78,41 @@ export default function LoginPage() {
             </svg>
             {loading ? 'Signing in...' : 'Sign in with Google'}
           </button>
+
+          <div className="flex items-center gap-3">
+            <div className="flex-1 h-px bg-border-hairline" />
+            <span className="font-body text-xs text-text-secondary">or</span>
+            <div className="flex-1 h-px bg-border-hairline" />
+          </div>
+
+          <form onSubmit={handlePasswordSignIn} className="space-y-3">
+            <input
+              type="email"
+              required
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="font-body w-full border-2 border-border-hairline rounded-lg py-3 px-4 text-text-primary bg-bg-surface focus:outline-none focus:border-accent-tertiary"
+            />
+            <input
+              type="password"
+              required
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="font-body w-full border-2 border-border-hairline rounded-lg py-3 px-4 text-text-primary bg-bg-surface focus:outline-none focus:border-accent-tertiary"
+            />
+            {error && (
+              <p className="font-body text-sm text-text-cta">{error}</p>
+            )}
+            <button
+              type="submit"
+              disabled={loading}
+              className="font-body w-full bg-cta-primary text-text-on-cta py-3 px-4 rounded-lg font-medium hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? 'Signing in...' : 'Sign in with Password'}
+            </button>
+          </form>
         </div>
 
         <div className="font-body mt-8 text-center text-sm text-text-secondary">

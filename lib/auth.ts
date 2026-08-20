@@ -107,3 +107,20 @@ export async function authenticateUser(
     name: user.name
   };
 }
+
+/**
+ * Set or change a user's password by id.
+ * Used to add password login to an account that was created via Google
+ * (which stores an empty password_hash), or to change an existing password.
+ */
+export async function updateUserPassword(
+  userId: string,
+  newPassword: string
+): Promise<void> {
+  const passwordHash = await hashPassword(newPassword);
+
+  await db.query(
+    `UPDATE users SET password_hash = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2`,
+    [passwordHash, userId]
+  );
+}

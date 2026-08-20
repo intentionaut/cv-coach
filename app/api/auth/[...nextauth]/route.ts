@@ -1,6 +1,7 @@
 import NextAuth, { NextAuthOptions } from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
-import { getUserByEmail, createUser } from '@/lib/auth';
+import CredentialsProvider from 'next-auth/providers/credentials';
+import { getUserByEmail, createUser, authenticateUser } from '@/lib/auth';
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -13,6 +14,28 @@ export const authOptions: NextAuthOptions = {
           access_type: "offline",
           response_type: "code"
         }
+      }
+    }),
+    CredentialsProvider({
+      name: 'Email and Password',
+      credentials: {
+        email: { label: 'Email', type: 'email' },
+        password: { label: 'Password', type: 'password' }
+      },
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) {
+          return null;
+        }
+
+        // authenticateUser returns null if the account has no password set
+        // yet (e.g. an account created via Google with an empty password_hash)
+        const user = await authenticateUser(credentials.email, credentials.password);
+
+        if (!user) {
+          return null;
+        }
+
+        return user;
       }
     })
   ],

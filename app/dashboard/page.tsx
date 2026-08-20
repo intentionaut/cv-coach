@@ -17,12 +17,20 @@ function DashboardContent() {
             <h1 className="font-display text-2xl font-bold text-text-primary">Friday</h1>
             <p className="font-body text-sm text-text-secondary">Welcome back, {session?.user?.name}</p>
           </div>
-          <button
-            onClick={() => signOut({ callbackUrl: '/login' })}
-            className="font-body px-4 py-2 text-sm text-text-secondary hover:bg-bg-main rounded-lg transition"
-          >
-            Sign Out
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => router.push('/settings')}
+              className="font-body px-4 py-2 text-sm text-text-secondary hover:bg-bg-main rounded-lg transition"
+            >
+              Settings
+            </button>
+            <button
+              onClick={() => signOut({ callbackUrl: '/login' })}
+              className="font-body px-4 py-2 text-sm text-text-secondary hover:bg-bg-main rounded-lg transition"
+            >
+              Sign Out
+            </button>
+          </div>
         </div>
       </header>
 
