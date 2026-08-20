@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import Anthropic from '@anthropic-ai/sdk';
+import mammoth from 'mammoth';
 import db from '@/lib/db/client';
+
+const DOCX_MIME_TYPE = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY || '',
@@ -25,7 +28,17 @@ export async function POST(req: NextRequest) {
     // Read file content
     const buffer = await file.arrayBuffer();
     let content = '';
-    let isPDF = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+    const fileNameLower = file.name.toLowerCase();
+    const isPDF = file.type === 'application/pdf' || fileNameLower.endsWith('.pdf');
+    const isDocx = file.type === DOCX_MIME_TYPE || fileNameLower.endsWith('.docx');
+    const isPlainText = file.type === 'text/plain' || fileNameLower.endsWith('.txt');
+
+    if (!isPDF && !isDocx && !isPlainText) {
+      return NextResponse.json(
+        { error: 'Unsupported file type. Please upload a PDF, .docx, or .txt file.' },
+        { status: 400 }
+      );
+    }
 
     // For PDFs, first extract text verbatim
     if (isPDF) {
@@ -56,9 +69,34 @@ export async function POST(req: NextRequest) {
       if (extractedText && extractedText.type === 'text') {
         content = extractedText.text;
       }
+    } else if (isDocx) {
+      // .docx files are ZIP archives - must be parsed, not read as raw UTF-8 text
+      const { value } = await mammoth.extractRawText({ buffer: Buffer.from(buffer) });
+      content = value;
     } else {
-      // For text files, read as UTF-8
+      // Plain text files only
       content = Buffer.from(buffer).toString('utf-8');
+    }
+
+    if (!content.trim()) {
+      return NextResponse.json(
+        { error: 'Could not extract any text from this file. Please check the file and try again.' },
+        { status: 400 }
+      );
+    }
+
+    // Reject content that's mostly unreadable (e.g. binary data misread as text,
+    // corrupted extraction) before sending it to Claude for structured parsing.
+    // eslint-disable-next-line no-control-regex
+    const controlCharCount = (content.match(/[\x00-\x08\x0E-\x1F�]/g) || []).length;
+    if (controlCharCount / content.length > 0.05) {
+      return NextResponse.json(
+        {
+          error:
+            'This file could not be read as text — it may be corrupted or in an unsupported format. Please upload a PDF, .docx, or .txt file.'
+        },
+        { status: 400 }
+      );
     }
 
     // Now use Claude to parse the extracted text into structured data
@@ -150,6 +188,26 @@ IMPORTANT:
     // Debug: Log extracted CV data
     console.log('Extracted CV data:', JSON.stringify(cvData, null, 2));
 
+    // If parsing produced essentially nothing (no name, no experience, no
+    // skills, no education), the source content was unreadable even though
+    // it passed earlier checks - don't silently save an empty CV.
+    const hasAnyContent =
+      !!cvData?.contact?.name ||
+      (cvData?.experience?.length ?? 0) > 0 ||
+      (cvData?.education?.length ?? 0) > 0 ||
+      (cvData?.skills?.length ?? 0) > 0 ||
+      !!cvData?.summary;
+
+    if (!hasAnyContent) {
+      return NextResponse.json(
+        {
+          error:
+            "We couldn't extract any usable information from this file. Please check that it's a readable CV and try again."
+        },
+        { status: 400 }
+      );
+    }
+
     // Check if user already has CV data
     const existing = await db.query(
       `SELECT id FROM cv_data WHERE user_id = $1`,
@@ -200,8 +258,18 @@ IMPORTANT:
     });
   } catch (error: any) {
     console.error('CV upload error:', error);
+
+    // Surface a clear, actionable message for a low/no Anthropic API credit
+    // balance instead of a raw API error dump.
+    if (error?.status === 400 && error?.error?.error?.type === 'invalid_request_error') {
+      return NextResponse.json(
+        { error: 'CV processing is temporarily unavailable. Please try again in a little while.' },
+        { status: 503 }
+      );
+    }
+
     return NextResponse.json(
-      { error: 'Failed to process CV', details: error.message },
+      { error: 'Something went wrong while processing your CV. Please try again.', details: error.message },
       { status: 500 }
     );
   }

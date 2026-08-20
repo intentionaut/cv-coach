@@ -177,6 +177,7 @@ function CVEditorContent() {
   const [analysis, setAnalysis] = useState<Analysis | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadingJob, setUploadingJob] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [isDraggingCV, setIsDraggingCV] = useState(false);
   const [isDraggingJob, setIsDraggingJob] = useState(false);
@@ -307,7 +308,36 @@ function CVEditorContent() {
   };
 
   // CV file upload handlers
+  const MAX_CV_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+  const ACCEPTED_CV_EXTENSIONS = ['.pdf', '.docx', '.txt'];
+
+  const validateCVFile = (file: File): string | null => {
+    const nameLower = file.name.toLowerCase();
+    const hasAcceptedExtension = ACCEPTED_CV_EXTENSIONS.some((ext) => nameLower.endsWith(ext));
+
+    if (!hasAcceptedExtension) {
+      return 'Please upload a PDF, DOCX, or TXT file.';
+    }
+    if (file.size === 0) {
+      return 'That file appears to be empty. Please choose a different file.';
+    }
+    if (file.size > MAX_CV_FILE_SIZE) {
+      return 'That file is too large (max 10MB). Please choose a smaller file.';
+    }
+    return null;
+  };
+
   const processFile = async (file: File) => {
+    setUploadError(null);
+
+    // Validate before spending an API call: type, empty, and size checks all
+    // happen instantly, client-side, with no network request.
+    const validationError = validateCVFile(file);
+    if (validationError) {
+      setUploadError(validationError);
+      return;
+    }
+
     setUploading(true);
     const formData = new FormData();
     formData.append('file', file);
@@ -325,11 +355,11 @@ function CVEditorContent() {
         setCvData(result.data);
         setRawCVText(result.rawText || ''); // Store the raw extracted text
       } else {
-        alert(`Failed to upload CV: ${result.error}`);
+        setUploadError(result.error || 'We couldn\'t process that file. Please try again.');
       }
     } catch (error) {
       console.error('Upload error:', error);
-      alert('Failed to upload CV');
+      setUploadError('Something went wrong while uploading. Please check your connection and try again.');
     } finally {
       setUploading(false);
     }
@@ -487,7 +517,7 @@ function CVEditorContent() {
                   >
                     <input
                       type="file"
-                      accept=".txt,.pdf,.docx,.doc"
+                      accept=".txt,.pdf,.docx"
                       onChange={handleFileUpload}
                       disabled={uploading}
                       className="hidden"
@@ -520,8 +550,15 @@ function CVEditorContent() {
                     </label>
 
                     <p className="font-body mt-4 text-sm text-text-secondary">or drag and drop</p>
-                    <p className="font-body mt-1 text-xs text-text-secondary">TXT, PDF, DOCX</p>
+                    <p className="font-body mt-1 text-xs text-text-secondary">TXT, PDF, DOCX &middot; up to 10MB</p>
                   </div>
+
+                  {uploadError && (
+                    <div className="mt-3 flex items-start gap-2 bg-cta-primary/10 border border-cta-primary/30 rounded-lg p-3">
+                      <span className="text-text-cta text-sm mt-0.5" aria-hidden="true">⚠</span>
+                      <p className="font-body text-sm text-text-cta">{uploadError}</p>
+                    </div>
+                  )}
                 </div>
 
                 {/* Job Description - Right Panel */}
@@ -564,7 +601,7 @@ function CVEditorContent() {
                   >
                     <input
                       type="file"
-                      accept=".txt,.pdf,.docx,.doc"
+                      accept=".txt,.pdf,.docx"
                       onChange={handleJobFileUpload}
                       disabled={uploadingJob}
                       className="hidden"
