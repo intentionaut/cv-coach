@@ -47,11 +47,6 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-bg-main flex items-center justify-center p-4">
       <div className="bg-bg-surface rounded-lg shadow-xl p-8 w-full max-w-md">
-        <div className="text-center mb-8">
-          <h1 className="font-display text-3xl font-bold text-text-primary mb-2">Friday, the Film Career Coach</h1>
-          <p className="font-body text-text-secondary">Film Industry Career Platform</p>
-        </div>
-
         <div className="space-y-4">
           <button
             onClick={handleGoogleSignIn}
@@ -115,12 +110,8 @@ export default function LoginPage() {
           </form>
         </div>
 
-        <div className="font-body mt-8 text-center text-sm text-text-secondary">
-          <p>Your personalized film career coach</p>
-          <p className="mt-2 text-xs text-text-secondary">
-            AI-powered CV tailoring and interview practice
-          </p>
-          <p className="mt-4 text-xs text-text-secondary">
+        <div className="font-body mt-8 text-center text-xs text-text-secondary">
+          <p>
             By using Friday, you agree to our{' '}
             <a href="/terms" className="text-text-link underline">
               Terms &amp; Conditions
