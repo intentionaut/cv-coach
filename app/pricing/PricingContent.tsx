@@ -81,7 +81,7 @@ export default function PricingContent() {
       <header className="bg-bg-surface shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
           <Link href="/" className="flex items-center gap-2 font-display text-2xl font-bold text-text-primary">
-            <Image src="/friday-logo.svg" alt="" width={36} height={36} />
+            <Image src="/friday-logo.png" alt="" width={36} height={36} />
             Friday
           </Link>
           <Link

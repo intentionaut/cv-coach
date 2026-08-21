@@ -21,7 +21,7 @@ export default function Home() {
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-accent-tertiary mx-auto mb-4"></div>
           <div className="flex items-center justify-center gap-2">
-            <Image src="/friday-logo.svg" alt="" width={31} height={31} />
+            <Image src="/friday-logo.png" alt="" width={31} height={31} />
             <h2 className="font-display text-xl font-bold text-text-primary">Friday</h2>
           </div>
           <p className="font-body text-text-secondary mt-2">Loading...</p>
@@ -35,7 +35,7 @@ export default function Home() {
       <header className="bg-bg-surface shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
           <div className="flex items-center gap-2">
-            <Image src="/friday-logo.svg" alt="" width={50} height={50} />
+            <Image src="/friday-logo.png" alt="" width={50} height={50} />
             <h1 className="font-display text-2xl font-bold text-text-primary">Friday</h1>
           </div>
           <button

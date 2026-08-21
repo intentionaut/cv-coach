@@ -54,7 +54,7 @@ function DashboardContent() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
           <div>
             <div className="flex items-center gap-2">
-              <Image src="/friday-logo.svg" alt="" width={31} height={31} />
+              <Image src="/friday-logo.png" alt="" width={31} height={31} />
               <h1 className="font-display text-2xl font-bold text-text-primary">Friday</h1>
             </div>
             <p className="font-body text-sm text-text-secondary">
