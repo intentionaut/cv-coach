@@ -787,10 +787,10 @@ function CVEditorContent() {
               <div className="bg-bg-surface rounded-lg shadow-lg overflow-hidden h-[600px] flex flex-col border border-border-hairline">
                 {/* No CV name/title here - "My CVs" above is the one place
                     that identifies and switches which CV this is. */}
-                <div className="px-4 py-2 border-b border-border-hairline flex items-center justify-end">
+                <div className="px-4 py-3 border-b border-border-hairline flex items-center justify-end">
                   <label
                     htmlFor="cv-reupload"
-                    className={`font-body cursor-pointer text-sm text-text-link hover:text-text-cta font-medium ${
+                    className={`font-body cursor-pointer inline-flex items-center gap-1.5 px-4 py-2 text-sm bg-bg-surface border-2 border-accent-tertiary text-accent-tertiary rounded-lg font-bold hover:bg-accent-secondary/15 transition ${
                       uploading ? 'opacity-50 pointer-events-none' : ''
                     }`}
                   >
