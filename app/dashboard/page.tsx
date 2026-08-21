@@ -58,7 +58,7 @@ function DashboardContent() {
               <h1 className="font-display text-2xl font-bold text-text-primary">Friday</h1>
             </div>
             <p className="font-body text-sm text-text-secondary">
-              {sessionStatus === 'loading' ? ' ' : `Welcome back, ${session?.user?.name}`}
+              {sessionStatus === 'loading' ? ' ' : `Welcome back, ${session?.user?.name?.split(' ')[0]}`}
             </p>
           </div>
           <div className="flex items-center gap-2">
