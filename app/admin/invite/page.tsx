@@ -15,6 +15,11 @@ function InviteContent() {
   const [inviteStatus, setInviteStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
   const [error, setError] = useState('');
 
+  const [tierEmail, setTierEmail] = useState('');
+  const [tier, setTier] = useState<'free' | 'starter' | 'pro'>('pro');
+  const [tierStatus, setTierStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
+  const [tierError, setTierError] = useState('');
+
   if (status === 'loading') {
     return null;
   }
@@ -26,6 +31,35 @@ function InviteContent() {
       </div>
     );
   }
+
+  const handleTierSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setTierError('');
+    setTierStatus('sending');
+
+    try {
+      const res = await fetch('/api/admin/set-tier', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: tierEmail, tier })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setTierError(data.error || 'Failed to update tier.');
+        setTierStatus('error');
+        return;
+      }
+
+      setTierStatus('success');
+      setTierEmail('');
+    } catch (err) {
+      console.error('Set tier error:', err);
+      setTierError('Something went wrong. Please try again.');
+      setTierStatus('error');
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -107,6 +141,46 @@ function InviteContent() {
               className="font-body w-full bg-cta-primary text-text-on-cta py-3 px-4 rounded-lg font-bold hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {inviteStatus === 'sending' ? 'Sending...' : 'Send Invite'}
+            </button>
+          </form>
+        </div>
+
+        <div className="bg-bg-surface rounded-lg shadow p-6 max-w-md mt-6">
+          <h2 className="font-display text-lg font-bold text-text-primary mb-2">Set User Tier</h2>
+          <p className="font-body text-sm text-text-secondary mb-6">
+            Changes an existing user&apos;s pricing tier immediately.
+          </p>
+
+          <form onSubmit={handleTierSubmit} className="space-y-4">
+            <input
+              type="email"
+              required
+              placeholder="user@example.com"
+              value={tierEmail}
+              onChange={(e) => setTierEmail(e.target.value)}
+              className="font-body w-full border-2 border-border-hairline rounded-lg py-3 px-4 text-text-primary bg-bg-main focus:outline-none focus:border-accent-tertiary"
+            />
+            <select
+              value={tier}
+              onChange={(e) => setTier(e.target.value as 'free' | 'starter' | 'pro')}
+              className="font-body w-full border-2 border-border-hairline rounded-lg py-3 px-4 text-text-primary bg-bg-main focus:outline-none focus:border-accent-tertiary"
+            >
+              <option value="free">Free</option>
+              <option value="starter">Starter</option>
+              <option value="pro">Pro</option>
+            </select>
+
+            {tierError && <p className="font-body text-sm text-text-cta">{tierError}</p>}
+            {tierStatus === 'success' && (
+              <p className="font-body text-sm text-success">Tier updated.</p>
+            )}
+
+            <button
+              type="submit"
+              disabled={tierStatus === 'sending'}
+              className="font-body w-full bg-cta-primary text-text-on-cta py-3 px-4 rounded-lg font-bold hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {tierStatus === 'sending' ? 'Updating...' : 'Update Tier'}
             </button>
           </form>
         </div>
