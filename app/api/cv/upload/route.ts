@@ -296,7 +296,18 @@ IMPORTANT:
       rawText: content // Return the raw extracted text
     });
   } catch (error: any) {
-    console.error('CV upload error:', error);
+    // Pull the fields that actually explain the failure (Anthropic SDK
+    // status/nested error, Postgres error code/detail) to the top - a plain
+    // console.error(label, error) buries these in a generic stack dump.
+    console.error('CV upload error:', {
+      message: error?.message,
+      name: error?.name,
+      status: error?.status,
+      anthropicError: error?.error,
+      pgCode: error?.code,
+      pgDetail: error?.detail,
+      stack: error?.stack
+    });
 
     // Surface a clear, actionable message for a low/no Anthropic API credit
     // balance instead of a raw API error dump.

@@ -12,9 +12,9 @@ const anthropic = new Anthropic({
 });
 
 // CV analysis can take well over Vercel's default function timeout - Claude
-// generates up to 8192 tokens here. Without this, the platform kills the
+// generates up to 12000 tokens here. Without this, the platform kills the
 // function before it finishes, with no error logged and the UI just hangs.
-export const maxDuration = 60;
+export const maxDuration = 120;
 
 export async function POST(req: NextRequest) {
   try {
@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
     // Use Claude to analyze the CV and provide improvement suggestions
     const message = await anthropic.messages.create({
       model,
-      max_tokens: 8192,
+      max_tokens: 12000,
       messages: [
         {
           role: 'user',
@@ -121,6 +121,26 @@ Return ONLY the JSON object, no additional text.`
       ]
     });
 
+    // If Claude hit the max_tokens ceiling mid-response, content.text.text is
+    // silently cut off mid-JSON - the JSON.parse below would fail with a
+    // generic "Unexpected end of JSON input" that gives no hint this was a
+    // truncation, not a malformed response. Catch it explicitly here instead.
+    if (message.stop_reason === 'max_tokens') {
+      console.error('CV analysis truncated: Claude hit max_tokens before finishing the response', {
+        cvId,
+        model,
+        stopReason: message.stop_reason,
+        usage: message.usage
+      });
+      return NextResponse.json(
+        {
+          error:
+            'Your CV analysis was too long to complete in one pass. Try again - this is usually transient.'
+        },
+        { status: 502 }
+      );
+    }
+
     const textContent = message.content.find(block => block.type === 'text');
     if (!textContent || textContent.type !== 'text') {
       throw new Error('No text response from Claude');
@@ -141,7 +161,23 @@ Return ONLY the JSON object, no additional text.`
       jsonText = jsonText.substring(firstBrace, lastBrace + 1);
     }
 
-    const analysis = JSON.parse(jsonText);
+    let analysis;
+    try {
+      analysis = JSON.parse(jsonText);
+    } catch (parseError: any) {
+      // A raw "Unexpected token" message is useless without seeing what
+      // Claude actually returned - log enough of the real text to diagnose
+      // a prompt/schema mismatch without dumping the entire (long) response.
+      console.error('CV analysis JSON parse failed:', {
+        cvId,
+        model,
+        parseErrorMessage: parseError.message,
+        responseLength: jsonText.length,
+        responseStart: jsonText.slice(0, 500),
+        responseEnd: jsonText.slice(-500)
+      });
+      throw parseError;
+    }
 
     // title is VARCHAR(255) - targetRole is often a full pasted job posting,
     // so it has to be truncated or a real job description blows the column
@@ -172,7 +208,18 @@ Return ONLY the JSON object, no additional text.`
       analysis
     });
   } catch (error: any) {
-    console.error('CV analysis error:', error);
+    // A plain `console.error(label, error)` on an Anthropic SDK error prints
+    // a generic "Error: 400 {...}" - the actually useful part (rate limit vs
+    // invalid request vs overloaded, which field was rejected) is nested in
+    // error.error/.status and gets buried or truncated in the log viewer.
+    // Pulling those fields to the top makes the real cause visible at a glance.
+    console.error('CV analysis error:', {
+      message: error?.message,
+      name: error?.name,
+      status: error?.status,
+      anthropicError: error?.error,
+      stack: error?.stack
+    });
     return NextResponse.json(
       { error: 'Failed to analyze CV', details: error.message },
       { status: 500 }
