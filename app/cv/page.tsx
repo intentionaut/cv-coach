@@ -171,6 +171,7 @@ function CVEditorContent() {
   const [cvData, setCvData] = useState<CVData | null>(null);
   const [jobTitle, setJobTitle] = useState('');
   const [jobDescription, setJobDescription] = useState('');
+  const [editingJobTitle, setEditingJobTitle] = useState(false);
   const [analysis, setAnalysis] = useState<Analysis | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadingJob, setUploadingJob] = useState(false);
@@ -200,6 +201,7 @@ function CVEditorContent() {
     setAnalysis(null);
     setJobTitle('');
     setJobDescription('');
+    setEditingJobTitle(false);
     setEditableCVText('');
     setUploadError(null);
     setCompletedImprovements(new Set());
@@ -646,19 +648,45 @@ function CVEditorContent() {
           <div className="p-6 flex items-center justify-between gap-4 flex-wrap">
             <div className="flex-1 min-w-[240px]">
               <h3 className="font-display text-lg font-bold text-text-primary mb-3">Have a specific role in mind?</h3>
-              <div className="flex items-center gap-2 mb-3 flex-wrap">
-                <label htmlFor="job-title" className="font-body text-sm font-semibold text-text-primary whitespace-nowrap">
-                  I want to be
-                </label>
-                <input
-                  id="job-title"
-                  type="text"
-                  value={jobTitle}
-                  onChange={(e) => handleJobTitleChange(e.target.value)}
-                  placeholder="Job role"
-                  className="font-body flex-1 min-w-[160px] px-3 py-1.5 border border-border-hairline rounded-lg focus:ring-2 focus:ring-accent-tertiary focus:border-transparent text-sm bg-bg-main text-text-primary"
-                />
-              </div>
+              {/* Once a role has been declared, show it as a settled value
+                  (with an edit affordance) rather than leaving an open
+                  fill-in-the-blank input sitting there indefinitely - that
+                  invites re-typing over what's already been said. */}
+              {jobTitle.trim() && !editingJobTitle ? (
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="font-body text-sm text-text-secondary">I want to be</span>
+                  <span className="font-body text-sm font-bold text-text-primary">{jobTitle.trim()}</span>
+                  <button
+                    onClick={() => setEditingJobTitle(true)}
+                    className="text-text-secondary hover:text-text-primary p-0.5"
+                    aria-label="Edit job title"
+                    title="Edit"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 mb-3 flex-wrap">
+                  <label htmlFor="job-title" className="font-body text-sm font-semibold text-text-primary whitespace-nowrap">
+                    I want to be
+                  </label>
+                  <input
+                    id="job-title"
+                    autoFocus={editingJobTitle}
+                    type="text"
+                    value={jobTitle}
+                    onChange={(e) => handleJobTitleChange(e.target.value)}
+                    onBlur={() => { if (jobTitle.trim()) setEditingJobTitle(false); }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && jobTitle.trim()) (e.target as HTMLInputElement).blur();
+                    }}
+                    placeholder="Job role"
+                    className="font-body flex-1 min-w-[160px] px-3 py-1.5 border border-border-hairline rounded-lg focus:ring-2 focus:ring-accent-tertiary focus:border-transparent text-sm bg-bg-main text-text-primary"
+                  />
+                </div>
+              )}
               <p className="font-body text-sm text-text-secondary">
                 {jobTitle.trim()
                   ? `Tailoring feedback for ${activeName} to: "${jobTitle.trim()}"${jobDescription.trim() ? ' — using the job description below too' : ''}`
