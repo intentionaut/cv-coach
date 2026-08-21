@@ -1,4 +1,7 @@
-require('dotenv').config({ path: '.env.local' });
+// override: true - a stale DATABASE_URL already set in the shell (e.g. from
+// another local project) otherwise silently wins over the one just pulled
+// from Vercel, since dotenv doesn't override existing env vars by default.
+require('dotenv').config({ path: '.env.local', override: true });
 const { Pool } = require('pg');
 const fs = require('fs');
 const path = require('path');
