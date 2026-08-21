@@ -21,10 +21,22 @@ export async function POST(req: NextRequest) {
     const tier = await getUserTier(session.user.id);
     const model = getModelForTier(tier);
 
-    const { cvData, targetRole } = await req.json();
+    const { cvData, targetRole, cvId } = await req.json();
 
     if (!cvData) {
       return NextResponse.json({ error: 'No CV data provided' }, { status: 400 });
+    }
+
+    if (!cvId) {
+      return NextResponse.json({ error: 'cvId is required' }, { status: 400 });
+    }
+
+    const owns = await db.query(`SELECT id FROM cv_data WHERE id = $1 AND user_id = $2`, [
+      cvId,
+      session.user.id
+    ]);
+    if (owns.rows.length === 0) {
+      return NextResponse.json({ error: 'CV not found' }, { status: 404 });
     }
 
     // Get all available film/theatre skills for context
@@ -122,10 +134,11 @@ Return ONLY the JSON object, no additional text.`
     // call - re-analyzing on every login was burning API cost for no reason.
     await db.query(
       `INSERT INTO coaching_recommendations (
-        user_id, type, priority, title, description, action_items, created_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, NOW())`,
+        user_id, cv_id, type, priority, title, description, action_items, created_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())`,
       [
         session.user.id,
+        cvId,
         'cv_analysis',
         'high',
         `CV Analysis for ${targetRole || 'Film/Theatre'}`,

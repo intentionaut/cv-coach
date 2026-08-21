@@ -5,7 +5,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import mammoth from 'mammoth';
 import db from '@/lib/db/client';
 import { getUserTier } from '@/lib/auth';
-import { getModelForTier } from '@/lib/tier';
+import { getModelForTier, getTierLimits } from '@/lib/tier';
 
 const DOCX_MIME_TYPE = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 
@@ -25,9 +25,26 @@ export async function POST(req: NextRequest) {
 
     const formData = await req.formData();
     const file = formData.get('file') as File;
+    const cvId = formData.get('cvId') as string | null;
+    const name = formData.get('name') as string | null;
 
     if (!file) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
+    }
+
+    if (!cvId && (!name || !name.trim())) {
+      return NextResponse.json({ error: 'A name is required for a new CV' }, { status: 400 });
+    }
+
+    // Re-uploading into an existing CV must actually belong to this user.
+    if (cvId) {
+      const owns = await db.query(`SELECT id FROM cv_data WHERE id = $1 AND user_id = $2`, [
+        cvId,
+        session.user.id
+      ]);
+      if (owns.rows.length === 0) {
+        return NextResponse.json({ error: 'CV not found' }, { status: 404 });
+      }
     }
 
     // Read file content
@@ -213,19 +230,13 @@ IMPORTANT:
       );
     }
 
-    // Check if user already has CV data
-    const existing = await db.query(
-      `SELECT id FROM cv_data WHERE user_id = $1`,
-      [session.user.id]
-    );
-
     let result;
-    if (existing.rows.length > 0) {
-      // Update existing CV
+    if (cvId) {
+      // Re-upload: replace this specific CV's content.
       result = await db.query(
         `UPDATE cv_data
          SET personal_info = $1, summary = $2, experience = $3, education = $4, skills = $5, projects = $6, updated_at = NOW()
-         WHERE user_id = $7
+         WHERE id = $7
          RETURNING id`,
         [
           JSON.stringify(cvData.contact || {}),
@@ -234,17 +245,33 @@ IMPORTANT:
           JSON.stringify(cvData.education || []),
           JSON.stringify(cvData.skills || []),
           JSON.stringify(cvData.projects || []),
-          session.user.id
+          cvId
         ]
       );
     } else {
-      // Insert new CV
+      // New CV: enforce the plan's CV cap before creating it.
+      const { maxCvs } = getTierLimits(tier);
+      if (maxCvs !== null) {
+        const count = await db.query(`SELECT COUNT(*) FROM cv_data WHERE user_id = $1`, [
+          session.user.id
+        ]);
+        if (Number(count.rows[0].count) >= maxCvs) {
+          return NextResponse.json(
+            {
+              error: `Your plan is limited to ${maxCvs} CV${maxCvs === 1 ? '' : 's'}. Upgrade to add more.`
+            },
+            { status: 403 }
+          );
+        }
+      }
+
       result = await db.query(
-        `INSERT INTO cv_data (user_id, personal_info, summary, experience, education, skills, projects, updated_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
+        `INSERT INTO cv_data (user_id, name, personal_info, summary, experience, education, skills, projects, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
          RETURNING id`,
         [
           session.user.id,
+          (name as string).trim(),
           JSON.stringify(cvData.contact || {}),
           cvData.summary || '',
           JSON.stringify(cvData.experience || []),

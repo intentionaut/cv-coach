@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import db from '@/lib/db/client';
+import { getUserTier } from '@/lib/auth';
+import { getTierLimits } from '@/lib/tier';
 
 export async function GET(req: NextRequest) {
   try {
@@ -10,61 +12,35 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get CV data for user
+    const tier = await getUserTier(session.user.id);
+    const { maxCvs } = getTierLimits(tier);
+
     const result = await db.query(
-      `SELECT personal_info, summary, experience, education, skills, projects, updated_at
-       FROM cv_data
-       WHERE user_id = $1`,
+      `SELECT cd.id, cd.name, cd.summary, cd.updated_at,
+        EXISTS(
+          SELECT 1 FROM coaching_recommendations cr
+          WHERE cr.cv_id = cd.id AND cr.type = 'cv_analysis'
+        ) AS has_analysis
+       FROM cv_data cd
+       WHERE cd.user_id = $1
+       ORDER BY cd.updated_at DESC`,
       [session.user.id]
     );
-
-    if (result.rows.length === 0) {
-      return NextResponse.json({ exists: false });
-    }
-
-    const cvData = result.rows[0];
-
-    // Get latest coaching recommendations (analysis) - action_items holds
-    // the full analysis object, not just priorityImprovements, so a
-    // returning user's analysis view can be rebuilt without another
-    // Claude call.
-    const analysisResult = await db.query(
-      `SELECT action_items, created_at
-       FROM coaching_recommendations
-       WHERE user_id = $1 AND type = 'cv_analysis'
-       ORDER BY created_at DESC
-       LIMIT 1`,
-      [session.user.id]
-    );
-
-    // action_items holds the full analysis object as of the fix that added
-    // this, but older rows only hold a bare priorityImprovements array -
-    // treat those as no cached analysis rather than spreading an array into
-    // a broken {0: ..., 1: ...} object with no priorityImprovements key.
-    const cachedAnalysis = analysisResult.rows[0]?.action_items;
-    const hasFullAnalysis =
-      cachedAnalysis && !Array.isArray(cachedAnalysis) && typeof cachedAnalysis === 'object';
 
     return NextResponse.json({
-      exists: true,
-      cv: {
-        contact: cvData.personal_info || {},
-        summary: cvData.summary || '',
-        experience: cvData.experience || [],
-        education: cvData.education || [],
-        skills: cvData.skills || [],
-        projects: cvData.projects || [],
-        updatedAt: cvData.updated_at
-      },
-      analysis: hasFullAnalysis ? {
-        ...cachedAnalysis,
-        createdAt: analysisResult.rows[0].created_at
-      } : null
+      cvs: result.rows.map((row: any) => ({
+        id: row.id,
+        name: row.name,
+        summary: row.summary || '',
+        updatedAt: row.updated_at,
+        hasAnalysis: row.has_analysis
+      })),
+      maxCvs
     });
   } catch (error: any) {
-    console.error('CV fetch error:', error);
+    console.error('CV list error:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch CV', details: error.message },
+      { error: 'Failed to fetch CVs', details: error.message },
       { status: 500 }
     );
   }

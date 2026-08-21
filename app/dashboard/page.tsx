@@ -7,7 +7,7 @@ import Image from 'next/image';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
 interface DashboardStatus {
-  hasCv: boolean;
+  cvCount: number;
   interviewSessionCount: number;
   latestInterviewAt: string | null;
   skillsAssessedCount: number;
@@ -35,7 +35,7 @@ function DashboardContent() {
     });
   };
 
-  const hasCv = status?.hasCv ?? false;
+  const hasCv = (status?.cvCount ?? 0) > 0;
   const hasInterviewed = (status?.interviewSessionCount ?? 0) > 0;
   const hasSkillsAssessed = (status?.skillsAssessedCount ?? 0) > 0;
   const allStepsDone = status !== null && hasCv && hasInterviewed && hasSkillsAssessed;

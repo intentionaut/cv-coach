@@ -16,7 +16,10 @@ export async function GET(req: NextRequest) {
     const userId = session.user.id;
 
     const [cvResult, sessionsResult, skillsResult, userResult] = await Promise.all([
-      db.query(`SELECT updated_at FROM cv_data WHERE user_id = $1`, [userId]),
+      db.query(
+        `SELECT COUNT(*)::int AS count, MAX(updated_at) AS latest FROM cv_data WHERE user_id = $1`,
+        [userId]
+      ),
       db.query(
         `SELECT COUNT(*)::int AS count, MAX(started_at) AS latest
          FROM interview_practice_sessions WHERE user_id = $1`,
@@ -33,8 +36,8 @@ export async function GET(req: NextRequest) {
     ]);
 
     return NextResponse.json({
-      hasCv: cvResult.rowCount > 0,
-      cvUpdatedAt: cvResult.rows[0]?.updated_at || null,
+      cvCount: cvResult.rows[0]?.count || 0,
+      cvUpdatedAt: cvResult.rows[0]?.latest || null,
       interviewSessionCount: sessionsResult.rows[0]?.count || 0,
       latestInterviewAt: sessionsResult.rows[0]?.latest || null,
       skillsAssessedCount: skillsResult.rows[0]?.count || 0,
