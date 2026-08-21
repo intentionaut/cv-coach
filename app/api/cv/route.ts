@@ -37,6 +37,14 @@ export async function GET(req: NextRequest) {
       [session.user.id]
     );
 
+    // action_items holds the full analysis object as of the fix that added
+    // this, but older rows only hold a bare priorityImprovements array -
+    // treat those as no cached analysis rather than spreading an array into
+    // a broken {0: ..., 1: ...} object with no priorityImprovements key.
+    const cachedAnalysis = analysisResult.rows[0]?.action_items;
+    const hasFullAnalysis =
+      cachedAnalysis && !Array.isArray(cachedAnalysis) && typeof cachedAnalysis === 'object';
+
     return NextResponse.json({
       exists: true,
       cv: {
@@ -48,8 +56,8 @@ export async function GET(req: NextRequest) {
         projects: cvData.projects || [],
         updatedAt: cvData.updated_at
       },
-      analysis: analysisResult.rows.length > 0 ? {
-        ...(analysisResult.rows[0].action_items || {}),
+      analysis: hasFullAnalysis ? {
+        ...cachedAnalysis,
         createdAt: analysisResult.rows[0].created_at
       } : null
     });
