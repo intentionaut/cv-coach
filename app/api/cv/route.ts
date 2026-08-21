@@ -20,10 +20,16 @@ export async function GET(req: NextRequest) {
         EXISTS(
           SELECT 1 FROM coaching_recommendations cr
           WHERE cr.cv_id = cd.id AND cr.type = 'cv_analysis'
-        ) AS has_analysis
+        ) AS has_analysis,
+        (
+          SELECT (cr.action_items->>'overallScore')::int
+          FROM coaching_recommendations cr
+          WHERE cr.cv_id = cd.id AND cr.type = 'cv_analysis'
+          ORDER BY cr.created_at DESC LIMIT 1
+        ) AS score
        FROM cv_data cd
        WHERE cd.user_id = $1
-       ORDER BY cd.updated_at DESC`,
+       ORDER BY cd.created_at ASC`,
       [session.user.id]
     );
 
@@ -33,7 +39,8 @@ export async function GET(req: NextRequest) {
         name: row.name,
         summary: row.summary || '',
         updatedAt: row.updated_at,
-        hasAnalysis: row.has_analysis
+        hasAnalysis: row.has_analysis,
+        score: row.score
       })),
       maxCvs
     });

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { useRouter } from 'next/navigation';
@@ -74,86 +74,12 @@ interface CvListItem {
   summary: string;
   updatedAt: string;
   hasAnalysis: boolean;
+  score: number | null;
 }
 
-// Helper function to convert score to tier label
-const getScoreTier = (score: number): string => {
-  if (score >= 70) return `${score}/100`;
-  if (score >= 50) return 'Getting There';
-  return 'Room for Improvement';
-};
-
-// Helper function to get encouragement message for scores 70+
-const getScoreMessage = (score: number): string | null => {
-  if (score === 100) return 'Perfect!';
-  if (score >= 90) return 'Excellent!';
-  if (score >= 80) return 'Strong!';
-  if (score >= 70) return 'Almost There!';
-  return null;
-};
-
-// Helper function to convert CV data to editable text
-const cvDataToText = (data: CVData | null): string => {
-  if (!data) return '';
-
-  let text = '';
-
-  // Contact
-  if (data.contact?.name) text += `${data.contact.name}\n`;
-  if (data.contact?.email) text += `${data.contact.email}\n`;
-  if (data.contact?.phone) text += `${data.contact.phone}\n`;
-  if (data.contact?.location) text += `${data.contact.location}\n`;
-
-  // Summary
-  if (data.summary) {
-    text += `\nPROFESSIONAL SUMMARY\n${data.summary}\n`;
-  }
-
-  // Experience
-  if (data.experience && data.experience.length > 0) {
-    text += `\nEXPERIENCE\n`;
-    data.experience.forEach(exp => {
-      text += `\n${exp.title} - ${exp.company}\n`;
-      if (exp.startDate || exp.endDate) text += `${exp.startDate || ''} - ${exp.endDate || ''}\n`;
-      if (exp.location) text += `${exp.location}\n`;
-      text += `${exp.description}\n`;
-      if (exp.achievements) {
-        exp.achievements.forEach(ach => text += `• ${ach}\n`);
-      }
-    });
-  }
-
-  // Skills
-  if (data.skills && data.skills.length > 0) {
-    text += `\nSKILLS\n${data.skills.join(', ')}\n`;
-  }
-
-  // Education
-  if (data.education && data.education.length > 0) {
-    text += `\nEDUCATION\n`;
-    data.education.forEach(edu => {
-      text += `\n${edu.degree} - ${edu.institution}\n`;
-      if (edu.year) text += `${edu.year}\n`;
-      if (edu.location) text += `${edu.location}\n`;
-      if (edu.details) text += `${edu.details}\n`;
-    });
-  }
-
-  // Projects
-  if (data.projects && data.projects.length > 0) {
-    text += `\nPROJECTS\n`;
-    data.projects.forEach(proj => {
-      text += `\n${proj.title}`;
-      if (proj.role) text += ` - ${proj.role}`;
-      if (proj.year) text += ` (${proj.year})`;
-      text += `\n${proj.description}\n`;
-    });
-  }
-
-  return text;
-};
-
-// Helper to generate readable CV text from structured data
+// Helper to generate readable CV text from structured data - the single
+// source used everywhere the CV's text is displayed or edited, instead of
+// having a separate raw-text view and a differently-formatted editable view.
 const generateCVText = (cv: CVData): string => {
   let text = '';
 
@@ -211,6 +137,22 @@ const generateCVText = (cv: CVData): string => {
   return text;
 };
 
+// List is ordered by creation (for stable card numbers), so the default
+// selection needs to be found separately rather than assumed to be list[0].
+const mostRecentlyUpdated = (list: CvListItem[]): CvListItem =>
+  list.reduce((a, b) => (new Date(a.updatedAt) > new Date(b.updatedAt) ? a : b));
+
+const formatRelativeTime = (iso: string): string => {
+  const diffMs = Date.now() - new Date(iso).getTime();
+  const minutes = Math.floor(diffMs / 60000);
+  if (minutes < 1) return 'just now';
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+};
+
 function CVEditorContent() {
   const router = useRouter();
 
@@ -225,7 +167,7 @@ function CVEditorContent() {
 
   // Selected CV's content
   const [cvData, setCvData] = useState<CVData | null>(null);
-  const [jobDescription, setJobDescription] = useState<string | null>(null);
+  const [targetRole, setTargetRole] = useState('');
   const [analysis, setAnalysis] = useState<Analysis | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadingJob, setUploadingJob] = useState(false);
@@ -234,10 +176,8 @@ function CVEditorContent() {
   const [isDraggingCV, setIsDraggingCV] = useState(false);
   const [isDraggingJob, setIsDraggingJob] = useState(false);
   const [editableCVText, setEditableCVText] = useState<string>('');
-  const [rawCVText, setRawCVText] = useState<string>('');
-  const [summaryCollapsed, setSummaryCollapsed] = useState(false);
-  const [mainTab, setMainTab] = useState<'cv' | 'analysis'>('cv');
   const [completedImprovements, setCompletedImprovements] = useState<Set<string>>(new Set());
+  const targetRoleSaveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const toggleCompletion = (id: string) => {
     setCompletedImprovements(prev => {
@@ -254,11 +194,9 @@ function CVEditorContent() {
   const resetSelectedCvContent = () => {
     setCvData(null);
     setAnalysis(null);
-    setJobDescription(null);
-    setRawCVText('');
+    setTargetRole('');
     setEditableCVText('');
     setUploadError(null);
-    setMainTab('cv');
     setCompletedImprovements(new Set());
   };
 
@@ -278,13 +216,10 @@ function CVEditorContent() {
       if (!response.ok) return;
       const data = await response.json();
       setCvData(data.cv);
-      const cvText = generateCVText(data.cv);
-      setEditableCVText(cvText);
-      setRawCVText(cvText);
+      setEditableCVText(generateCVText(data.cv));
+      setTargetRole(data.targetRole || '');
       if (data.analysis && data.analysis.priorityImprovements) {
         setAnalysis(data.analysis);
-        setEditableCVText(cvDataToText(data.cv));
-        setMainTab('analysis');
       }
     } catch (error) {
       console.error('Failed to load CV:', error);
@@ -308,7 +243,7 @@ function CVEditorContent() {
     (async () => {
       const list = await loadCvList();
       if (list.length > 0) {
-        selectCv(list[0].id);
+        selectCv(mostRecentlyUpdated(list).id);
       } else {
         startNewCv();
       }
@@ -348,13 +283,29 @@ function CVEditorContent() {
       if (!response.ok) return;
       const list = await loadCvList();
       if (list.length > 0) {
-        selectCv(list[0].id);
+        selectCv(mostRecentlyUpdated(list).id);
       } else {
         startNewCv();
       }
     } catch (error) {
       console.error('Delete error:', error);
     }
+  };
+
+  // Target role: saved with a short debounce as the user types, decoupled
+  // from analysis - editing it is free, only clicking Analyze costs a
+  // Claude call. Not saved until the CV itself has been created.
+  const handleTargetRoleChange = (value: string) => {
+    setTargetRole(value);
+    if (!selectedCvId) return;
+    if (targetRoleSaveTimeout.current) clearTimeout(targetRoleSaveTimeout.current);
+    targetRoleSaveTimeout.current = setTimeout(() => {
+      fetch(`/api/cv/${selectedCvId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetRole: value })
+      }).catch(err => console.error('Failed to save target role:', err));
+    }, 800);
   };
 
   // CV file upload handlers
@@ -409,7 +360,6 @@ function CVEditorContent() {
       const result = await response.json();
       if (result.success) {
         setCvData(result.data);
-        setRawCVText(result.rawText || '');
         setEditableCVText(result.rawText || '');
         await loadCvList();
         setSelectedCvId(result.cvId);
@@ -447,7 +397,7 @@ function CVEditorContent() {
     if (file) await processFile(file);
   };
 
-  // Job description upload handlers
+  // Target role file upload handlers
   const handleJobFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -455,7 +405,7 @@ function CVEditorContent() {
     setUploadingJob(true);
     try {
       const text = await file.text();
-      setJobDescription(text);
+      handleTargetRoleChange(text);
     } catch (error) {
       console.error('Job file read error:', error);
       alert('Failed to read job description file');
@@ -479,7 +429,7 @@ function CVEditorContent() {
     const file = e.dataTransfer.files[0];
     if (file) {
       const text = await file.text();
-      setJobDescription(text);
+      handleTargetRoleChange(text);
     }
   };
 
@@ -495,15 +445,17 @@ function CVEditorContent() {
         body: JSON.stringify({
           cvData,
           cvId: selectedCvId,
-          targetRole: jobDescription || undefined,
+          targetRole: targetRole || undefined,
         }),
       });
 
       const result = await response.json();
       if (result.success) {
         setAnalysis(result.analysis);
-        setEditableCVText(cvDataToText(cvData));
-        setCvs(prev => prev.map(cv => (cv.id === selectedCvId ? { ...cv, hasAnalysis: true } : cv)));
+        setEditableCVText(generateCVText(cvData));
+        setCvs(prev => prev.map(cv => (
+          cv.id === selectedCvId ? { ...cv, hasAnalysis: true, score: result.analysis.overallScore } : cv
+        )));
       } else {
         alert(`Analysis failed: ${result.error}`);
       }
@@ -539,212 +491,163 @@ function CVEditorContent() {
           </button>
         </div>
 
-        {/* CV Switcher */}
-        <div className="flex items-center gap-2 mb-6 flex-wrap">
-          {cvs.map(cv => (
-            <div key={cv.id} className="flex items-center">
-              {renamingId === cv.id ? (
-                <input
-                  autoFocus
-                  value={renameValue}
-                  onChange={(e) => setRenameValue(e.target.value)}
-                  onBlur={() => handleRename(cv.id)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleRename(cv.id);
-                    if (e.key === 'Escape') setRenamingId(null);
-                  }}
-                  className="font-body px-4 py-2 rounded-lg border-2 border-accent-tertiary bg-bg-surface text-text-primary text-sm"
-                />
-              ) : (
-                <button
-                  onClick={() => selectCv(cv.id)}
-                  onDoubleClick={() => {
-                    setRenamingId(cv.id);
-                    setRenameValue(cv.name);
-                  }}
-                  className={`font-body px-4 py-2 rounded-lg text-sm font-semibold transition ${
-                    cv.id === selectedCvId
-                      ? 'bg-cta-primary text-text-on-cta'
-                      : 'bg-bg-surface text-text-secondary hover:text-text-primary border border-border-hairline'
+        {/* My CVs */}
+        <div className="mb-6">
+          <h2 className="font-display text-lg font-bold text-text-primary mb-3">My CVs</h2>
+          <div className="flex items-stretch gap-3 flex-wrap">
+            {cvs.map((cv, index) => {
+              const isActive = cv.id === selectedCvId;
+              return (
+                <div
+                  key={cv.id}
+                  onClick={() => !renamingId && selectCv(cv.id)}
+                  className={`font-body min-w-[200px] px-4 py-3 rounded-lg border-2 cursor-pointer transition ${
+                    isActive
+                      ? 'border-accent-tertiary bg-accent-secondary/15'
+                      : 'border-border-hairline bg-bg-surface hover:border-accent-tertiary/50'
                   }`}
-                  title="Double-click to rename"
                 >
-                  {cv.name}
-                </button>
-              )}
-              {cv.id === selectedCvId && renamingId !== cv.id && (
-                <button
-                  onClick={() => handleDelete(cv.id)}
-                  className="font-body ml-1 text-text-secondary hover:text-text-cta text-sm px-2"
-                  aria-label={`Delete ${cv.name}`}
-                >
-                  ✕
-                </button>
-              )}
-            </div>
-          ))}
-
-          {canAddCv ? (
-            <button
-              onClick={startNewCv}
-              className={`font-body px-4 py-2 rounded-lg text-sm font-semibold border-2 border-dashed transition ${
-                selectedCvId === null
-                  ? 'border-accent-tertiary text-accent-tertiary'
-                  : 'border-border-hairline text-text-secondary hover:text-text-primary'
-              }`}
-            >
-              + New CV
-            </button>
-          ) : (
-            <Link
-              href="/pricing"
-              className="font-body px-4 py-2 rounded-lg text-sm font-semibold text-text-link hover:text-text-cta"
-            >
-              Upgrade for more CVs →
-            </Link>
-          )}
-        </div>
-
-        {/* Unified panel: same shell whether this CV is empty or has content */}
-        {!analysis ? (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Left: CV content (2/3 width) */}
-            <div className="lg:col-span-2">
-              <div className="bg-bg-surface rounded-lg shadow-lg overflow-hidden h-[600px] flex flex-col border border-border-hairline">
-                <div className="bg-accent-tertiary px-6 py-4">
-                  <h2 className="font-display text-2xl font-bold text-text-on-tertiary">
-                    {cvData ? `${activeName} ✓` : (selectedCvId ? activeName : 'New CV')}
-                  </h2>
-                  <p className="font-body text-text-inverse/75 text-sm mt-1">
-                    {cvData
-                      ? 'This is exactly what we received from your file'
-                      : 'Upload a CV to get started'}
-                  </p>
-                </div>
-
-                <div className="flex-1 overflow-hidden">
-                  {cvData ? (
-                    <pre className="h-full overflow-auto p-6 font-mono text-sm leading-relaxed whitespace-pre-wrap bg-bg-main text-text-primary">
-                      {rawCVText || 'No content extracted yet...'}
-                    </pre>
+                  {renamingId === cv.id ? (
+                    <input
+                      autoFocus
+                      value={renameValue}
+                      onChange={(e) => setRenameValue(e.target.value)}
+                      onClick={(e) => e.stopPropagation()}
+                      onBlur={() => handleRename(cv.id)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleRename(cv.id);
+                        if (e.key === 'Escape') setRenamingId(null);
+                      }}
+                      className="w-full px-2 py-1 rounded border border-accent-tertiary bg-bg-main text-text-primary text-sm"
+                    />
                   ) : (
-                    <div className="h-full overflow-auto p-6">
-                      {!selectedCvId && (
-                        <input
-                          type="text"
-                          value={newCvName}
-                          onChange={(e) => setNewCvName(e.target.value)}
-                          placeholder='Name this CV (e.g. "Production Assistant")'
-                          className="font-body w-full mb-4 px-4 py-3 border-2 border-border-hairline rounded-lg text-text-primary bg-bg-main focus:outline-none focus:border-accent-tertiary"
-                        />
-                      )}
-                      <div
-                        onDragOver={handleCVDragOver}
-                        onDragLeave={handleCVDragLeave}
-                        onDrop={handleCVDrop}
-                        className={`border-2 border-dashed rounded-lg p-8 text-center transition-all ${
-                          isDraggingCV
-                            ? 'border-accent-tertiary bg-accent-secondary/20 scale-105'
-                            : 'border-border-hairline bg-bg-main'
-                        }`}
-                      >
-                        <input
-                          type="file"
-                          accept=".txt,.pdf,.docx"
-                          onChange={handleFileUpload}
-                          disabled={uploading}
-                          className="hidden"
-                          id="cv-upload"
-                        />
-
-                        <div className="mb-4">
-                          <svg
-                            className={`mx-auto h-12 w-12 ${isDraggingCV ? 'text-accent-tertiary' : 'text-text-secondary'}`}
-                            stroke="currentColor"
-                            fill="none"
-                            viewBox="0 0 48 48"
-                          >
-                            <path
-                              d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
-                              strokeWidth={2}
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
-                          </svg>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-start gap-2">
+                        <span className="font-body text-xs font-bold text-accent-tertiary mt-0.5">{index + 1}.</span>
+                        <div>
+                          <p className="font-semibold text-sm text-text-primary">{cv.name}</p>
+                          <p className="text-xs text-text-secondary mt-0.5">
+                            {cv.hasAnalysis && cv.score !== null ? `Analyzed · ${cv.score}/100` : 'Draft'}
+                            {' · '}
+                            {formatRelativeTime(cv.updatedAt)}
+                          </p>
                         </div>
-
-                        <label
-                          htmlFor="cv-upload"
-                          className={`font-body cursor-pointer inline-flex items-center gap-2 px-6 py-3 bg-cta-primary text-text-on-cta rounded-lg font-bold hover:opacity-90 transition ${
-                            uploading ? 'opacity-50 cursor-not-allowed' : ''
-                          }`}
-                        >
-                          {uploading ? 'Processing...' : 'Choose File'}
-                        </label>
-
-                        <p className="font-body mt-4 text-sm text-text-secondary">or drag and drop</p>
-                        <p className="font-body mt-1 text-xs text-text-secondary">TXT, PDF, DOCX &middot; up to 10MB</p>
                       </div>
-
-                      {uploadError && (
-                        <div className="mt-3 flex items-start gap-2 bg-cta-primary/10 border border-cta-primary/30 rounded-lg p-3">
-                          <span className="text-text-cta text-sm mt-0.5" aria-hidden="true">⚠</span>
-                          <p className="font-body text-sm text-text-cta">{uploadError}</p>
-                        </div>
-                      )}
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setRenamingId(cv.id);
+                            setRenameValue(cv.name);
+                          }}
+                          className="text-text-secondary hover:text-text-primary p-0.5"
+                          aria-label={`Rename ${cv.name}`}
+                          title="Rename"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                        </button>
+                        {isActive && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleDelete(cv.id); }}
+                            className="text-text-secondary hover:text-text-cta text-sm p-0.5"
+                            aria-label={`Delete ${cv.name}`}
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
-              </div>
+              );
+            })}
 
-              {cvData && (
-                <div className="mt-4">
-                  <label
-                    htmlFor="cv-reupload"
-                    className={`font-body cursor-pointer text-sm text-text-link hover:text-text-cta font-medium ${
-                      uploading ? 'opacity-50 pointer-events-none' : ''
-                    }`}
-                  >
-                    {uploading ? 'Processing...' : '↻ Re-upload this CV'}
-                  </label>
-                  <input
-                    type="file"
-                    accept=".txt,.pdf,.docx"
-                    onChange={handleFileUpload}
-                    disabled={uploading}
-                    className="hidden"
-                    id="cv-reupload"
-                  />
-                  {uploadError && (
-                    <p className="font-body text-sm text-text-cta mt-2">{uploadError}</p>
-                  )}
-                </div>
-              )}
+            {canAddCv ? (
+              <button
+                onClick={startNewCv}
+                className={`font-body min-w-[140px] px-4 py-3 rounded-lg border-2 border-dashed text-sm font-semibold transition ${
+                  selectedCvId === null
+                    ? 'border-accent-tertiary text-accent-tertiary'
+                    : 'border-border-hairline text-text-secondary hover:text-text-primary'
+                }`}
+              >
+                + New CV
+              </button>
+            ) : (
+              <Link
+                href="/pricing"
+                className="font-body min-w-[140px] px-4 py-3 rounded-lg text-sm font-semibold text-text-link hover:text-text-cta flex items-center"
+              >
+                Upgrade for more CVs →
+              </Link>
+            )}
+          </div>
+        </div>
+
+        {/* Target Role - always optional; Analyze works with or without it.
+            Collapsed by default so it doesn't dominate the page when there's
+            nothing to look at there. */}
+        <div className="bg-bg-surface rounded-lg shadow-lg mb-6 border border-border-hairline overflow-hidden">
+          <div className="p-6 flex items-center justify-between gap-4 flex-wrap">
+            <div className="flex-1 min-w-[240px]">
+              <h3 className="font-display text-lg font-bold text-text-primary mb-1">Have a specific role in mind?</h3>
+              <p className="font-body text-sm text-text-secondary">
+                {targetRole.trim()
+                  ? `Tailoring feedback for ${activeName} to: "${targetRole.trim().slice(0, 80)}${targetRole.trim().length > 80 ? '…' : ''}"`
+                  : `We'll assess ${activeName} against general film industry standards — add a job description below for tailored feedback instead.`}
+              </p>
             </div>
 
-            {/* Right: Target Role & CTA (1/3 width) - present in both empty and populated states */}
-            <div className="bg-bg-surface rounded-lg shadow-lg p-6 h-fit sticky top-6 border border-border-hairline">
-              <h3 className="font-display text-lg font-bold text-text-primary mb-3">Target Role</h3>
-              <p className="font-body text-sm text-text-secondary mb-4">
-                Add a job description to get tailored suggestions
-              </p>
+            <button
+              onClick={handleAnalyze}
+              disabled={analyzing || !cvData}
+              className="font-body shrink-0 px-6 py-3 bg-cta-primary text-text-on-cta rounded-lg font-bold hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {analyzing ? (
+                <span className="flex items-center justify-center gap-2">
+                  <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  Analyzing...
+                </span>
+              ) : !cvData ? (
+                'Upload a CV first'
+              ) : analysis ? (
+                'Re-analyze'
+              ) : (
+                'Get Suggestions'
+              )}
+            </button>
+          </div>
 
+          <details className="group border-t border-border-hairline">
+            <summary className="cursor-pointer list-none px-6 py-3 flex items-center gap-2 hover:bg-bg-main transition">
+              <span className="font-body text-sm font-medium text-text-link">
+                {targetRole.trim() ? 'Edit job description' : 'Add a job description (optional)'}
+              </span>
+              <svg className="w-4 h-4 text-text-secondary group-open:rotate-180 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </summary>
+            <div className="px-6 pb-6">
               <textarea
-                value={jobDescription || ''}
-                onChange={(e) => setJobDescription(e.target.value)}
+                value={targetRole}
+                onChange={(e) => handleTargetRoleChange(e.target.value)}
                 placeholder="Paste job description here..."
-                rows={8}
-                className="font-body w-full px-3 py-2 border border-border-hairline rounded-lg focus:ring-2 focus:ring-accent-tertiary focus:border-transparent resize-none text-sm mb-4 bg-bg-main text-text-primary"
+                rows={4}
+                className="font-body w-full px-3 py-2 border border-border-hairline rounded-lg focus:ring-2 focus:ring-accent-tertiary focus:border-transparent resize-none text-sm bg-bg-main text-text-primary"
               />
-
               <div
                 onDragOver={handleJobDragOver}
                 onDragLeave={handleJobDragLeave}
                 onDrop={handleJobDrop}
-                className={`border-2 border-dashed rounded-lg p-4 text-center transition-all mb-4 ${
+                className={`mt-2 border-2 border-dashed rounded-lg px-4 py-2 text-center transition-all ${
                   isDraggingJob
                     ? 'border-accent-tertiary bg-accent-secondary/20'
-                    : 'border-border-hairline bg-bg-main'
+                    : 'border-border-hairline'
                 }`}
               >
                 <input
@@ -757,152 +660,132 @@ function CVEditorContent() {
                 />
                 <label
                   htmlFor="job-upload"
-                  className={`font-body cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-accent-tertiary text-text-on-tertiary rounded-lg text-sm font-semibold hover:opacity-90 transition ${
+                  className={`font-body cursor-pointer text-xs text-text-link hover:text-text-cta font-medium ${
                     uploadingJob ? 'opacity-50 cursor-not-allowed' : ''
                   }`}
                 >
-                  {uploadingJob ? 'Processing...' : '📎 Upload File'}
+                  {uploadingJob ? 'Processing...' : '📎 or upload a file'}
                 </label>
-                <p className="font-body mt-2 text-xs text-text-secondary">TXT, PDF, DOCX</p>
+              </div>
+            </div>
+          </details>
+        </div>
+
+        {/* Canvas: CV content always visible; analysis appears alongside it
+            the moment it's available, fresh or cached - no tab to default. */}
+        {!cvData ? (
+          <div className="bg-bg-surface rounded-lg shadow-lg overflow-hidden border border-border-hairline">
+            <div className="bg-accent-tertiary px-6 py-4">
+              <h2 className="font-display text-2xl font-bold text-text-on-tertiary">
+                {selectedCvId ? activeName : 'New CV'}
+              </h2>
+              <p className="font-body text-text-inverse/75 text-sm mt-1">Upload a CV to get started</p>
+            </div>
+            <div className="p-6">
+              {!selectedCvId && (
+                <input
+                  type="text"
+                  value={newCvName}
+                  onChange={(e) => setNewCvName(e.target.value)}
+                  placeholder='Name this CV (e.g. "Production Assistant")'
+                  className="font-body w-full mb-4 px-4 py-3 border-2 border-border-hairline rounded-lg text-text-primary bg-bg-main focus:outline-none focus:border-accent-tertiary"
+                />
+              )}
+              <div
+                onDragOver={handleCVDragOver}
+                onDragLeave={handleCVDragLeave}
+                onDrop={handleCVDrop}
+                className={`border-2 border-dashed rounded-lg p-8 text-center transition-all ${
+                  isDraggingCV
+                    ? 'border-accent-tertiary bg-accent-secondary/20 scale-105'
+                    : 'border-border-hairline bg-bg-main'
+                }`}
+              >
+                <input
+                  type="file"
+                  accept=".txt,.pdf,.docx"
+                  onChange={handleFileUpload}
+                  disabled={uploading}
+                  className="hidden"
+                  id="cv-upload"
+                />
+
+                <div className="mb-4">
+                  <svg
+                    className={`mx-auto h-12 w-12 ${isDraggingCV ? 'text-accent-tertiary' : 'text-text-secondary'}`}
+                    stroke="currentColor"
+                    fill="none"
+                    viewBox="0 0 48 48"
+                  >
+                    <path
+                      d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
+                      strokeWidth={2}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </div>
+
+                <label
+                  htmlFor="cv-upload"
+                  className={`font-body cursor-pointer inline-flex items-center gap-2 px-6 py-3 bg-cta-primary text-text-on-cta rounded-lg font-bold hover:opacity-90 transition ${
+                    uploading ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
+                >
+                  {uploading ? 'Processing...' : 'Choose File'}
+                </label>
+
+                <p className="font-body mt-4 text-sm text-text-secondary">or drag and drop</p>
+                <p className="font-body mt-1 text-xs text-text-secondary">TXT, PDF, DOCX &middot; up to 10MB</p>
               </div>
 
-              <button
-                onClick={handleAnalyze}
-                disabled={analyzing || !cvData}
-                className="font-body w-full px-6 py-3 bg-cta-primary text-text-on-cta rounded-lg font-bold hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {analyzing ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                    </svg>
-                    Analyzing...
-                  </span>
-                ) : !cvData ? (
-                  'Upload a CV first'
-                ) : (
-                  'Get Suggestions'
-                )}
-              </button>
+              {uploadError && (
+                <div className="mt-3 flex items-start gap-2 bg-cta-primary/10 border border-cta-primary/30 rounded-lg p-3">
+                  <span className="text-text-cta text-sm mt-0.5" aria-hidden="true">⚠</span>
+                  <p className="font-body text-sm text-text-cta">{uploadError}</p>
+                </div>
+              )}
             </div>
           </div>
         ) : (
-          <div className="space-y-6">
-
-            {/* Main Tab Navigation */}
-            <div className="bg-bg-surface rounded-lg shadow-lg overflow-hidden border border-border-hairline">
-              <div className="flex border-b border-border-hairline">
-                <button
-                  onClick={() => setMainTab('cv')}
-                  className={`font-body flex-1 px-6 py-4 text-sm font-medium transition ${
-                    mainTab === 'cv'
-                      ? 'border-b-2 border-accent-tertiary text-accent-tertiary bg-accent-secondary/15'
-                      : 'text-text-secondary hover:text-text-primary hover:bg-bg-main'
-                  }`}
-                >
-                  Your CV
-                </button>
-                <button
-                  onClick={() => setMainTab('analysis')}
-                  className={`font-body flex-1 px-6 py-4 text-sm font-medium transition ${
-                    mainTab === 'analysis'
-                      ? 'border-b-2 border-accent-tertiary text-accent-tertiary bg-accent-secondary/15'
-                      : 'text-text-secondary hover:text-text-primary hover:bg-bg-main'
-                  }`}
-                >
-                  Analysis & Improvements
-                </button>
-              </div>
-            </div>
-
-            {/* Tab Content */}
-            {mainTab === 'cv' && (
-            <div className="space-y-4">
-
-                {/* Collapsible Summary Header */}
-                <div className="bg-bg-surface rounded-lg shadow-lg overflow-hidden border border-border-hairline">
-                  <button
-                    onClick={() => setSummaryCollapsed(!summaryCollapsed)}
-                    className="w-full px-6 py-4 flex items-center justify-between hover:bg-bg-main transition"
+          <div className={`grid grid-cols-1 gap-6 ${analysis ? 'lg:grid-cols-5' : ''}`}>
+            {/* CV content - single reusable editable view, always present */}
+            <div className={analysis ? 'lg:col-span-2' : ''}>
+              <div className="bg-bg-surface rounded-lg shadow-lg overflow-hidden h-[600px] flex flex-col border border-border-hairline">
+                <div className="bg-accent-tertiary px-4 py-3 border-b border-border-hairline flex items-center justify-between">
+                  <h3 className="font-display font-bold text-text-on-tertiary">{activeName}</h3>
+                  <label
+                    htmlFor="cv-reupload"
+                    className={`font-body cursor-pointer text-sm text-text-inverse/75 hover:text-text-inverse font-medium ${
+                      uploading ? 'opacity-50 pointer-events-none' : ''
+                    }`}
                   >
-                    <div className="flex items-center gap-4">
-                      <div className="text-left">
-                        <h2 className="font-display text-xl font-bold text-text-primary">Overall Score</h2>
-                        <p className="font-body text-sm text-text-secondary mt-0.5">
-                          {summaryCollapsed ? 'Click to expand' : 'Click to collapse'}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <div className="text-right">
-                        {analysis.overallScore >= 70 ? (
-                          <>
-                            <div className="font-display text-3xl font-bold text-accent-tertiary">{analysis.overallScore}</div>
-                            <p className="font-body text-xs text-accent-tertiary font-semibold">
-                              {getScoreMessage(analysis.overallScore)}
-                            </p>
-                          </>
-                        ) : (
-                          <>
-                            <div className="font-display text-xl font-bold text-accent-tertiary">
-                              {getScoreTier(analysis.overallScore)}
-                            </div>
-                            <p className="font-body text-xs text-text-secondary">Keep improving!</p>
-                          </>
-                        )}
-                      </div>
-                      <svg
-                        className={`w-6 h-6 text-text-secondary transition-transform ${summaryCollapsed ? '' : 'rotate-180'}`}
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </div>
-                  </button>
-
-                  {!summaryCollapsed && (
-                    <div className="px-6 pb-6 border-t border-border-hairline">
-                      <div className="pt-4 space-y-3">
-                        {analysis.priorityImprovements && analysis.priorityImprovements.slice(0, 3).map((improvement, idx) => (
-                          <div key={idx} className="flex items-start gap-3 p-3 bg-accent-secondary/15 rounded-lg">
-                            <div className="flex-shrink-0 w-6 h-6 rounded-full bg-accent-tertiary text-text-on-tertiary flex items-center justify-center text-sm font-bold">
-                              {idx + 1}
-                            </div>
-                            <div className="flex-1">
-                              <p className="font-body text-sm font-semibold text-text-primary">{improvement.section}</p>
-                              <p className="font-body text-sm text-text-secondary mt-1">{improvement.change}</p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* CV Editor */}
-                <div className="bg-bg-surface rounded-lg shadow-lg overflow-hidden h-[600px] flex flex-col border border-border-hairline">
-                  <div className="bg-accent-tertiary px-4 py-3 border-b border-border-hairline flex items-center justify-between">
-                    <h3 className="font-display font-bold text-text-on-tertiary">{activeName}</h3>
-                    <button className="font-body text-sm text-text-inverse/75 hover:text-text-inverse font-medium">
-                      Download
-                    </button>
-                  </div>
-                  <textarea
-                    value={editableCVText}
-                    onChange={(e) => setEditableCVText(e.target.value)}
-                    className="flex-1 p-6 font-mono text-sm leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-accent-tertiary focus:ring-inset bg-bg-surface text-text-primary"
-                    placeholder="Your CV content will appear here..."
+                    {uploading ? 'Processing...' : '↻ Re-upload'}
+                  </label>
+                  <input
+                    type="file"
+                    accept=".txt,.pdf,.docx"
+                    onChange={handleFileUpload}
+                    disabled={uploading}
+                    className="hidden"
+                    id="cv-reupload"
                   />
                 </div>
+                <textarea
+                  value={editableCVText}
+                  onChange={(e) => setEditableCVText(e.target.value)}
+                  className="flex-1 p-6 font-mono text-sm leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-accent-tertiary focus:ring-inset bg-bg-surface text-text-primary"
+                  placeholder="Your CV content will appear here..."
+                />
+              </div>
+              {uploadError && (
+                <p className="font-body text-sm text-text-cta mt-2">{uploadError}</p>
+              )}
             </div>
-            )}
 
-            {/* Analysis Tab */}
-            {mainTab === 'analysis' && (
-              <div className="bg-bg-surface rounded-lg shadow-lg border border-border-hairline">
+            {/* Analysis - appears the moment it exists, fresh or cached */}
+            {analysis && (
+              <div className="lg:col-span-3 bg-bg-surface rounded-lg shadow-lg border border-border-hairline">
                 {/* Header */}
                 <div className="border-b border-border-hairline px-8 py-6">
                   <div className="flex items-center justify-between">
@@ -1127,20 +1010,8 @@ function CVEditorContent() {
                   }
                   return null;
                 })()}
-
-                {/* Footer */}
-                <div className="px-8 py-6 bg-bg-main border-t border-border-hairline flex justify-between items-center">
-                  <button
-                    onClick={() => setMainTab('cv')}
-                    className="font-body px-6 py-3 text-text-link hover:text-text-cta font-semibold transition"
-                  >
-                    ← Back to CV
-                  </button>
-                  <p className="font-body text-sm text-text-secondary">Make changes one at a time for best results</p>
-                </div>
               </div>
             )}
-
           </div>
         )}
 

@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
           role: 'user',
           content: `You are an expert film and theatre industry career coach. Analyze this CV and provide detailed, actionable improvement suggestions to help this candidate build confidence and land their first professional role.
 
-Target Role: ${targetRole || 'Film/Theatre Production'}
+Target Role: ${targetRole || 'No specific role given - assess generally against the film and theatre industry, covering a broad range of entry-level production, technical, and administrative roles.'}
 
 Current CV Data:
 ${JSON.stringify(cvData, null, 2)}
