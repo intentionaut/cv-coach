@@ -117,7 +117,9 @@ Return ONLY the JSON object, no additional text.`
 
     const analysis = JSON.parse(jsonText);
 
-    // Store analysis in database
+    // Store the full analysis (not just priorityImprovements) so a returning
+    // user's session can be rebuilt from the database without another Claude
+    // call - re-analyzing on every login was burning API cost for no reason.
     await db.query(
       `INSERT INTO coaching_recommendations (
         user_id, type, priority, title, description, action_items, created_at
@@ -128,7 +130,7 @@ Return ONLY the JSON object, no additional text.`
         'high',
         `CV Analysis for ${targetRole || 'Film/Theatre'}`,
         `Overall Score: ${analysis.overallScore}/100`,
-        JSON.stringify(analysis.priorityImprovements || [])
+        JSON.stringify(analysis)
       ]
     );
 

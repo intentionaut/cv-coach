@@ -209,29 +209,25 @@ function CVEditorContent() {
         if (response.ok) {
           const data = await response.json();
           if (data.exists && data.cv) {
-            // Set CV data
+            // Set CV data - also mark as the master CV so the upload
+            // screen doesn't show again for a user who's already uploaded.
             setCvData(data.cv);
+            setMasterCV(data.cv);
 
             // Generate editable text from CV data
             const cvText = generateCVText(data.cv);
             setEditableCVText(cvText);
             setRawCVText(cvText);
 
-            // If there's existing analysis, load it
+            // If there's existing analysis, load it from the cached copy -
+            // no need to spend another Claude call re-analyzing a CV we've
+            // already scored.
             if (data.analysis && data.analysis.priorityImprovements) {
-              // We need to reconstruct the full analysis object
-              // For now, we'll just trigger a fresh analysis
-              // Future: store full analysis in database
-              const analyzeResponse = await fetch('/api/cv/analyze', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ cvData: data.cv })
-              });
-
-              if (analyzeResponse.ok) {
-                const analyzeData = await analyzeResponse.json();
-                setAnalysis(analyzeData.analysis);
-              }
+              setAnalysis(data.analysis);
+              setEditableCVText(cvDataToText(data.cv));
+              // Land on the analysis tab instead of the CV tab, since
+              // this user has already been through the upload flow.
+              setMainTab('analysis');
             }
           }
         }

@@ -24,9 +24,12 @@ export async function GET(req: NextRequest) {
 
     const cvData = result.rows[0];
 
-    // Get latest coaching recommendations (analysis)
+    // Get latest coaching recommendations (analysis) - action_items holds
+    // the full analysis object, not just priorityImprovements, so a
+    // returning user's analysis view can be rebuilt without another
+    // Claude call.
     const analysisResult = await db.query(
-      `SELECT action_items, description, created_at
+      `SELECT action_items, created_at
        FROM coaching_recommendations
        WHERE user_id = $1 AND type = 'cv_analysis'
        ORDER BY created_at DESC
@@ -37,17 +40,16 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       exists: true,
       cv: {
-        contact: JSON.parse(cvData.personal_info || '{}'),
+        contact: cvData.personal_info || {},
         summary: cvData.summary || '',
-        experience: JSON.parse(cvData.experience || '[]'),
-        education: JSON.parse(cvData.education || '[]'),
-        skills: JSON.parse(cvData.skills || '[]'),
-        projects: JSON.parse(cvData.projects || '[]'),
+        experience: cvData.experience || [],
+        education: cvData.education || [],
+        skills: cvData.skills || [],
+        projects: cvData.projects || [],
         updatedAt: cvData.updated_at
       },
       analysis: analysisResult.rows.length > 0 ? {
-        priorityImprovements: JSON.parse(analysisResult.rows[0].action_items || '[]'),
-        score: analysisResult.rows[0].description?.match(/\d+/)?.[0] || null,
+        ...(analysisResult.rows[0].action_items || {}),
         createdAt: analysisResult.rows[0].created_at
       } : null
     });
