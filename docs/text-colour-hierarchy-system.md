@@ -327,13 +327,10 @@ Each typographic role below specifies its **default token**, and any **state var
 
 ## 10. Brand assets
 
-**Added 2026-08-20.** Out of scope for the text/colour audit above, but recorded here as the canonical reference for the Friday wordmark icon until a dedicated brand-assets doc exists.
+**Added 2026-08-20. Updated 2026-08-22:** the wordmark icon was redesigned (new "F" mark) and the SVG variant was retired — both in-app usage and the favicon now come from a single PNG source. Recorded here as the canonical reference until a dedicated brand-assets doc exists.
 
 | Asset | File | Background | Use |
 |---|---|---|---|
-| Logo (SVG, vector) | `/public/friday-logo.svg` | None (no background in the file) | **In-app header lockups** — the icon-plus-wordmark next to "Friday" on `/`, `/dashboard`, `/pricing`. Preferred over the PNGs for any in-app placement: scales cleanly at any size, smaller file, fill colours match design tokens exactly (`#E07A5F` = `cta-primary`). |
-| Logo (opaque PNG) | `/public/friday-logo.png` | Cream (`bg-main`/`bg-surface`-matched, baked into the PNG) | **Favicon source only** (`/app/icon.png` is a copy of this file). Not used in-page — the SVG replaced it there. |
-| Logo (transparent PNG) | `/public/friday-logo-transparent.png` | None (alpha channel) | Fallback raster option for anywhere an SVG can't be used (e.g. `og:image`, email templates) — otherwise superseded by the SVG for in-app use. |
-| Favicon | `/app/icon.png` | Cream (same source as the opaque PNG) | Browser tab icon, via Next.js's `app/icon.png` file convention — no manual `<link>` tag needed. |
+| Logo (PNG) | `/public/friday-logo.png` | Transparent | **In-app header lockups** — the icon next to "Friday" on `/`, `/dashboard`, `/pricing`. Also the favicon source (`/app/icon.png` is a copy of this file, via Next.js's `app/icon.png` file convention — no manual `<link>` tag needed). |
 
-Both PNGs are 400×400 source files; the SVG is a 400×400 viewBox, infinitely scalable. Current in-app usage is a small (24–28px) icon-plus-wordmark lockup next to the "Friday" text heading — see `app/page.tsx`, `app/dashboard/page.tsx`, and `app/pricing/PricingContent.tsx`, all using the SVG. The favicon intentionally stays on the opaque PNG (colour background wanted for browser-tab visibility); the SVG is for in-page placements only.
+Current in-app usage is a small (24–31px) icon-plus-wordmark lockup next to the "Friday" text heading — see `app/page.tsx`, `app/dashboard/page.tsx`, and `app/pricing/PricingContent.tsx`. There is no SVG or separate transparent-PNG variant anymore; both were removed when the logo was replaced. A vector (SVG) source would be worth commissioning if the mark needs to render larger than its current small icon usage — the PNG will show compression artifacts scaled much past ~64px.
