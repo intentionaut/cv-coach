@@ -5,13 +5,24 @@ import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { REUSABLE_QUESTIONS } from '@/lib/data/cover-letter-questions';
 
+type ApplicationStatus = 'draft' | 'applied' | 'interviewing' | 'offer' | 'rejected';
+
 interface LetterListItem {
   id: string;
   companyName: string;
   jobTitle: string;
+  status: ApplicationStatus;
   cvName: string;
   updatedAt: string;
 }
+
+const STATUS_LABELS: Record<ApplicationStatus, string> = {
+  draft: 'Draft',
+  applied: 'Applied',
+  interviewing: 'Interviewing',
+  offer: 'Offer',
+  rejected: 'Rejected'
+};
 
 interface CvOption {
   id: string;
@@ -60,6 +71,9 @@ function CoverLettersContent() {
   const [jobTitle, setJobTitle] = useState('');
   const [jobDescription, setJobDescription] = useState('');
   const [content, setContent] = useState('');
+  const [letterStatus, setLetterStatus] = useState<ApplicationStatus>('draft');
+  const [letterAppliedAt, setLetterAppliedAt] = useState<string | null>(null);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
 
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [reviewing, setReviewing] = useState(false);
@@ -88,6 +102,8 @@ function CoverLettersContent() {
     setJobDescription('');
     setContent('');
     setFeedback(null);
+    setLetterStatus('draft');
+    setLetterAppliedAt(null);
   };
 
   const startNewLetter = async (presetCvId?: string) => {
@@ -134,6 +150,8 @@ function CoverLettersContent() {
       setJobTitle(data.jobTitle || '');
       setJobDescription(data.jobDescription || '');
       setContent(data.content || '');
+      setLetterStatus(data.status || 'draft');
+      setLetterAppliedAt(data.appliedAt || null);
     } catch (error) {
       console.error('Failed to load cover letter:', error);
     }
@@ -272,6 +290,32 @@ function CoverLettersContent() {
     }
   };
 
+  // Captures that the user actually applied, and lets status be updated on
+  // revisit ("any updates since you applied?") - applied_at is stamped
+  // server-side the first time only, so it stays put across later updates.
+  const handleStatusChange = async (newStatus: ApplicationStatus) => {
+    if (!selectedLetterId) return;
+    setUpdatingStatus(true);
+    try {
+      const response = await fetch(`/api/cover-letters/${selectedLetterId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus })
+      });
+      if (response.ok) {
+        setLetterStatus(newStatus);
+        if (newStatus === 'applied' && !letterAppliedAt) {
+          setLetterAppliedAt(new Date().toISOString());
+        }
+        setLetters(prev => prev.map(l => (l.id === selectedLetterId ? { ...l, status: newStatus } : l)));
+      }
+    } catch (error) {
+      console.error('Failed to update status:', error);
+    } finally {
+      setUpdatingStatus(false);
+    }
+  };
+
   const pencilIcon = (
     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -337,6 +381,7 @@ function CoverLettersContent() {
                               {letter.companyName ? `${letter.companyName} — ${letter.jobTitle}` : letter.jobTitle}
                             </p>
                             <p className="text-xs text-text-secondary mt-0.5">
+                              {letter.status !== 'draft' ? `${STATUS_LABELS[letter.status]} · ` : ''}
                               {letter.cvName} · {formatRelativeTime(letter.updatedAt)}
                             </p>
                           </div>
@@ -518,13 +563,59 @@ function CoverLettersContent() {
                       placeholder="Your draft will appear here..."
                     />
                   </div>
-                  <button
-                    onClick={handleReview}
-                    disabled={reviewing || !content.trim()}
-                    className="font-body mt-4 px-6 py-3 bg-bg-surface border-2 border-accent-tertiary text-accent-tertiary rounded-lg font-bold hover:bg-accent-secondary/15 transition disabled:opacity-50"
-                  >
-                    {reviewing ? 'Reviewing...' : 'Get Feedback'}
-                  </button>
+                  <div className="mt-4 flex items-center gap-3 flex-wrap">
+                    <button
+                      onClick={handleReview}
+                      disabled={reviewing || !content.trim()}
+                      className="font-body px-6 py-3 bg-bg-surface border-2 border-accent-tertiary text-accent-tertiary rounded-lg font-bold hover:bg-accent-secondary/15 transition disabled:opacity-50"
+                    >
+                      {reviewing ? 'Reviewing...' : 'Get Feedback'}
+                    </button>
+                  </div>
+
+                  {/* Stage 4 of the flow: capture that they actually applied,
+                      then let them log what happened if they revisit later -
+                      applied_at only gets stamped the first time. */}
+                  <div className="mt-4 bg-bg-surface rounded-lg shadow-lg border border-border-hairline p-6">
+                    {letterStatus === 'draft' ? (
+                      <div className="flex items-center justify-between gap-3 flex-wrap">
+                        <p className="font-body text-sm text-text-secondary">Sent this one off yet?</p>
+                        <button
+                          onClick={() => handleStatusChange('applied')}
+                          disabled={updatingStatus || !content.trim()}
+                          className="font-body px-6 py-3 bg-cta-primary text-text-on-cta rounded-lg font-bold hover:opacity-90 transition disabled:opacity-50"
+                        >
+                          I Applied
+                        </button>
+                      </div>
+                    ) : (
+                      <div>
+                        <div className="flex items-center justify-between gap-3 flex-wrap mb-3">
+                          <p className="font-body text-sm text-text-primary font-semibold">
+                            {STATUS_LABELS[letterStatus]}
+                            {letterAppliedAt && (
+                              <span className="font-normal text-text-secondary"> · applied {formatRelativeTime(letterAppliedAt)}</span>
+                            )}
+                          </p>
+                        </div>
+                        <p className="font-body text-xs text-text-secondary mb-2">Any updates?</p>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {(['interviewing', 'offer', 'rejected'] as ApplicationStatus[])
+                            .filter(s => s !== letterStatus)
+                            .map(s => (
+                              <button
+                                key={s}
+                                onClick={() => handleStatusChange(s)}
+                                disabled={updatingStatus}
+                                className="font-body px-3 py-1.5 text-xs font-semibold border border-border-hairline rounded-lg text-text-secondary hover:border-accent-tertiary hover:text-accent-tertiary transition disabled:opacity-50"
+                              >
+                                {STATUS_LABELS[s]}
+                              </button>
+                            ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 <div className="lg:col-span-2">

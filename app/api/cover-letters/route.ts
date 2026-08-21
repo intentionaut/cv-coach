@@ -21,7 +21,7 @@ export async function GET() {
     }
 
     const result = await db.query(
-      `SELECT cl.id, cl.company_name, cl.job_title, cl.updated_at, cd.name AS cv_name
+      `SELECT cl.id, cl.company_name, cl.job_title, cl.status, cl.updated_at, cd.name AS cv_name
        FROM cover_letters cl
        JOIN cv_data cd ON cd.id = cl.cv_id
        WHERE cl.user_id = $1
@@ -34,6 +34,7 @@ export async function GET() {
         id: row.id,
         companyName: row.company_name || '',
         jobTitle: row.job_title,
+        status: row.status,
         cvName: row.cv_name,
         updatedAt: row.updated_at
       }))

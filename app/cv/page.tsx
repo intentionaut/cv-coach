@@ -535,9 +535,21 @@ function CVEditorContent() {
         {/* Header */}
         <div className="mb-6">
           <h1 className="font-display text-4xl font-bold text-text-primary mb-2">CV Editor</h1>
-          <p className="font-body text-text-secondary">
+          <p className="font-body text-text-secondary mb-3">
             Build a CV for each type of role you&apos;re going for — your experience is reusable, the framing isn&apos;t.
           </p>
+          {/* Sets expectations for the full journey up front, not just this
+              page - the cover letter step below only unlocks once you've
+              actually applied feedback here. */}
+          <div className="font-body text-sm text-text-secondary flex items-center flex-wrap gap-x-2 gap-y-1">
+            <span className="font-bold text-text-primary">1. Upload</span>
+            <span aria-hidden="true">→</span>
+            <span className="font-bold text-text-primary">2. Edit &amp; Improve</span>
+            <span aria-hidden="true">→</span>
+            <span>3. Write a Cover Letter</span>
+            <span aria-hidden="true">→</span>
+            <span>4. Apply</span>
+          </div>
           <button
             onClick={() => router.push('/dashboard')}
             className="font-body text-text-link hover:text-text-cta font-medium mt-4"
@@ -881,17 +893,6 @@ function CVEditorContent() {
               {uploadError && (
                 <p className="font-body text-sm text-text-cta mt-2">{uploadError}</p>
               )}
-              {/* Next step in the linear CV -> cover letter -> interview
-                  flow - not gated on analysis, since writing a cover letter
-                  doesn't require a finished/scored CV. */}
-              {selectedCvId && (
-                <button
-                  onClick={() => router.push(`/cover-letters?cvId=${selectedCvId}`)}
-                  className="font-body mt-3 text-sm text-text-link hover:text-text-cta font-medium"
-                >
-                  Write a Cover Letter for this CV →
-                </button>
-              )}
             </div>
 
             {/* Analysis - appears the moment it exists, fresh or cached */}
@@ -1189,13 +1190,28 @@ function CVEditorContent() {
                       ? `${completedImprovements.size}/${totalImprovements} changes applied. Made changes? Re-upload above for updated feedback, or re-analyze this draft as-is.`
                       : 'Made changes? Re-upload above for updated feedback, or re-analyze this draft as-is.'}
                   </p>
-                  <button
-                    onClick={() => handleAnalyze()}
-                    disabled={analyzing}
-                    className="font-body px-6 py-3 bg-bg-surface border-2 border-accent-tertiary text-accent-tertiary rounded-lg font-bold hover:bg-accent-secondary/15 transition disabled:opacity-50"
-                  >
-                    {analyzing ? 'Re-analyzing...' : 'Re-analyze'}
-                  </button>
+                  <div className="flex items-center gap-3 flex-wrap">
+                    {/* Cover letter unlocks once at least one improvement has
+                        actually been applied, not on first upload - it only
+                        makes sense once the CV reflects a real rewrite, not
+                        the raw first draft. Once unlocked it's the primary
+                        action here; Re-analyze steps back to secondary. */}
+                    {completedImprovements.size > 0 && selectedCvId && (
+                      <button
+                        onClick={() => router.push(`/cover-letters?cvId=${selectedCvId}`)}
+                        className="font-body px-6 py-3 bg-cta-primary text-text-on-cta rounded-lg font-bold hover:opacity-90 transition shadow-lg"
+                      >
+                        Write a Cover Letter →
+                      </button>
+                    )}
+                    <button
+                      onClick={() => handleAnalyze()}
+                      disabled={analyzing}
+                      className="font-body px-6 py-3 bg-bg-surface border-2 border-accent-tertiary text-accent-tertiary rounded-lg font-bold hover:bg-accent-secondary/15 transition disabled:opacity-50"
+                    >
+                      {analyzing ? 'Re-analyzing...' : 'Re-analyze'}
+                    </button>
+                  </div>
                 </div>
 
                 {/* Nice acknowledgment when the checklist is fully worked

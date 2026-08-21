@@ -16,7 +16,7 @@ export async function GET(
     const { id } = await params;
 
     const result = await db.query(
-      `SELECT id, cv_id, company_name, job_title, job_description, content, updated_at
+      `SELECT id, cv_id, company_name, job_title, job_description, content, status, applied_at, updated_at
        FROM cover_letters WHERE id = $1 AND user_id = $2`,
       [id, session.user.id]
     );
@@ -32,6 +32,8 @@ export async function GET(
       jobTitle: letter.job_title,
       jobDescription: letter.job_description || '',
       content: letter.content || '',
+      status: letter.status,
+      appliedAt: letter.applied_at,
       updatedAt: letter.updated_at
     });
   } catch (error: any) {
@@ -58,13 +60,19 @@ export async function PATCH(
     }
 
     const { id } = await params;
-    const { companyName, jobTitle, jobDescription, content } = await req.json();
+    const { companyName, jobTitle, jobDescription, content, status } = await req.json();
+
+    const validStatuses = ['draft', 'applied', 'interviewing', 'offer', 'rejected'];
+    if (status !== undefined && !validStatuses.includes(status)) {
+      return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
+    }
 
     if (
       companyName === undefined &&
       jobTitle === undefined &&
       jobDescription === undefined &&
-      content === undefined
+      content === undefined &&
+      status === undefined
     ) {
       return NextResponse.json({ error: 'Nothing to update' }, { status: 400 });
     }
@@ -86,6 +94,15 @@ export async function PATCH(
     if (content !== undefined) {
       sets.push(`content = $${sets.length + 1}`);
       values.push(content);
+    }
+    if (status !== undefined) {
+      sets.push(`status = $${sets.length + 1}`);
+      values.push(status);
+      // Only stamped the first time - keeps the original "applied" date
+      // even as status moves on to interviewing/offer/rejected later.
+      if (status === 'applied') {
+        sets.push('applied_at = COALESCE(applied_at, NOW())');
+      }
     }
     sets.push('updated_at = NOW()');
 
