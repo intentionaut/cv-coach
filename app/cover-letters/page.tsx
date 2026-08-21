@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { REUSABLE_QUESTIONS } from '@/lib/data/cover-letter-questions';
 
 interface LetterListItem {
@@ -36,6 +36,7 @@ const formatRelativeTime = (iso: string): string => {
 
 function CoverLettersContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [letters, setLetters] = useState<LetterListItem[]>([]);
   const [loadingLetters, setLoadingLetters] = useState(true);
@@ -89,14 +90,16 @@ function CoverLettersContent() {
     setFeedback(null);
   };
 
-  const startNewLetter = async () => {
+  const startNewLetter = async (presetCvId?: string) => {
     setSelectedLetterId(null);
     setCreatingNew(true);
     resetEditor();
     setAnswerDrafts({});
     setEditingAnswerKey(null);
     setGenerateError(null);
-    if (cvs.length > 0 && !newCvId) {
+    if (presetCvId) {
+      setNewCvId(presetCvId);
+    } else if (cvs.length > 0 && !newCvId) {
       setNewCvId(cvs[0].id);
     }
   };
@@ -140,7 +143,13 @@ function CoverLettersContent() {
     (async () => {
       await loadCvOptions();
       const list = await loadLetterList();
-      if (list.length > 0) {
+      // Arriving from the CV page with a specific CV in mind ("Write a
+      // Cover Letter for this CV") should always land in the new-letter
+      // flow for that CV, not on whatever letter was most recently touched.
+      const cvIdParam = searchParams.get('cvId');
+      if (cvIdParam) {
+        await startNewLetter(cvIdParam);
+      } else if (list.length > 0) {
         await selectLetter(list[0].id);
       } else {
         await startNewLetter();
@@ -347,7 +356,7 @@ function CoverLettersContent() {
                 })}
 
                 <button
-                  onClick={startNewLetter}
+                  onClick={() => startNewLetter()}
                   className={`font-body min-w-[140px] px-4 py-3 rounded-lg border-2 border-dashed text-sm font-semibold transition ${
                     creatingNew
                       ? 'border-accent-tertiary text-accent-tertiary'
@@ -565,7 +574,9 @@ function CoverLettersContent() {
 export default function CoverLettersPage() {
   return (
     <ProtectedRoute>
-      <CoverLettersContent />
+      <Suspense fallback={<div className="min-h-screen bg-bg-main" />}>
+        <CoverLettersContent />
+      </Suspense>
     </ProtectedRoute>
   );
 }

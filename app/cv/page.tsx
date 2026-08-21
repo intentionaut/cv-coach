@@ -881,6 +881,17 @@ function CVEditorContent() {
               {uploadError && (
                 <p className="font-body text-sm text-text-cta mt-2">{uploadError}</p>
               )}
+              {/* Next step in the linear CV -> cover letter -> interview
+                  flow - not gated on analysis, since writing a cover letter
+                  doesn't require a finished/scored CV. */}
+              {selectedCvId && (
+                <button
+                  onClick={() => router.push(`/cover-letters?cvId=${selectedCvId}`)}
+                  className="font-body mt-3 text-sm text-text-link hover:text-text-cta font-medium"
+                >
+                  Write a Cover Letter for this CV →
+                </button>
+              )}
             </div>
 
             {/* Analysis - appears the moment it exists, fresh or cached */}
