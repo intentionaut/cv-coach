@@ -59,11 +59,13 @@ interface Analysis {
     section: string;
     item: string;
     questions: string[];
+    exampleAnswers?: string[];
   }>;
   formattingTips?: string[];
   languageUpgrades: Array<{
     current: string;
-    suggested: string;
+    principle: string;
+    example: string;
     reason: string;
   }>;
 }
@@ -842,6 +844,22 @@ function CVEditorContent() {
                   </div>
                 </div>
 
+                {/* What's already working - leads with strengths, not just
+                    problems to fix, before anything else. */}
+                {analysis.confidenceBoosters && analysis.confidenceBoosters.length > 0 && (
+                  <div className="px-8 py-6 bg-success/10 border-b border-border-hairline">
+                    <h3 className="font-display text-lg font-bold text-text-primary mb-3">What&apos;s Already Working</h3>
+                    <ul className="space-y-2">
+                      {analysis.confidenceBoosters.map((boost, idx) => (
+                        <li key={idx} className="font-body text-sm text-text-secondary flex items-start gap-2">
+                          <span className="text-success shrink-0">✓</span>
+                          <span>{boost}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
                 {/* Priority Improvements - Top 3 Only */}
                 <div className="px-8 py-6 bg-accent-secondary/15 border-b border-border-hairline">
                   <div className="flex items-center justify-between mb-4">
@@ -1005,6 +1023,79 @@ function CVEditorContent() {
                               </div>
                             </div>
                           )}
+                        </div>
+                      </details>
+                    )}
+
+                    {analysis.quantificationPrompts && analysis.quantificationPrompts.length > 0 && (
+                      <details className="group">
+                        <summary className="cursor-pointer list-none">
+                          <div className="flex items-center justify-between p-4 hover:bg-bg-main rounded-lg transition">
+                            <div className="flex items-center gap-3">
+                              <span className="text-2xl">🔢</span>
+                              <div>
+                                <h4 className="font-display font-bold text-text-primary">Add the Numbers</h4>
+                                <p className="font-body text-sm text-text-secondary">{analysis.quantificationPrompts.length} prompts to help you recall specifics</p>
+                              </div>
+                            </div>
+                            <svg className="w-5 h-5 text-text-secondary group-open:rotate-180 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                          </div>
+                        </summary>
+                        <div className="px-4 pb-4 space-y-4">
+                          {analysis.quantificationPrompts.map((prompt, idx) => (
+                            <div key={idx} className="border-l-2 border-border-hairline pl-3">
+                              <p className="font-body text-sm font-medium text-text-primary mb-1">{prompt.item}</p>
+                              <ul className="space-y-1 mb-2">
+                                {prompt.questions.map((q, qIdx) => (
+                                  <li key={qIdx} className="font-body text-sm text-text-secondary">{q}</li>
+                                ))}
+                              </ul>
+                              {prompt.exampleAnswers && prompt.exampleAnswers.length > 0 && (
+                                <div className="mt-2">
+                                  <p className="font-body text-xs uppercase tracking-wide text-text-disabled mb-1">For inspiration, not to copy - examples from a different production:</p>
+                                  <ul className="space-y-1">
+                                    {prompt.exampleAnswers.map((ex, exIdx) => (
+                                      <li key={exIdx} className="font-body text-sm text-text-secondary italic">&ldquo;{ex}&rdquo;</li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </details>
+                    )}
+
+                    {analysis.languageUpgrades && analysis.languageUpgrades.length > 0 && (
+                      <details className="group">
+                        <summary className="cursor-pointer list-none">
+                          <div className="flex items-center justify-between p-4 hover:bg-bg-main rounded-lg transition">
+                            <div className="flex items-center gap-3">
+                              <span className="text-2xl">🗣️</span>
+                              <div>
+                                <h4 className="font-display font-bold text-text-primary">Language &amp; Voice</h4>
+                                <p className="font-body text-sm text-text-secondary">{analysis.languageUpgrades.length} lines worth rethinking in your own words</p>
+                              </div>
+                            </div>
+                            <svg className="w-5 h-5 text-text-secondary group-open:rotate-180 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                          </div>
+                        </summary>
+                        <div className="px-4 pb-4 space-y-4">
+                          {analysis.languageUpgrades.map((upgrade, idx) => (
+                            <div key={idx} className="border-l-2 border-border-hairline pl-3">
+                              <p className="font-body text-sm text-text-secondary mb-1">
+                                Your line: <span className="italic">&ldquo;{upgrade.current}&rdquo;</span>
+                              </p>
+                              <p className="font-body text-sm font-medium text-text-primary mb-1">{upgrade.principle}</p>
+                              <p className="font-body text-xs uppercase tracking-wide text-text-disabled mb-1">Example from a different production, for the pattern only:</p>
+                              <p className="font-body text-sm text-text-secondary italic mb-1">&ldquo;{upgrade.example}&rdquo;</p>
+                              <p className="font-body text-sm text-text-secondary">{upgrade.reason}</p>
+                            </div>
+                          ))}
                         </div>
                       </details>
                     )}

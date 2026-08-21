@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
       messages: [
         {
           role: 'user',
-          content: `You are an expert film and theatre industry career coach. Analyze this CV and provide detailed, actionable improvement suggestions to help this candidate build confidence and land their first professional role.
+          content: `You are an expert film and theatre industry career coach. Your job is not to rewrite this person's CV for them - it's to help them think through their own experience and learn to represent it well, so they leave this session better at self-advocacy, not just holding a better document.
 
 Target Role: ${targetRole || 'No specific role given - assess generally against the film and theatre industry, covering a broad range of entry-level production, technical, and administrative roles.'}
 
@@ -66,23 +66,32 @@ ${JSON.stringify(availableSkills, null, 2)}
 
 IMPORTANT: First identify any MISSING essential information (email, phone, location, professional summary) and include tasks to add these in your recommendations.
 
+COACHING PRINCIPLES - apply these throughout every field below:
+
+1. **Score for voice as well as ATS.** Don't just reward keyword coverage and standard formatting. A CV that's parseable but reads like generic boilerplate should score lower on summary/experience than one that's a little rougher but sounds like an actual specific person with real motivations. When you critique, name both dimensions - is this legible to a scanner AND does it sound like someone wrote it?
+
+2. **Never write in AI-tell language, and flag it when the candidate has.** Avoid words/patterns like "spearheaded," "leveraged," "utilized," "dynamic," "results-driven," "passionate about," "seamlessly," "robust," "self-starter," or stacking em-dashes for emphasis - in anything you write. If the CV already contains this kind of generic corporate-bot phrasing, call it out as something to soften into their own words, not just something to keep.
+
+3. **Coach with questions, not finished answers.** For "improvements" text and "priorityImprovements[].change", point at what's vague, missing, or generic and ask the specific question that would help them fill it in - don't hand over a drop-in replacement sentence. Bad: "Change 'helped with lighting' to 'Assisted the gaffer in rigging and operating lighting equipment for a 15-person crew.'" Good: "This line says 'helped with lighting' but not what you actually did - were you rigging, operating, or assisting the gaffer directly? Do you remember the crew size or how many shoot days?" The candidate should leave knowing how to think about their own experience, not just what string to paste in.
+
+4. **Any illustrative example must come from an adjacent, different scenario - never their literal answer.** When you demonstrate a technique (in languageUpgrades.example or quantificationPrompts.exampleAnswers), invent a short example from a different specific role or production than the one in this CV or target role - close enough to be useful as a pattern, different enough that it cannot be copy-pasted into their CV as-is. This is a hard constraint, not a suggestion.
+
 Please analyze the CV and provide:
 
-1. **Overall Score** (0-100): Rate the CV's effectiveness for film/theatre industry roles
-2. **Confidence Boosters**: Identify 3-5 strong points the candidate should feel proud of
+1. **Overall Score** (0-100): Weigh both ATS-parseability and authentic personal voice
+2. **Confidence Boosters**: Identify 3-5 strong points the candidate should feel proud of - genuine, specific to their actual experience
 3. **Section-by-Section Analysis**:
-   - Summary/Objective: Score (0-100) and specific improvements
-   - Experience: Score (0-100) and specific improvements for each role
+   - Summary/Objective: Score (0-100) and specific improvements, framed per the coaching principles above
+   - Experience: Score (0-100) and specific improvements for each role, framed per the coaching principles above
    - Skills: Score (0-100), missing industry-relevant skills, suggestions for better presentation
    - Education: Score (0-100) and how to better highlight relevant coursework/projects
    - Projects: Score (0-100) and suggestions for better storytelling
 
-4. **Priority Improvements**: Top 3-5 changes that will have the biggest impact (MUST include any missing essential contact info or summary as high priority tasks)
-5. **Achievement Quantification Prompts**: Questions to help them add measurable details
-   - e.g., "What was the budget?" "How many crew members?" "What was the audience size?"
+4. **Priority Improvements**: Top 3-5 changes that will have the biggest impact (MUST include any missing essential contact info or summary as high priority tasks) - phrased as guiding questions per principle 3
+5. **Achievement Quantification Prompts**: For each, a question to help them recall a measurable detail (e.g. "What was the budget?" "How many crew members?"), PLUS 2-3 short exampleAnswers showing how such an answer might read, drawn from an adjacent production context per principle 4 - never their literal number, just enough to spark how to phrase it
 6. **Missing Skills**: Industry-relevant skills they should consider adding (from the skills database)
 7. **Formatting & Presentation**: Specific suggestions for visual improvements
-8. **Confidence Building**: Specific language changes to make accomplishments sound stronger without exaggerating
+8. **Language & Voice Coaching**: For notably weak or generic lines, quote the real line (current), name the underlying technique in one sentence (principle), and demonstrate it with an adjacent-scenario example (example) per principle 4 - plus a short reason grounded in sounding human, not just "stronger"
 
 Return a JSON object with this structure:
 {
@@ -99,11 +108,11 @@ Return a JSON object with this structure:
     { "priority": number, "section": "string", "change": "string", "impact": "string" }
   ],
   "quantificationPrompts": [
-    { "section": "string", "item": "string", "questions": ["string"] }
+    { "section": "string", "item": "string", "questions": ["string"], "exampleAnswers": ["string"] }
   ],
   "formattingTips": ["string"],
   "languageUpgrades": [
-    { "current": "string", "suggested": "string", "reason": "string" }
+    { "current": "string", "principle": "string", "example": "string", "reason": "string" }
   ]
 }
 
