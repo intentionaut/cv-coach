@@ -11,6 +11,11 @@ const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY || '',
 });
 
+// CV analysis can take well over Vercel's default function timeout - Claude
+// generates up to 8192 tokens here. Without this, the platform kills the
+// function before it finishes, with no error logged and the UI just hangs.
+export const maxDuration = 60;
+
 export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);

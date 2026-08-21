@@ -13,6 +13,12 @@ const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY || '',
 });
 
+// PDFs need two sequential Claude calls (text extraction, then structured
+// parsing) which can exceed Vercel's default function timeout. Without
+// this, the platform kills the function before it finishes, with no error
+// logged and the UI just hangs.
+export const maxDuration = 60;
+
 export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);

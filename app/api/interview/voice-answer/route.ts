@@ -13,6 +13,10 @@ const anthropic = new Anthropic({
 
 const deepgram = new DeepgramClient({ apiKey: process.env.DEEPGRAM_API_KEY! });
 
+// Guards against Vercel's default function timeout silently killing the
+// request before transcription + Claude finish, with no error logged.
+export const maxDuration = 60;
+
 export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);

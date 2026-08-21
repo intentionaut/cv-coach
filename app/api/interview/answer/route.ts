@@ -10,6 +10,10 @@ const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY || '',
 });
 
+// Guards against Vercel's default function timeout silently killing the
+// request before Claude responds, with no error logged.
+export const maxDuration = 60;
+
 // POST: Submit answer for a question
 export async function POST(req: NextRequest) {
   try {
