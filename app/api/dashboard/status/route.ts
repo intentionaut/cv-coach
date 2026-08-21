@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
 
     const userId = session.user.id;
 
-    const [cvResult, sessionsResult, skillsResult, userResult] = await Promise.all([
+    const [cvResult, sessionsResult, skillsResult, userResult, coverLettersResult] = await Promise.all([
       db.query(
         `SELECT COUNT(*)::int AS count, MAX(updated_at) AS latest FROM cv_data WHERE user_id = $1`,
         [userId]
@@ -32,6 +32,10 @@ export async function GET(req: NextRequest) {
       db.query(
         `SELECT getting_started_dismissed_at FROM users WHERE id = $1`,
         [userId]
+      ),
+      db.query(
+        `SELECT COUNT(*)::int AS count FROM cover_letters WHERE user_id = $1`,
+        [userId]
       )
     ]);
 
@@ -41,7 +45,8 @@ export async function GET(req: NextRequest) {
       interviewSessionCount: sessionsResult.rows[0]?.count || 0,
       latestInterviewAt: sessionsResult.rows[0]?.latest || null,
       skillsAssessedCount: skillsResult.rows[0]?.count || 0,
-      gettingStartedDismissed: !!userResult.rows[0]?.getting_started_dismissed_at
+      gettingStartedDismissed: !!userResult.rows[0]?.getting_started_dismissed_at,
+      coverLetterCount: coverLettersResult.rows[0]?.count || 0
     });
   } catch (error: any) {
     console.error('Dashboard status error:', error);

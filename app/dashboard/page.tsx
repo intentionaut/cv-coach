@@ -12,6 +12,7 @@ interface DashboardStatus {
   latestInterviewAt: string | null;
   skillsAssessedCount: number;
   gettingStartedDismissed: boolean;
+  coverLetterCount: number;
 }
 
 function DashboardContent() {
@@ -38,6 +39,7 @@ function DashboardContent() {
   const hasCv = (status?.cvCount ?? 0) > 0;
   const hasInterviewed = (status?.interviewSessionCount ?? 0) > 0;
   const hasSkillsAssessed = (status?.skillsAssessedCount ?? 0) > 0;
+  const hasCoverLetter = (status?.coverLetterCount ?? 0) > 0;
   const allStepsDone = status !== null && hasCv && hasInterviewed && hasSkillsAssessed;
   const showGettingStarted = status !== null && !status.gettingStartedDismissed && !allStepsDone;
 
@@ -109,6 +111,20 @@ function DashboardContent() {
             done={hasCv}
             actionLabel={hasCv ? 'Continue' : 'Get Started'}
             onClick={() => router.push('/cv')}
+          />
+
+          <ActionCard
+            title="Write a Cover Letter"
+            description={
+              hasCoverLetter
+                ? 'Write another, or refine one you already have'
+                : 'Answer a few questions once, reuse them for every letter after'
+            }
+            icon="✉️"
+            iconLabel="Envelope"
+            done={hasCoverLetter}
+            actionLabel={hasCoverLetter ? 'Continue' : 'Get Started'}
+            onClick={() => router.push('/cover-letters')}
           />
 
           <ActionCard
