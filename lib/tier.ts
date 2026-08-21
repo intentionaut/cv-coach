@@ -48,7 +48,7 @@ export function getTierLimits(tier: Tier): TierLimits {
  * cost; Starter and Pro use Sonnet.
  */
 export function getModelForTier(tier: Tier): string {
-  return tier === 'free' ? 'claude-haiku-4-5' : 'claude-sonnet-5';
+  return tier === 'free' ? 'claude-haiku-4-5-20251001' : 'claude-sonnet-5';
 }
 
 export function isValidTier(value: unknown): value is Tier {
