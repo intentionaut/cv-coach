@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import Anthropic from '@anthropic-ai/sdk';
 import mammoth from 'mammoth';
+import { PDFParse } from 'pdf-parse';
 import db from '@/lib/db/client';
 import { getUserTier } from '@/lib/auth';
 import { getModelForTier, getTierLimits } from '@/lib/tier';
@@ -43,14 +44,17 @@ export async function POST(req: NextRequest) {
     }
 
     // Re-uploading into an existing CV must actually belong to this user.
+    // Also fetch its stored raw_text as the baseline for change detection.
+    let previousRawText: string | null = null;
     if (cvId) {
-      const owns = await db.query(`SELECT id FROM cv_data WHERE id = $1 AND user_id = $2`, [
+      const owns = await db.query(`SELECT raw_text FROM cv_data WHERE id = $1 AND user_id = $2`, [
         cvId,
         session.user.id
       ]);
       if (owns.rows.length === 0) {
         return NextResponse.json({ error: 'CV not found' }, { status: 404 });
       }
+      previousRawText = owns.rows[0].raw_text;
     }
 
     // Read file content
@@ -68,34 +72,16 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // For PDFs, first extract text verbatim
+    // All extraction happens locally now - no Claude call needed just to
+    // read a file's text, which also means we can compare against the
+    // previous upload before spending anything on Claude.
     if (isPDF) {
-      const extractMessage = await anthropic.messages.create({
-        model,
-        max_tokens: 4096,
-        messages: [
-          {
-            role: 'user',
-            content: [
-              {
-                type: 'document',
-                source: {
-                  type: 'base64',
-                  media_type: 'application/pdf',
-                  data: Buffer.from(buffer).toString('base64'),
-                },
-              },
-              {
-                type: 'text',
-                text: 'Extract ALL text from this PDF exactly as written. Return ONLY the extracted text with no additional commentary or formatting.',
-              },
-            ],
-          },
-        ],
-      });
-      const extractedText = extractMessage.content.find(block => block.type === 'text');
-      if (extractedText && extractedText.type === 'text') {
-        content = extractedText.text;
+      const parser = new PDFParse({ data: new Uint8Array(buffer) });
+      try {
+        const result = await parser.getText({ pageJoiner: '' });
+        content = result.text;
+      } finally {
+        await parser.destroy();
       }
     } else if (isDocx) {
       // .docx files are ZIP archives - must be parsed, not read as raw UTF-8 text
@@ -125,6 +111,14 @@ export async function POST(req: NextRequest) {
         },
         { status: 400 }
       );
+    }
+
+    // Re-upload with no real change: skip the Claude structuring call
+    // entirely rather than silently re-running (and re-billing) an
+    // identical CV.
+    const normalize = (text: string) => text.replace(/\s+/g, ' ').trim();
+    if (cvId && previousRawText !== null && normalize(content) === normalize(previousRawText)) {
+      return NextResponse.json({ success: true, unchanged: true });
     }
 
     // Now use Claude to parse the extracted text into structured data
@@ -241,8 +235,8 @@ IMPORTANT:
       // Re-upload: replace this specific CV's content.
       result = await db.query(
         `UPDATE cv_data
-         SET personal_info = $1, summary = $2, experience = $3, education = $4, skills = $5, projects = $6, updated_at = NOW()
-         WHERE id = $7
+         SET personal_info = $1, summary = $2, experience = $3, education = $4, skills = $5, projects = $6, raw_text = $7, updated_at = NOW()
+         WHERE id = $8
          RETURNING id`,
         [
           JSON.stringify(cvData.contact || {}),
@@ -251,6 +245,7 @@ IMPORTANT:
           JSON.stringify(cvData.education || []),
           JSON.stringify(cvData.skills || []),
           JSON.stringify(cvData.projects || []),
+          content,
           cvId
         ]
       );
@@ -272,8 +267,8 @@ IMPORTANT:
       }
 
       result = await db.query(
-        `INSERT INTO cv_data (user_id, name, personal_info, summary, experience, education, skills, projects, updated_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
+        `INSERT INTO cv_data (user_id, name, personal_info, summary, experience, education, skills, projects, raw_text, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
          RETURNING id`,
         [
           session.user.id,
@@ -283,7 +278,8 @@ IMPORTANT:
           JSON.stringify(cvData.experience || []),
           JSON.stringify(cvData.education || []),
           JSON.stringify(cvData.skills || []),
-          JSON.stringify(cvData.projects || [])
+          JSON.stringify(cvData.projects || []),
+          content
         ]
       );
     }

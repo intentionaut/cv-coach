@@ -358,12 +358,24 @@ function CVEditorContent() {
       });
 
       const result = await response.json();
-      if (result.success) {
+      if (result.success && result.unchanged) {
+        setUploadError('No changes detected in your CV — nothing to re-analyze.');
+      } else if (result.success) {
+        // If this CV already had analysis before this upload, the point of
+        // re-uploading was to get it re-assessed - do that automatically
+        // instead of requiring a separate click. A brand-new CV's first
+        // upload doesn't auto-analyze (no prior analysis, may want to set
+        // a target role first).
+        const hadPriorAnalysis = !!analysis;
         setCvData(result.data);
+        setAnalysis(null);
         setEditableCVText(result.rawText || '');
         await loadCvList();
         setSelectedCvId(result.cvId);
         setNewCvName('');
+        if (hadPriorAnalysis) {
+          await handleAnalyze(result.data);
+        }
       } else {
         setUploadError(result.error || 'We couldn\'t process that file. Please try again.');
       }
@@ -434,8 +446,13 @@ function CVEditorContent() {
   };
 
   // Analysis handler
-  const handleAnalyze = async () => {
-    if (!cvData || !selectedCvId) return;
+  // Accepts an explicit CV data override for the case right after a
+  // re-upload, where `cvData` in closure/state is still the pre-upload
+  // value (setCvData hasn't re-rendered yet) - reading from state there
+  // would silently re-analyze the old content.
+  const handleAnalyze = async (cvDataOverride?: CVData) => {
+    const dataToAnalyze = cvDataOverride || cvData;
+    if (!dataToAnalyze || !selectedCvId) return;
 
     setAnalyzing(true);
     try {
@@ -443,7 +460,7 @@ function CVEditorContent() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          cvData,
+          cvData: dataToAnalyze,
           cvId: selectedCvId,
           targetRole: targetRole || undefined,
         }),
@@ -452,7 +469,7 @@ function CVEditorContent() {
       const result = await response.json();
       if (result.success) {
         setAnalysis(result.analysis);
-        setEditableCVText(generateCVText(cvData));
+        setEditableCVText(generateCVText(dataToAnalyze));
         setCvs(prev => prev.map(cv => (
           cv.id === selectedCvId ? { ...cv, hasAnalysis: true, score: result.analysis.overallScore } : cv
         )));
@@ -469,6 +486,17 @@ function CVEditorContent() {
 
   const activeCv = cvs.find(cv => cv.id === selectedCvId);
   const activeName = activeCv?.name || (selectedCvId ? '' : newCvName || 'New CV');
+
+  // Re-analyzing is gated on having addressed every suggestion first,
+  // rather than being freely repeatable - it's the last step, not a leading
+  // action.
+  const totalImprovements = analysis
+    ? (analysis.priorityImprovements?.slice(0, 3).length || 0) +
+      (analysis.sections?.summary?.improvements?.length || 0) +
+      (analysis.sections?.experience?.improvements?.length || 0) +
+      (analysis.sections?.skills?.improvements?.length || 0)
+    : 0;
+  const allImprovementsCompleted = totalImprovements > 0 && completedImprovements.size >= totalImprovements;
 
   if (loadingCvs) {
     return <div className="min-h-screen bg-bg-main" />;
@@ -600,27 +628,30 @@ function CVEditorContent() {
               </p>
             </div>
 
-            <button
-              onClick={handleAnalyze}
-              disabled={analyzing || !cvData}
-              className="font-body shrink-0 px-6 py-3 bg-cta-primary text-text-on-cta rounded-lg font-bold hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {analyzing ? (
-                <span className="flex items-center justify-center gap-2">
-                  <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                  </svg>
-                  Analyzing...
-                </span>
-              ) : !cvData ? (
-                'Upload a CV first'
-              ) : analysis ? (
-                'Re-analyze'
-              ) : (
-                'Get Suggestions'
-              )}
-            </button>
+            {/* Once analysis exists, re-analyzing moves to the end of the
+                suggestions list, gated on having addressed them - not led
+                with here. */}
+            {!analysis && (
+              <button
+                onClick={() => handleAnalyze()}
+                disabled={analyzing || !cvData}
+                className="font-body shrink-0 px-6 py-3 bg-cta-primary text-text-on-cta rounded-lg font-bold hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {analyzing ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    Analyzing...
+                  </span>
+                ) : !cvData ? (
+                  'Upload a CV first'
+                ) : (
+                  'Get Suggestions'
+                )}
+              </button>
+            )}
           </div>
 
           <details className="group border-t border-border-hairline">
@@ -752,11 +783,12 @@ function CVEditorContent() {
             {/* CV content - single reusable editable view, always present */}
             <div className={analysis ? 'lg:col-span-2' : ''}>
               <div className="bg-bg-surface rounded-lg shadow-lg overflow-hidden h-[600px] flex flex-col border border-border-hairline">
-                <div className="bg-accent-tertiary px-4 py-3 border-b border-border-hairline flex items-center justify-between">
-                  <h3 className="font-display font-bold text-text-on-tertiary">{activeName}</h3>
+                {/* No CV name/title here - "My CVs" above is the one place
+                    that identifies and switches which CV this is. */}
+                <div className="px-4 py-2 border-b border-border-hairline flex items-center justify-end">
                   <label
                     htmlFor="cv-reupload"
-                    className={`font-body cursor-pointer text-sm text-text-inverse/75 hover:text-text-inverse font-medium ${
+                    className={`font-body cursor-pointer text-sm text-text-link hover:text-text-cta font-medium ${
                       uploading ? 'opacity-50 pointer-events-none' : ''
                     }`}
                   >
@@ -979,37 +1011,45 @@ function CVEditorContent() {
                   </div>
                 </div>
 
-                {/* Completion Celebration - Show when all improvements are checked off */}
-                {(() => {
-                  const totalImprovements =
-                    (analysis.priorityImprovements?.slice(0, 3).length || 0) +
-                    (analysis.sections?.summary?.improvements?.length || 0) +
-                    (analysis.sections?.experience?.improvements?.length || 0) +
-                    (analysis.sections?.skills?.improvements?.length || 0);
+                {/* End of flow: re-analyzing is always available - made a
+                    change? re-upload above (auto-triggers this) or click
+                    here to reassess the current draft as-is. Not gated on
+                    the checklist; that's just a progress indicator now. */}
+                <div className="px-8 py-6 border-t border-border-hairline flex items-center justify-between flex-wrap gap-3">
+                  <p className="font-body text-sm text-text-secondary">
+                    {totalImprovements > 0
+                      ? `${completedImprovements.size}/${totalImprovements} changes applied. Made changes? Re-upload above for updated feedback, or re-analyze this draft as-is.`
+                      : 'Made changes? Re-upload above for updated feedback, or re-analyze this draft as-is.'}
+                  </p>
+                  <button
+                    onClick={() => handleAnalyze()}
+                    disabled={analyzing}
+                    className="font-body px-6 py-3 bg-bg-surface border-2 border-accent-tertiary text-accent-tertiary rounded-lg font-bold hover:bg-accent-secondary/15 transition disabled:opacity-50"
+                  >
+                    {analyzing ? 'Re-analyzing...' : 'Re-analyze'}
+                  </button>
+                </div>
 
-                  const allCompleted = totalImprovements > 0 && completedImprovements.size >= totalImprovements;
-
-                  if (allCompleted) {
-                    return (
-                      <div className="px-8 py-6 bg-success/15 border-t border-success/30">
-                        <div className="text-center">
-                          <div className="text-6xl mb-4">🎉</div>
-                          <h3 className="font-display text-2xl font-bold text-text-on-success mb-2">CV Complete!</h3>
-                          <p className="font-body text-text-on-success mb-6 max-w-2xl mx-auto">
-                            You&apos;ve worked through all the improvements. Your CV is looking strong! Ready to practice answering interview questions?
-                          </p>
-                          <button
-                            onClick={() => router.push('/coaching')}
-                            className="font-body px-8 py-4 bg-cta-primary text-text-on-cta rounded-lg text-lg font-bold hover:opacity-90 transition shadow-lg hover:shadow-xl transform hover:scale-105"
-                          >
-                            Start Interview Practice →
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  }
-                  return null;
-                })()}
+                {/* Nice acknowledgment when the checklist is fully worked
+                    through - doesn't gate anything, just a nod plus a
+                    natural next step. */}
+                {allImprovementsCompleted && (
+                  <div className="px-8 py-6 bg-success/15 border-t border-success/30">
+                    <div className="text-center">
+                      <div className="text-6xl mb-4">🎉</div>
+                      <h3 className="font-display text-2xl font-bold text-text-on-success mb-2">CV Complete!</h3>
+                      <p className="font-body text-text-on-success mb-6 max-w-2xl mx-auto">
+                        You&apos;ve worked through all the improvements. Your CV is looking strong! Ready to practice answering interview questions?
+                      </p>
+                      <button
+                        onClick={() => router.push('/coaching')}
+                        className="font-body px-8 py-4 bg-cta-primary text-text-on-cta rounded-lg text-lg font-bold hover:opacity-90 transition shadow-lg hover:shadow-xl transform hover:scale-105"
+                      >
+                        Start Interview Practice →
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
