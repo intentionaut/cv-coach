@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
     const tier = await getUserTier(session.user.id);
     const model = getModelForTier(tier);
 
-    const { cvData, targetRole, cvId } = await req.json();
+    const { cvData, jobTitle, jobDescription, cvId } = await req.json();
 
     if (!cvData) {
       return NextResponse.json({ error: 'No CV data provided' }, { status: 400 });
@@ -56,7 +56,8 @@ export async function POST(req: NextRequest) {
           role: 'user',
           content: `You are an expert film and theatre industry career coach. Your job is not to rewrite this person's CV for them - it's to help them think through their own experience and learn to represent it well, so they leave this session better at self-advocacy, not just holding a better document.
 
-Target Role: ${targetRole || 'No specific role given - assess generally against the film and theatre industry, covering a broad range of entry-level production, technical, and administrative roles.'}
+Target Role: ${jobTitle || 'No specific role given - assess generally against the film and theatre industry, covering a broad range of entry-level production, technical, and administrative roles.'}
+${jobDescription ? `\nJob Description:\n${jobDescription}` : ''}
 
 Current CV Data:
 ${JSON.stringify(cvData, null, 2)}
@@ -179,11 +180,11 @@ Return ONLY the JSON object, no additional text.`
       throw parseError;
     }
 
-    // title is VARCHAR(255) - targetRole is often a full pasted job posting,
-    // so it has to be truncated or a real job description blows the column
-    // and the whole insert fails after Claude has already run (and been
-    // paid for).
-    const titleRole = (targetRole || 'Film/Theatre').replace(/\s+/g, ' ').trim().slice(0, 200);
+    // title is VARCHAR(255) - jobDescription can be a full pasted job
+    // posting, so it has to be truncated or a long one blows the column and
+    // the whole insert fails after Claude has already run (and been paid
+    // for). Prefer the short jobTitle when there is one.
+    const titleRole = (jobTitle || jobDescription || 'Film/Theatre').replace(/\s+/g, ' ').trim().slice(0, 200);
 
     // Store the full analysis (not just priorityImprovements) so a returning
     // user's session can be rebuilt from the database without another Claude

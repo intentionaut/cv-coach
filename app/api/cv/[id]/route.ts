@@ -16,7 +16,7 @@ export async function GET(
     const { id } = await params;
 
     const result = await db.query(
-      `SELECT id, name, personal_info, summary, experience, education, skills, projects, target_role, updated_at
+      `SELECT id, name, personal_info, summary, experience, education, skills, projects, job_title, job_description, updated_at
        FROM cv_data
        WHERE id = $1 AND user_id = $2`,
       [id, session.user.id]
@@ -48,7 +48,8 @@ export async function GET(
     return NextResponse.json({
       id: cvData.id,
       name: cvData.name,
-      targetRole: cvData.target_role || '',
+      jobTitle: cvData.job_title || '',
+      jobDescription: cvData.job_description || '',
       cv: {
         contact: cvData.personal_info || {},
         summary: cvData.summary || '',
@@ -83,27 +84,32 @@ export async function PATCH(
     }
 
     const { id } = await params;
-    const { name, targetRole } = await req.json();
+    const { name, jobTitle, jobDescription } = await req.json();
 
     if (name !== undefined && (typeof name !== 'string' || !name.trim())) {
       return NextResponse.json({ error: 'Name cannot be empty' }, { status: 400 });
     }
-    if (name === undefined && targetRole === undefined) {
+    if (name === undefined && jobTitle === undefined && jobDescription === undefined) {
       return NextResponse.json({ error: 'Nothing to update' }, { status: 400 });
     }
 
     // Build the SET clause from whichever fields were actually provided -
-    // renaming and saving the target role happen independently (the latter
-    // on every keystroke, debounced), so this can't assume both are present.
+    // renaming, the job title, and the job description all save
+    // independently (the latter two on every keystroke, debounced), so this
+    // can't assume all three are present.
     const sets: string[] = [];
     const values: any[] = [];
     if (name !== undefined) {
       sets.push(`name = $${sets.length + 1}`);
       values.push(name.trim());
     }
-    if (targetRole !== undefined) {
-      sets.push(`target_role = $${sets.length + 1}`);
-      values.push(targetRole);
+    if (jobTitle !== undefined) {
+      sets.push(`job_title = $${sets.length + 1}`);
+      values.push(jobTitle);
+    }
+    if (jobDescription !== undefined) {
+      sets.push(`job_description = $${sets.length + 1}`);
+      values.push(jobDescription);
     }
     sets.push('updated_at = NOW()');
 

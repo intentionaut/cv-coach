@@ -169,7 +169,8 @@ function CVEditorContent() {
 
   // Selected CV's content
   const [cvData, setCvData] = useState<CVData | null>(null);
-  const [targetRole, setTargetRole] = useState('');
+  const [jobTitle, setJobTitle] = useState('');
+  const [jobDescription, setJobDescription] = useState('');
   const [analysis, setAnalysis] = useState<Analysis | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadingJob, setUploadingJob] = useState(false);
@@ -179,7 +180,8 @@ function CVEditorContent() {
   const [isDraggingJob, setIsDraggingJob] = useState(false);
   const [editableCVText, setEditableCVText] = useState<string>('');
   const [completedImprovements, setCompletedImprovements] = useState<Set<string>>(new Set());
-  const targetRoleSaveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const jobTitleSaveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const jobDescriptionSaveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const toggleCompletion = (id: string) => {
     setCompletedImprovements(prev => {
@@ -196,7 +198,8 @@ function CVEditorContent() {
   const resetSelectedCvContent = () => {
     setCvData(null);
     setAnalysis(null);
-    setTargetRole('');
+    setJobTitle('');
+    setJobDescription('');
     setEditableCVText('');
     setUploadError(null);
     setCompletedImprovements(new Set());
@@ -219,7 +222,8 @@ function CVEditorContent() {
       const data = await response.json();
       setCvData(data.cv);
       setEditableCVText(generateCVText(data.cv));
-      setTargetRole(data.targetRole || '');
+      setJobTitle(data.jobTitle || '');
+      setJobDescription(data.jobDescription || '');
       if (data.analysis && data.analysis.priorityImprovements) {
         setAnalysis(data.analysis);
       }
@@ -294,19 +298,33 @@ function CVEditorContent() {
     }
   };
 
-  // Target role: saved with a short debounce as the user types, decoupled
-  // from analysis - editing it is free, only clicking Analyze costs a
-  // Claude call. Not saved until the CV itself has been created.
-  const handleTargetRoleChange = (value: string) => {
-    setTargetRole(value);
+  // Job title and description: each saved with a short debounce as the user
+  // types, decoupled from analysis - editing them is free, only clicking
+  // Analyze costs a Claude call. Not saved until the CV itself has been
+  // created (a brand-new, not-yet-uploaded CV just keeps this in state).
+  const handleJobTitleChange = (value: string) => {
+    setJobTitle(value);
     if (!selectedCvId) return;
-    if (targetRoleSaveTimeout.current) clearTimeout(targetRoleSaveTimeout.current);
-    targetRoleSaveTimeout.current = setTimeout(() => {
+    if (jobTitleSaveTimeout.current) clearTimeout(jobTitleSaveTimeout.current);
+    jobTitleSaveTimeout.current = setTimeout(() => {
       fetch(`/api/cv/${selectedCvId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ targetRole: value })
-      }).catch(err => console.error('Failed to save target role:', err));
+        body: JSON.stringify({ jobTitle: value })
+      }).catch(err => console.error('Failed to save job title:', err));
+    }, 800);
+  };
+
+  const handleJobDescriptionChange = (value: string) => {
+    setJobDescription(value);
+    if (!selectedCvId) return;
+    if (jobDescriptionSaveTimeout.current) clearTimeout(jobDescriptionSaveTimeout.current);
+    jobDescriptionSaveTimeout.current = setTimeout(() => {
+      fetch(`/api/cv/${selectedCvId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jobDescription: value })
+      }).catch(err => console.error('Failed to save job description:', err));
     }, 800);
   };
 
@@ -333,8 +351,12 @@ function CVEditorContent() {
   const processFile = async (file: File) => {
     setUploadError(null);
 
-    if (!selectedCvId && !newCvName.trim()) {
-      setUploadError('Give this CV a name first (e.g. "Production Assistant").');
+    // Job title (if set, e.g. from "I want to be a Camera Trainee") is the
+    // default name for a new CV - a manually typed name still wins if given.
+    const effectiveName = newCvName.trim() || jobTitle.trim();
+
+    if (!selectedCvId && !effectiveName) {
+      setUploadError('Give this CV a name first (e.g. "Production Assistant"), or fill in "I want to be" above.');
       return;
     }
 
@@ -350,7 +372,7 @@ function CVEditorContent() {
     if (selectedCvId) {
       formData.append('cvId', selectedCvId);
     } else {
-      formData.append('name', newCvName.trim());
+      formData.append('name', effectiveName);
     }
 
     try {
@@ -419,7 +441,7 @@ function CVEditorContent() {
     setUploadingJob(true);
     try {
       const text = await file.text();
-      handleTargetRoleChange(text);
+      handleJobDescriptionChange(text);
     } catch (error) {
       console.error('Job file read error:', error);
       alert('Failed to read job description file');
@@ -443,7 +465,7 @@ function CVEditorContent() {
     const file = e.dataTransfer.files[0];
     if (file) {
       const text = await file.text();
-      handleTargetRoleChange(text);
+      handleJobDescriptionChange(text);
     }
   };
 
@@ -464,7 +486,8 @@ function CVEditorContent() {
         body: JSON.stringify({
           cvData: dataToAnalyze,
           cvId: selectedCvId,
-          targetRole: targetRole || undefined,
+          jobTitle: jobTitle || undefined,
+          jobDescription: jobDescription || undefined,
         }),
       });
 
@@ -487,7 +510,7 @@ function CVEditorContent() {
   };
 
   const activeCv = cvs.find(cv => cv.id === selectedCvId);
-  const activeName = activeCv?.name || (selectedCvId ? '' : newCvName || 'New CV');
+  const activeName = activeCv?.name || (selectedCvId ? '' : newCvName || jobTitle || 'New CV');
 
   // Re-analyzing is gated on having addressed every suggestion first,
   // rather than being freely repeatable - it's the last step, not a leading
@@ -622,11 +645,26 @@ function CVEditorContent() {
         <div className="bg-bg-surface rounded-lg shadow-lg mb-6 border border-border-hairline overflow-hidden">
           <div className="p-6 flex items-center justify-between gap-4 flex-wrap">
             <div className="flex-1 min-w-[240px]">
-              <h3 className="font-display text-lg font-bold text-text-primary mb-1">Have a specific role in mind?</h3>
+              <h3 className="font-display text-lg font-bold text-text-primary mb-3">Have a specific role in mind?</h3>
+              <div className="flex items-center gap-2 mb-3 flex-wrap">
+                <label htmlFor="job-title" className="font-body text-sm font-semibold text-text-primary whitespace-nowrap">
+                  I want to be
+                </label>
+                <input
+                  id="job-title"
+                  type="text"
+                  value={jobTitle}
+                  onChange={(e) => handleJobTitleChange(e.target.value)}
+                  placeholder="Job role"
+                  className="font-body flex-1 min-w-[160px] px-3 py-1.5 border border-border-hairline rounded-lg focus:ring-2 focus:ring-accent-tertiary focus:border-transparent text-sm bg-bg-main text-text-primary"
+                />
+              </div>
               <p className="font-body text-sm text-text-secondary">
-                {targetRole.trim()
-                  ? `Tailoring feedback for ${activeName} to: "${targetRole.trim().slice(0, 80)}${targetRole.trim().length > 80 ? '…' : ''}"`
-                  : `We'll assess ${activeName} against general film industry standards — add a job description below for tailored feedback instead.`}
+                {jobTitle.trim()
+                  ? `Tailoring feedback for ${activeName} to: "${jobTitle.trim()}"${jobDescription.trim() ? ' — using the job description below too' : ''}`
+                  : jobDescription.trim()
+                    ? `Tailoring feedback for ${activeName} using the job description below.`
+                    : `We'll assess your CV against film industry skills and standards and give you tailored feedback if you have a specific role in mind.`}
               </p>
             </div>
 
@@ -659,7 +697,7 @@ function CVEditorContent() {
           <details className="group border-t border-border-hairline">
             <summary className="cursor-pointer list-none px-6 py-3 flex items-center gap-2 hover:bg-bg-main transition">
               <span className="font-body text-sm font-medium text-text-link">
-                {targetRole.trim() ? 'Edit job description' : 'Add a job description (optional)'}
+                {jobDescription.trim() ? 'Edit job description' : 'Add a job description (optional)'}
               </span>
               <svg className="w-4 h-4 text-text-secondary group-open:rotate-180 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -667,8 +705,8 @@ function CVEditorContent() {
             </summary>
             <div className="px-6 pb-6">
               <textarea
-                value={targetRole}
-                onChange={(e) => handleTargetRoleChange(e.target.value)}
+                value={jobDescription}
+                onChange={(e) => handleJobDescriptionChange(e.target.value)}
                 placeholder="Paste job description here..."
                 rows={4}
                 className="font-body w-full px-3 py-2 border border-border-hairline rounded-lg focus:ring-2 focus:ring-accent-tertiary focus:border-transparent resize-none text-sm bg-bg-main text-text-primary"
@@ -718,7 +756,7 @@ function CVEditorContent() {
               {!selectedCvId && (
                 <input
                   type="text"
-                  value={newCvName}
+                  value={newCvName || jobTitle}
                   onChange={(e) => setNewCvName(e.target.value)}
                   placeholder='Name this CV (e.g. "Production Assistant")'
                   className="font-body w-full mb-4 px-4 py-3 border-2 border-border-hairline rounded-lg text-text-primary bg-bg-main focus:outline-none focus:border-accent-tertiary"
