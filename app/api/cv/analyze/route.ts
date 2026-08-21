@@ -134,6 +134,12 @@ Return ONLY the JSON object, no additional text.`
 
     const analysis = JSON.parse(jsonText);
 
+    // title is VARCHAR(255) - targetRole is often a full pasted job posting,
+    // so it has to be truncated or a real job description blows the column
+    // and the whole insert fails after Claude has already run (and been
+    // paid for).
+    const titleRole = (targetRole || 'Film/Theatre').replace(/\s+/g, ' ').trim().slice(0, 200);
+
     // Store the full analysis (not just priorityImprovements) so a returning
     // user's session can be rebuilt from the database without another Claude
     // call - re-analyzing on every login was burning API cost for no reason.
@@ -146,7 +152,7 @@ Return ONLY the JSON object, no additional text.`
         cvId,
         'cv_analysis',
         'high',
-        `CV Analysis for ${targetRole || 'Film/Theatre'}`,
+        `CV Analysis for ${titleRole}`,
         `Overall Score: ${analysis.overallScore}/100`,
         JSON.stringify(analysis)
       ]
