@@ -3,7 +3,12 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import Anthropic from '@anthropic-ai/sdk';
 import mammoth from 'mammoth';
-import { PDFParse } from 'pdf-parse';
+// Import the internal module directly, not 'pdf-parse' itself - the
+// package's index.js has a debug self-test block gated on `!module.parent`
+// that misfires under Turbopack's bundling (module.parent isn't set the way
+// plain Node CJS sets it) and tries to read a nonexistent test fixture at
+// build time. lib/pdf-parse.js is the same function, without that wrapper.
+import pdfParse from 'pdf-parse/lib/pdf-parse.js';
 import db from '@/lib/db/client';
 import { getUserTier } from '@/lib/auth';
 import { getModelForTier, getTierLimits } from '@/lib/tier';
@@ -76,13 +81,13 @@ export async function POST(req: NextRequest) {
     // read a file's text, which also means we can compare against the
     // previous upload before spending anything on Claude.
     if (isPDF) {
-      const parser = new PDFParse({ data: new Uint8Array(buffer) });
-      try {
-        const result = await parser.getText({ pageJoiner: '' });
-        content = result.text;
-      } finally {
-        await parser.destroy();
-      }
+      // pdf-parse v1, not v2: v2 depends on @napi-rs/canvas for pdfjs-dist's
+      // Node DOMMatrix polyfill, a native addon whose platform binary
+      // Vercel's file tracer doesn't reliably include in the deployed
+      // Lambda - it works locally (plain node_modules resolution) and
+      // crashes at runtime in production. v1 has zero native dependencies.
+      const result = await pdfParse(Buffer.from(buffer));
+      content = result.text;
     } else if (isDocx) {
       // .docx files are ZIP archives - must be parsed, not read as raw UTF-8 text
       const { value } = await mammoth.extractRawText({ buffer: Buffer.from(buffer) });
