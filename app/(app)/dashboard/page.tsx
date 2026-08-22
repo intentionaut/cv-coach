@@ -1,9 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { setUserProgress } from '@/lib/mixpanel';
 
@@ -20,7 +18,6 @@ interface DashboardStatus {
 }
 
 function DashboardContent() {
-  const { data: session, status: sessionStatus } = useSession();
   const router = useRouter();
   const [status, setStatus] = useState<DashboardStatus | null>(null);
   const [dismissing, setDismissing] = useState(false);
@@ -91,67 +88,30 @@ function DashboardContent() {
 
   return (
     <div className="min-h-screen bg-bg-main">
-      {/* Header */}
-      <header className="bg-bg-surface shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-          <div>
-            <div className="flex items-center gap-2">
-              <Image src="/friday-logo.png" alt="" width={31} height={31} />
-              <h1 className="font-display text-2xl font-bold text-text-primary">Friday</h1>
-            </div>
-            <p className="font-body text-sm text-text-secondary">
-              {sessionStatus === 'loading' ? ' ' : `Welcome back, ${session?.user?.name?.split(' ')[0]}`}
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            {session?.user?.email === 'dasilvasaielle@gmail.com' && (
-              <button
-                onClick={() => router.push('/admin/invite')}
-                title="Admin only"
-                className="font-body px-4 py-2 text-sm text-accent-tertiary border border-accent-tertiary/30 hover:bg-accent-tertiary/10 rounded-lg transition"
-              >
-                Invite User
-              </button>
-            )}
-            <button
-              onClick={() => router.push('/settings')}
-              className="font-body px-4 py-2 text-sm text-text-secondary hover:bg-bg-main rounded-lg transition"
-            >
-              Settings
-            </button>
-            <button
-              onClick={() => signOut({ callbackUrl: '/login' })}
-              className="font-body px-4 py-2 text-sm text-text-muted hover:text-text-secondary hover:bg-bg-main rounded-lg transition"
-            >
-              Sign Out
-            </button>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Welcome Section */}
-        <div className="bg-accent-tertiary rounded-lg p-8 text-text-on-tertiary mb-8">
-          <h2 className="font-display text-3xl font-bold mb-2">Your Film Career Journey</h2>
-          <p className="font-body text-text-inverse/75">{heroSubtitle}</p>
-        </div>
+        {/* One progress surface, not four. The old blue banner carried a
+            generic heading and one useful sentence, while the real numbers
+            sat in a separate card below it - so this merges them.
 
-        {/* Outcomes, not activity. Sessions logged and words written are
-            vanity numbers; applications sent and what came back is the only
-            progress that means anything. Hidden until there's something real
-            to show, so it never reads as an empty scoreboard. */}
-        {hasApplied && (
-          <div className="bg-bg-surface rounded-lg border border-border-hairline p-6 mb-8">
-            <h3 className="font-display text-lg font-bold text-text-primary mb-4">Where you&apos;re up to</h3>
-            <div className="grid grid-cols-3 gap-4">
-              <OutcomeStat label="Applications sent" value={status?.appliedCount ?? 0} />
-              <OutcomeStat label="Got to interview" value={status?.interviewingCount ?? 0} />
-              <OutcomeStat label="Offers" value={status?.offerCount ?? 0} highlight />
-            </div>
-            <p className="font-body text-xs text-text-secondary mt-4">
-              Update a cover letter&apos;s status when you hear back, and this keeps track for you.
-            </p>
+            Only appears once something has actually happened. A scoreboard of
+            zeroes on day one is worse than no scoreboard: the Getting Started
+            checklist is the right first thing to see. */}
+        {status !== null && hasCv && (
+          <div className="bg-accent-tertiary rounded-lg p-6 sm:p-8 text-text-on-tertiary mb-8">
+            <p className="font-body text-text-inverse/85 max-w-2xl">{heroSubtitle}</p>
+
+            {hasApplied && (
+              <>
+                <div className="grid grid-cols-3 gap-4 mt-6 pt-6 border-t border-text-inverse/20">
+                  <OutcomeStat label="Applications sent" value={status.appliedCount} />
+                  <OutcomeStat label="Got to interview" value={status.interviewingCount} />
+                  <OutcomeStat label="Offers" value={status.offerCount} />
+                </div>
+                <p className="font-body text-xs text-text-inverse/70 mt-4">
+                  Update a cover letter&apos;s status when you hear back and this keeps track for you.
+                </p>
+              </>
+            )}
           </div>
         )}
 
@@ -239,17 +199,11 @@ function DashboardContent() {
   );
 }
 
-function OutcomeStat({ label, value, highlight }: { label: string; value: number; highlight?: boolean }) {
+function OutcomeStat({ label, value }: { label: string; value: number }) {
   return (
     <div>
-      <div
-        className={`font-display text-3xl font-bold ${
-          highlight && value > 0 ? 'text-text-on-success' : 'text-accent-tertiary'
-        }`}
-      >
-        {value}
-      </div>
-      <p className="font-body text-xs text-text-secondary mt-0.5">{label}</p>
+      <div className="font-display text-3xl font-bold text-text-on-tertiary tabular-nums">{value}</div>
+      <p className="font-body text-xs text-text-inverse/70 mt-0.5">{label}</p>
     </div>
   );
 }
