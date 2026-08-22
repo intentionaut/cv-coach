@@ -27,6 +27,11 @@ function PracticeSessionContent() {
   const [submitting, setSubmitting] = useState(false);
   const [startTime] = useState(Date.now());
   const [roleLabel, setRoleLabel] = useState<string | null>(null);
+  // Captured BEFORE feedback is shown. That ordering is the whole point:
+  // once you've seen an assessment you anchor to it, and the self-rating
+  // stops measuring your own judgement of your answer.
+  const [selfClarity, setSelfClarity] = useState<number | null>(null);
+  const [selfConfidence, setSelfConfidence] = useState<number | null>(null);
 
   useEffect(() => {
     // Load questions for this session
@@ -100,6 +105,8 @@ function PracticeSessionContent() {
     setShowingFeedback(false);
     setCurrentAnswer('');
     setCurrentFeedback(null);
+    setSelfClarity(null);
+    setSelfConfidence(null);
 
     if (isLastQuestion) {
       // Go to completion page
@@ -198,6 +205,36 @@ function PracticeSessionContent() {
               </p>
             </div>
 
+            {/* Asked before feedback, deliberately. Comparing your own read
+                of an answer against an outside one is where the learning is -
+                but only if you commit to a view first. */}
+            {currentAnswer.trim() && (
+              <div className="mb-6 bg-bg-main rounded-lg border border-border-hairline p-4">
+                <p className="font-display text-sm font-bold text-text-primary mb-1">
+                  Before you submit — how do you think that went?
+                </p>
+                <p className="font-body text-xs text-text-secondary mb-3">
+                  Optional, but comparing your read against the feedback is the most useful part.
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <SelfRating
+                    label="How clear was it?"
+                    value={selfClarity}
+                    onChange={setSelfClarity}
+                    lowLabel="Rambled"
+                    highLabel="Crystal clear"
+                  />
+                  <SelfRating
+                    label="How confident did you feel?"
+                    value={selfConfidence}
+                    onChange={setSelfConfidence}
+                    lowLabel="Shaky"
+                    highLabel="Very"
+                  />
+                </div>
+              </div>
+            )}
+
             {/* Submit Button */}
             <div className="flex justify-end gap-3">
               {currentIndex > 0 && (
@@ -209,7 +246,7 @@ function PracticeSessionContent() {
                 </button>
               )}
               <button
-                onClick={() => submitAnswer(null, null)}
+                onClick={() => submitAnswer(selfConfidence, selfClarity)}
                 disabled={!currentAnswer.trim() || submitting}
                 className="font-body px-8 py-3 bg-cta-primary text-text-on-cta rounded-lg font-bold hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition"
               >
@@ -221,24 +258,72 @@ function PracticeSessionContent() {
           /* Feedback View */
           <div className="bg-bg-surface rounded-lg shadow-lg p-8 border border-border-hairline">
             <div className="mb-6">
-              <h2 className="font-display text-2xl font-bold text-text-primary mb-2">AI Feedback</h2>
-              <p className="font-body text-text-secondary">Here's how you did on this question</p>
+              <h2 className="font-display text-2xl font-bold text-text-primary mb-2">Feedback</h2>
+              <p className="font-body text-text-secondary">
+                What landed, and the questions worth sitting with before you answer this again.
+              </p>
             </div>
 
             {currentFeedback && (
               <div className="space-y-6 mb-8">
-                {/* Overall Impression */}
+                {/* Calibration: only shown when they committed to a self-rating
+                    before seeing this, otherwise there's nothing to compare. */}
+                {selfClarity !== null && typeof currentFeedback.assessedClarity === 'number' && (
+                  <CalibrationGap self={selfClarity} assessed={currentFeedback.assessedClarity} />
+                )}
+
                 {currentFeedback.overallImpression && (
                   <div className="bg-accent-secondary/15 border-l-4 border-accent-secondary p-4 rounded">
                     <p className="font-body text-text-primary">{currentFeedback.overallImpression}</p>
+                    {currentFeedback.clarityNote && (
+                      <p className="font-body text-sm text-text-secondary mt-2">{currentFeedback.clarityNote}</p>
+                    )}
                   </div>
                 )}
 
-                {/* Strengths */}
+                {/* STAR, per component. Far more actionable than prose about
+                    "structure", and it's the vocabulary careers services
+                    already teach. Hidden entirely for motivational questions,
+                    where forcing STAR would be bad advice. */}
+                {currentFeedback.starApplicable && currentFeedback.star && (
+                  <div>
+                    <h3 className="font-display font-bold text-text-primary mb-1">Structure</h3>
+                    <p className="font-body text-xs text-text-secondary mb-3">
+                      Behavioural answers land best as Situation, Task, Action, Result.
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {(['situation', 'task', 'action', 'result'] as const).map(key => {
+                        const part = currentFeedback.star[key];
+                        if (!part) return null;
+                        return (
+                          <div
+                            key={key}
+                            className={`rounded-lg border p-3 ${
+                              part.present
+                                ? 'border-success/40 bg-success/10'
+                                : 'border-cta-primary/40 bg-cta-primary/10'
+                            }`}
+                          >
+                            <p className="font-body text-sm font-bold text-text-primary capitalize flex items-center gap-1.5">
+                              <span className={part.present ? 'text-success' : 'text-text-cta'}>
+                                {part.present ? '✓' : '✕'}
+                              </span>
+                              {key}
+                            </p>
+                            {part.note && (
+                              <p className="font-body text-xs text-text-secondary mt-1">{part.note}</p>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
                 {currentFeedback.strengths && currentFeedback.strengths.length > 0 && (
                   <div>
                     <h3 className="font-display font-bold text-text-on-success mb-2 flex items-center gap-2">
-                      <span className="text-xl">✓</span> Strengths
+                      <span className="text-xl">✓</span> What worked
                     </h3>
                     <ul className="space-y-2">
                       {currentFeedback.strengths.map((strength: string, idx: number) => (
@@ -251,28 +336,18 @@ function PracticeSessionContent() {
                   </div>
                 )}
 
-                {/* Improvements */}
-                {currentFeedback.improvements && currentFeedback.improvements.length > 0 && (
+                {/* Questions, not instructions - the answer stays theirs. */}
+                {currentFeedback.questions && currentFeedback.questions.length > 0 && (
                   <div>
-                    <h3 className="font-display font-bold text-text-on-alert mb-2 flex items-center gap-2">
-                      <span className="text-xl">→</span> Areas to Improve
-                    </h3>
+                    <h3 className="font-display font-bold text-text-primary mb-2">Worth thinking about</h3>
                     <ul className="space-y-2">
-                      {currentFeedback.improvements.map((improvement: string, idx: number) => (
+                      {currentFeedback.questions.map((q: string, idx: number) => (
                         <li key={idx} className="font-body flex items-start gap-2 text-text-secondary">
-                          <span className="text-cta-primary mt-1">•</span>
-                          <span>{improvement}</span>
+                          <span className="text-accent-tertiary mt-1">•</span>
+                          <span>{q}</span>
                         </li>
                       ))}
                     </ul>
-                  </div>
-                )}
-
-                {/* Suggested Revision */}
-                {currentFeedback.suggestedRevision && (
-                  <div className="bg-accent-secondary/15 border-l-4 border-accent-tertiary p-4 rounded">
-                    <h3 className="font-display font-bold text-accent-tertiary mb-2">Suggested Revision</h3>
-                    <p className="font-body text-text-secondary">{currentFeedback.suggestedRevision}</p>
                   </div>
                 )}
               </div>
@@ -287,6 +362,77 @@ function PracticeSessionContent() {
           </div>
         )}
       </main>
+    </div>
+  );
+}
+
+function SelfRating({
+  label,
+  value,
+  onChange,
+  lowLabel,
+  highLabel
+}: {
+  label: string;
+  value: number | null;
+  onChange: (v: number) => void;
+  lowLabel: string;
+  highLabel: string;
+}) {
+  return (
+    <div>
+      <p className="font-body text-xs font-medium text-text-primary mb-1.5">{label}</p>
+      <div className="flex items-center gap-1.5" role="group" aria-label={label}>
+        {[1, 2, 3, 4, 5].map(n => (
+          <button
+            key={n}
+            type="button"
+            onClick={() => onChange(n)}
+            aria-pressed={value === n}
+            className={`font-body w-9 h-9 rounded-lg border-2 text-sm font-bold transition ${
+              value === n
+                ? 'border-accent-tertiary bg-accent-secondary/25 text-text-primary'
+                : 'border-border-hairline bg-bg-surface text-text-secondary hover:border-accent-tertiary/50'
+            }`}
+          >
+            {n}
+          </button>
+        ))}
+      </div>
+      <div className="flex justify-between mt-1">
+        <span className="font-body text-[10px] text-text-secondary">{lowLabel}</span>
+        <span className="font-body text-[10px] text-text-secondary">{highLabel}</span>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * The calibration gap: your own read of an answer against an outside one.
+ * Both directions matter - over-rating shows a blind spot, under-rating
+ * shows you're harder on yourself than the answer deserves - so this is
+ * deliberately framed as information rather than a mark.
+ */
+function CalibrationGap({ self, assessed }: { self: number; assessed: number }) {
+  const delta = self - assessed;
+  const message =
+    delta >= 2
+      ? `You rated this ${self}. It read as a ${assessed} — worth looking at what didn't land the way you expected.`
+      : delta <= -2
+        ? `You rated this ${self}, but it read as a ${assessed}. You're being harder on yourself than this answer deserves.`
+        : delta === 0
+          ? `You rated this ${self}, and it read as a ${assessed}. Your sense of your own answers is well calibrated.`
+          : `You rated this ${self}, it read as a ${assessed} — close, so you're reading your own answers pretty accurately.`;
+
+  const tone =
+    Math.abs(delta) >= 2
+      ? 'bg-alert/25 border-alert'
+      : 'bg-success/15 border-success/40';
+
+  return (
+    <div className={`rounded-lg border p-4 ${tone}`}>
+      <p className="font-display text-sm font-bold text-text-primary mb-1">Your read vs. this one</p>
+      <p className="font-body text-sm text-text-primary">{message}</p>
     </div>
   );
 }

@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
       messages: [
         {
           role: 'user',
-          content: `You are an expert film industry interview coach. Analyze this interview answer and provide constructive feedback.
+          content: `You are an expert film and theatre industry interview coach. Critique this interview answer so the candidate can improve it themselves.
 
 Question: ${question}
 ${question_category ? `Category: ${question_category}` : ''}
@@ -83,24 +83,53 @@ ${roleContext}
 Candidate's Answer:
 ${written_answer}
 
+COACHING PRINCIPLES - these override any instinct to be helpful by writing for them:
+1. **Never rewrite their answer.** Do not supply a improved version, a model answer, or a sentence they could repeat back. Where something is missing, name what's missing and ask the question that would help them find it in their own experience.
+2. **Never use AI-tell language**: avoid "spearheaded," "leveraged," "utilized," "dynamic," "results-driven," "passionate about," "seamlessly," "robust," "self-starter," or stacking em-dashes.
+3. **Be specific to what they actually wrote.** Quote or reference their real words. Generic feedback that could apply to any answer is worthless.
+4. **Be honest.** Don't inflate. An answer that genuinely doesn't work should be told so, kindly and with a route forward.
+
+STAR STRUCTURE:
+STAR (Situation, Task, Action, Result) applies to behavioural questions - "tell me about a time when...". It does NOT sensibly apply to motivational or opinion questions ("why do you want to work in film?"), and forcing it there is bad advice. Set "starApplicable" to false for those, and leave the star object's fields as false with empty notes.
+
+Where it does apply, judge each component independently and honestly. A missing Result is the single most common failure - people describe what they did but never say how it turned out.
+
+CLARITY RATING:
+Rate how clearly this answer would land with an interviewer, 1-5:
+1 = hard to follow, 2 = gets there eventually, 3 = clear enough, 4 = clear and easy to follow, 5 = genuinely compelling.
+Judge the answer as written, not the person's potential.
+
 Provide feedback in this JSON structure:
 {
-  "strengths": ["specific strength 1", "specific strength 2"],
-  "improvements": ["specific suggestion 1", "specific suggestion 2"],
-  "overallImpression": "brief overall assessment (2-3 sentences)",
-  "suggestedRevision": "optional: a brief example of how to strengthen weak parts"
+  "assessedClarity": number (1-5),
+  "clarityNote": "one sentence on why it landed at that number",
+  "starApplicable": boolean,
+  "star": {
+    "situation": { "present": boolean, "note": "short - what they gave, or what's missing" },
+    "task": { "present": boolean, "note": "short" },
+    "action": { "present": boolean, "note": "short" },
+    "result": { "present": boolean, "note": "short" }
+  },
+  "strengths": ["specific to what they wrote"],
+  "questions": ["guiding questions that help them strengthen it themselves - never instructions to follow"],
+  "overallImpression": "2-3 sentences, honest"
 }
-
-Focus on:
-- Clarity and structure (STAR method for behavioral questions)
-- Relevance to film industry
-- Specific examples and details
-- Professional tone
 
 Return ONLY the JSON object, no markdown formatting.`
         }
       ]
     });
+
+    if (feedbackMessage.stop_reason === 'max_tokens') {
+      // Truncated mid-JSON, so the parse below will fail into the raw-text
+      // fallback. Log it so a recurring ceiling problem is visible rather
+      // than looking like intermittently malformed feedback.
+      console.error('Interview feedback truncated: hit max_tokens before finishing', {
+        practiceSessionId: practice_session_id,
+        model,
+        usage: feedbackMessage.usage
+      });
+    }
 
     const textContent = feedbackMessage.content.find(block => block.type === 'text');
     let aiFeedback = null;

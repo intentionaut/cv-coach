@@ -220,26 +220,51 @@ function SessionReviewContent() {
                           </div>
                         )}
 
-                        {feedback.improvements && feedback.improvements.length > 0 && (
+                        {/* STAR breakdown, present on answers given after the
+                            structured critique shipped. */}
+                        {feedback.starApplicable && feedback.star && (
                           <div>
-                            <h4 className="font-display font-bold text-text-on-alert mb-2 flex items-center gap-2">
-                              <span className="text-xl">→</span> Areas to Improve
-                            </h4>
-                            <ul className="space-y-2">
-                              {feedback.improvements.map((improvement: string, idx: number) => (
-                                <li key={idx} className="font-body flex items-start gap-2 text-text-secondary">
-                                  <span className="text-cta-primary mt-1">•</span>
-                                  <span>{improvement}</span>
-                                </li>
-                              ))}
-                            </ul>
+                            <h4 className="font-display font-bold text-text-primary mb-2">Structure</h4>
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                              {(['situation', 'task', 'action', 'result'] as const).map(key => {
+                                const part = feedback.star[key];
+                                if (!part) return null;
+                                return (
+                                  <div
+                                    key={key}
+                                    className={`rounded-lg border p-2 text-center ${
+                                      part.present
+                                        ? 'border-success/40 bg-success/10'
+                                        : 'border-cta-primary/40 bg-cta-primary/10'
+                                    }`}
+                                  >
+                                    <span className={part.present ? 'text-success' : 'text-text-cta'}>
+                                      {part.present ? '✓' : '✕'}
+                                    </span>
+                                    <p className="font-body text-xs font-bold text-text-primary capitalize">{key}</p>
+                                  </div>
+                                );
+                              })}
+                            </div>
                           </div>
                         )}
 
-                        {feedback.suggestedRevision && (
-                          <div className="bg-accent-secondary/15 border-l-4 border-accent-tertiary p-4 rounded">
-                            <h4 className="font-display font-bold text-accent-tertiary mb-2">Suggested Revision</h4>
-                            <p className="font-body text-text-secondary">{feedback.suggestedRevision}</p>
+                        {/* `questions` is the current shape; `improvements` is
+                            kept so answers recorded before the Socratic
+                            rewrite still render their feedback. */}
+                        {(feedback.questions?.length > 0 || feedback.improvements?.length > 0) && (
+                          <div>
+                            <h4 className="font-display font-bold text-text-primary mb-2">
+                              {feedback.questions?.length > 0 ? 'Worth thinking about' : 'Areas to improve'}
+                            </h4>
+                            <ul className="space-y-2">
+                              {(feedback.questions ?? feedback.improvements).map((item: string, idx: number) => (
+                                <li key={idx} className="font-body flex items-start gap-2 text-text-secondary">
+                                  <span className="text-accent-tertiary mt-1">•</span>
+                                  <span>{item}</span>
+                                </li>
+                              ))}
+                            </ul>
                           </div>
                         )}
                       </div>
