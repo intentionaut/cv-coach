@@ -84,8 +84,8 @@ export default function PrivacyPage() {
           <li>
             <strong>Website:</strong> Friday Career Coaching&rsquo;s site, which can be
             accessed via this URL:{' '}
-            <a href="https://friday.intentionaut.com" className="text-text-link underline">
-              friday.intentionaut.com
+            <a href="https://fridayforwork.com" className="text-text-link underline">
+              fridayforwork.com
             </a>
             .
           </li>

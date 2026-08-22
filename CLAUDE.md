@@ -8,13 +8,13 @@ Naming is inconsistent — resolve like this:
 - Local folder: `cv-coach-main`
 - GitHub repo: `intentionaut/cv-coach`
 - Vercel project: `cv-coach` under team `intentionauts-projects` (a stray duplicate project `cv-coach-main` also exists from a linking mistake on 2026-08-21 — unused, ignorable)
-- Production domain: `friday.intentionaut.com` (product is branded "Friday"; default Vercel URL is `cv-coach-chi.vercel.app`)
+- Production domain: `fridayforwork.com` (product is branded "Friday"; default Vercel URL is `cv-coach-chi.vercel.app`). `friday.intentionaut.com` is the retired domain, kept alive as a redirect because existing invite emails link to it. `fridayforwork.co.uk` / `.online` / `.work` / `.store` redirect via GoDaddy forwarding — those are http-only by design, since GoDaddy forwarding doesn't serve HTTPS on the source domain.
 
 **Deployment is manual, not Git-integrated.** No CI/CD is wired up — `git push` to GitHub does NOT deploy. To ship: commit + push to GitHub (history/source of truth), then separately run `vercel --prod` from this folder.
 
 **Migrations are run by the user, never by Claude.** Any secret Claude's tools touch gets redacted to the literal string `[SENSITIVE]` on disk, so Claude cannot hold a real `DATABASE_URL`. Write the migration to `lib/db/migrations/`, then give the user the SQL to paste into Neon's SQL Editor. **Always confirm a migration is applied before deploying code that depends on it** — deploying first broke production once (migration 005).
 
-**Logs**: Hobby-tier Vercel — historical `vercel logs`/`vercel metrics` mostly return nothing (metrics needs paid Observability Plus). To debug live, tail with `vercel logs friday.intentionaut.com --follow` in the background while the user reproduces. Note: the stream dies after ~5 minutes, so wrap it in a restart loop. macOS has no `timeout` command by default.
+**Logs**: Hobby-tier Vercel — historical `vercel logs`/`vercel metrics` mostly return nothing (metrics needs paid Observability Plus). To debug live, tail with `vercel logs fridayforwork.com --follow` in the background while the user reproduces. Note: the stream dies after ~5 minutes, so wrap it in a restart loop. macOS has no `timeout` command by default.
 
 ## Product shape
 
