@@ -12,7 +12,6 @@ interface DashboardStatus {
   latestInterviewAt: string | null;
   gettingStartedDismissed: boolean;
   coverLetterCount: number;
-  applicationCount: number;
   appliedCount: number;
   interviewingCount: number;
   offerCount: number;
@@ -36,7 +35,6 @@ function DashboardContent() {
           cvCount: data.cvCount,
           cvAnalysedCount: data.cvAnalysedCount,
           coverLetterCount: data.coverLetterCount,
-          applicationCount: data.applicationCount,
           appliedCount: data.appliedCount,
           interviewingCount: data.interviewingCount,
           offerCount: data.offerCount,

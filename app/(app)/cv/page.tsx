@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import ApplyButton from '@/components/applications/ApplyButton';
 import { ChevronDownIcon, EditIcon } from '@/components/ui/icons';
 import { formatRelativeTime } from '@/lib/format';
 import { useRouter } from 'next/navigation';
@@ -1475,6 +1476,17 @@ function CVEditorContent() {
                       >
                         Write a Cover Letter →
                       </button>
+                    )}
+                    {/* Plenty of early-career crew work is landed by emailing
+                        a CV, with no letter involved. This is how that gets
+                        recorded without making the user fill in a form about
+                        a job they already applied for. */}
+                    {selectedCvId && (
+                      <ApplyButton
+                        cvId={selectedCvId}
+                        jobTitle={jobTitle}
+                        variant="secondary"
+                      />
                     )}
                     <button
                       onClick={() => handleAnalyze()}

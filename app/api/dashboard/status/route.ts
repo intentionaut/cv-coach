@@ -44,15 +44,16 @@ export async function GET(req: NextRequest) {
       db.query(`SELECT COUNT(*)::int AS count FROM cover_letters WHERE user_id = $1`, [userId]),
       // Outcomes come from applications, not cover letters - a job applied
       // for by emailing a CV has no letter but is still an application, and
-      // was invisible here before 014.
+      // was invisible here before 014. Every application here has been sent
+      // by definition; the 'draft' exclusion only filters 014 backfill rows
+      // that 015 removes.
       db.query(
         `SELECT
-           COUNT(*)::int AS count,
-           COUNT(*) FILTER (WHERE status <> 'draft')::int AS applied_count,
+           COUNT(*)::int AS applied_count,
            COUNT(*) FILTER (WHERE status IN ('interviewing', 'offer'))::int AS interviewing_count,
            COUNT(*) FILTER (WHERE status = 'offer')::int AS offer_count,
            COUNT(*) FILTER (WHERE status = 'no_response')::int AS no_response_count
-         FROM applications WHERE user_id = $1`,
+         FROM applications WHERE user_id = $1 AND status <> 'draft'`,
         [userId]
       )
     ]);
@@ -65,7 +66,6 @@ export async function GET(req: NextRequest) {
       latestInterviewAt: sessionsResult.rows[0]?.latest || null,
       gettingStartedDismissed: !!userResult.rows[0]?.getting_started_dismissed_at,
       coverLetterCount: coverLettersResult.rows[0]?.count || 0,
-      applicationCount: applicationsResult.rows[0]?.count || 0,
       appliedCount: applicationsResult.rows[0]?.applied_count || 0,
       interviewingCount: applicationsResult.rows[0]?.interviewing_count || 0,
       offerCount: applicationsResult.rows[0]?.offer_count || 0,

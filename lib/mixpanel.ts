@@ -48,7 +48,6 @@ export function setUserProgress(progress: {
   cvCount: number;
   cvAnalysedCount: number;
   coverLetterCount: number;
-  applicationCount: number;
   appliedCount: number;
   interviewingCount: number;
   offerCount: number;
@@ -79,7 +78,6 @@ export function setUserProgress(progress: {
       'CV Count': progress.cvCount,
       'CVs Analysed': progress.cvAnalysedCount,
       'Cover Letters': progress.coverLetterCount,
-      'Applications Tracked': progress.applicationCount,
       'Applications Sent': progress.appliedCount,
       'Interviews Reached': progress.interviewingCount,
       'Offers': progress.offerCount,

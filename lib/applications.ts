@@ -1,12 +1,18 @@
 /**
- * The application is the object the rest of the product hangs off: a CV is
- * tailored for one, a cover letter is written for one, an interview is
- * practised for one. Shared here rather than in the route file so client
- * components can use the labels without dragging server code into the bundle.
+ * An application is the record that you actually went for something.
+ *
+ * It is deliberately not a job-search tracker - LinkedIn and Mandy already do
+ * that, and doing it worse isn't worth anyone's time. It exists to close the
+ * loop the rest of the product opens: you tailored a CV, maybe wrote a letter,
+ * and then you sent it. Clicking "I applied" is the only way one comes into
+ * being, which is why there's no draft state here - by the time it exists, it
+ * has been sent.
+ *
+ * What it does capture is structured: the role, and where possible the company
+ * receiving it, carried over from whatever the user already told us.
  */
 
 export const APPLICATION_STATUSES = [
-  'draft',
   'applied',
   'interviewing',
   'offer',
@@ -17,7 +23,6 @@ export const APPLICATION_STATUSES = [
 export type ApplicationStatus = (typeof APPLICATION_STATUSES)[number];
 
 export const STATUS_LABELS: Record<ApplicationStatus, string> = {
-  draft: 'Not sent yet',
   applied: 'Applied',
   interviewing: 'Interviewing',
   offer: 'Offer',
@@ -35,7 +40,3 @@ export const OUTCOME_STATUSES: ApplicationStatus[] = [
   'rejected',
   'no_response'
 ];
-
-export function isOpen(status: ApplicationStatus): boolean {
-  return status === 'draft' || status === 'applied' || status === 'interviewing';
-}
