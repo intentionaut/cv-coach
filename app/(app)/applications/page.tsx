@@ -160,31 +160,7 @@ function ApplicationsContent() {
         </div>
 
         {applications.length === 0 ? (
-          <div className="bg-bg-surface rounded-lg shadow-lg border border-border-hairline p-8 max-w-2xl">
-            <h2 className="font-display text-lg font-bold text-text-primary mb-2">
-              Nothing here yet
-            </h2>
-            <p className="font-body text-text-secondary mb-4">
-              When you send your CV or a cover letter off for a role, hit{' '}
-              <span className="font-semibold text-text-primary">I applied</span> and it&apos;ll
-              show up here. Come back to say how it went — that&apos;s how you find out which
-              version of your CV is actually working.
-            </p>
-            <div className="flex items-center gap-3 flex-wrap">
-              <button
-                onClick={() => router.push('/cv')}
-                className="font-body px-6 py-3 bg-cta-primary text-text-on-cta rounded-lg font-bold hover:opacity-90 transition"
-              >
-                Go to your CV
-              </button>
-              <button
-                onClick={() => router.push('/cover-letters')}
-                className="font-body px-6 py-3 bg-bg-surface border-2 border-accent-tertiary text-accent-tertiary rounded-lg font-bold hover:bg-accent-secondary/15 transition"
-              >
-                Cover letters
-              </button>
-            </div>
-          </div>
+          <EmptyState onGoToCv={() => router.push('/cv')} />
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
             <div className="lg:col-span-2 space-y-2">
@@ -318,6 +294,113 @@ function ApplicationsContent() {
         )}
       </div>
     </div>
+  );
+}
+
+/**
+ * The empty state does two jobs.
+ *
+ * It says what has to happen for this page to fill up - the page can't do
+ * anything on its own, since applications only exist once the user says they
+ * applied - and it shows the shape the page will take when it does, as a
+ * skeleton of the real layout.
+ *
+ * The skeleton uses real labels for the fixed furniture (the outcome buttons,
+ * the section headings) and grey bars only where the user's own content will
+ * go. That's the difference between a placeholder that sets expectations and
+ * one that just looks like something failed to load. It's inert and hidden
+ * from assistive tech - the message above it already says everything.
+ */
+function EmptyState({ onGoToCv }: { onGoToCv: () => void }) {
+  return (
+    <div>
+      <div className="max-w-2xl mb-8">
+        <p className="font-body text-lg text-text-primary mb-4">
+          When you&apos;ve applied and let us know, we&apos;ll help you keep track here.
+        </p>
+        <p className="font-body text-text-secondary mb-5">
+          Hit <span className="font-semibold text-text-primary">I applied</span> on a CV or a
+          cover letter and the role lands here. Come back to say how it went — over a few
+          applications that&apos;s what tells you which version of your CV is actually working.
+        </p>
+        <button
+          onClick={onGoToCv}
+          className="font-body px-6 py-3 bg-cta-primary text-text-on-cta rounded-lg font-bold hover:opacity-90 transition"
+        >
+          Go to your CV
+        </button>
+      </div>
+
+      <div
+        aria-hidden="true"
+        inert
+        className="grid grid-cols-1 lg:grid-cols-5 gap-6 opacity-45 select-none"
+      >
+        <div className="lg:col-span-2 space-y-2">
+          {[0, 1, 2].map(i => (
+            <div
+              key={i}
+              className="px-4 py-3 rounded-lg border-2 border-dashed border-border-hairline bg-bg-surface"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 space-y-2">
+                  <GhostBar className="h-3.5 w-2/3" />
+                  <GhostBar className="h-3 w-1/2" />
+                </div>
+                <GhostBar className="h-5 w-16 rounded-full shrink-0" />
+              </div>
+              <GhostBar className="h-2.5 w-1/3 mt-3" />
+            </div>
+          ))}
+        </div>
+
+        <div className="lg:col-span-3">
+          <div className="bg-bg-surface rounded-lg border-2 border-dashed border-border-hairline p-6 space-y-6">
+            <div className="space-y-2">
+              <GhostBar className="h-6 w-1/2" />
+              <GhostBar className="h-3 w-1/4" />
+            </div>
+
+            <div className="border-t border-border-hairline pt-5">
+              <p className="font-body text-xs text-text-secondary mb-2">Heard anything?</p>
+              <div className="flex items-center gap-2 flex-wrap">
+                {OUTCOME_STATUSES.map(s => (
+                  <span
+                    key={s}
+                    className="font-body px-3 py-1.5 text-xs font-semibold border border-border-hairline rounded-lg text-text-secondary"
+                  >
+                    {STATUS_LABELS[s]}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <div className="border-t border-border-hairline pt-5">
+              <p className="font-body text-sm font-semibold text-text-primary mb-1">
+                Who you sent it to
+              </p>
+              <GhostBar className="h-9 w-full rounded-lg" />
+            </div>
+
+            <div className="border-t border-border-hairline pt-5">
+              <p className="font-display font-bold text-text-primary mb-3">What you sent</p>
+              <div className="space-y-2">
+                <GhostBar className="h-3.5 w-3/5" />
+                <GhostBar className="h-3.5 w-2/5" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function GhostBar({ className = '' }: { className?: string }) {
+  return (
+    <div
+      className={`bg-text-primary/10 rounded animate-pulse motion-reduce:animate-none ${className}`}
+    />
   );
 }
 
