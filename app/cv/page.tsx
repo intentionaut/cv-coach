@@ -192,6 +192,7 @@ function CVEditorContent() {
   // image-based CV that most systems can't read at all).
   const [atsOpen, setAtsOpen] = useState(false);
   const [analyzeError, setAnalyzeError] = useState<string | null>(null);
+  const [scoreHistory, setScoreHistory] = useState<Array<{ score: number; at: string }>>([]);
   const [uploading, setUploading] = useState(false);
   const [uploadingJob, setUploadingJob] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -220,6 +221,7 @@ function CVEditorContent() {
     setAnalysis(null);
     setAtsReport(null);
     setAnalyzeError(null);
+    setScoreHistory([]);
     setJobTitle('');
     setJobDescription('');
     setEditingJobTitle(false);
@@ -247,6 +249,7 @@ function CVEditorContent() {
       setEditableCVText(generateCVText(data.cv));
       setJobTitle(data.jobTitle || '');
       setJobDescription(data.jobDescription || '');
+      setScoreHistory(data.scoreHistory || []);
       if (data.analysis && data.analysis.priorityImprovements) {
         setAnalysis(data.analysis);
       }
@@ -1110,6 +1113,25 @@ function CVEditorContent() {
                     <div className="text-right shrink-0">
                       <div className="font-display text-5xl font-bold text-accent-tertiary">{analysis.overallScore}</div>
                       <p className="font-body text-sm text-text-secondary mt-1">out of 100</p>
+                      {/* Progress is the point of the product, and until now
+                          only the latest score was ever shown - so a CV that
+                          improved from 51 to 74 looked identical to one that
+                          started at 74. */}
+                      {(() => {
+                        if (scoreHistory.length < 2) return null;
+                        const first = scoreHistory[0].score;
+                        const delta = analysis.overallScore - first;
+                        if (delta === 0) return null;
+                        return (
+                          <p
+                            className={`font-body text-xs font-bold mt-1 ${
+                              delta > 0 ? 'text-text-on-success' : 'text-text-secondary'
+                            }`}
+                          >
+                            {delta > 0 ? `▲ up ${delta} from ${first}` : `▼ ${delta} from ${first}`}
+                          </p>
+                        );
+                      })()}
                     </div>
                   </div>
                 </div>

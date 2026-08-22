@@ -41,6 +41,19 @@ export async function GET(
       [id]
     );
 
+    // Score across every analysis of this CV, oldest first. Only the latest
+    // score was ever surfaced before, so a user improving from 51 to 74 had
+    // no way to see it - the single clearest evidence of progress the product
+    // holds, and it was sitting unused in the same table.
+    const historyResult = await db.query(
+      `SELECT (action_items->>'overallScore')::int AS score, created_at
+       FROM coaching_recommendations
+       WHERE cv_id = $1 AND type = 'cv_analysis'
+         AND action_items->>'overallScore' IS NOT NULL
+       ORDER BY created_at ASC`,
+      [id]
+    );
+
     const cachedAnalysis = analysisResult.rows[0]?.action_items;
     const hasFullAnalysis =
       cachedAnalysis && !Array.isArray(cachedAnalysis) && typeof cachedAnalysis === 'object';
@@ -62,7 +75,11 @@ export async function GET(
       analysis: hasFullAnalysis ? {
         ...cachedAnalysis,
         createdAt: analysisResult.rows[0].created_at
-      } : null
+      } : null,
+      scoreHistory: historyResult.rows.map((row: any) => ({
+        score: row.score,
+        at: row.created_at
+      }))
     });
   } catch (error: any) {
     console.error('CV fetch error:', error);

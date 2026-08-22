@@ -32,6 +32,8 @@ function PracticeSessionContent() {
   // stops measuring your own judgement of your answer.
   const [selfClarity, setSelfClarity] = useState<number | null>(null);
   const [selfConfidence, setSelfConfidence] = useState<number | null>(null);
+  // Prior answers to this same question, fetched only after submitting.
+  const [priorAnswer, setPriorAnswer] = useState<{ written_answer: string; completed_at: string } | null>(null);
 
   useEffect(() => {
     // Load questions for this session
@@ -93,6 +95,25 @@ function PracticeSessionContent() {
         setAnswers([...answers, newAnswer]);
         setCurrentFeedback(data.feedback);
         setShowingFeedback(true);
+
+        // Deliberately fetched only now, never before submitting: seeing your
+        // old answer first would just invite copying it, which defeats the
+        // practice. Afterwards it's the clearest evidence of improvement the
+        // product can show.
+        try {
+          const histRes = await fetch(
+            `/api/interview/question-history?question=${encodeURIComponent(currentQuestion.question)}`
+          );
+          if (histRes.ok) {
+            const hist = await histRes.json();
+            const previous = (hist.responses || []).filter(
+              (r: any) => r.written_answer && r.written_answer !== currentAnswer
+            );
+            if (previous.length > 0) setPriorAnswer(previous[previous.length - 1]);
+          }
+        } catch (err) {
+          console.error('Failed to load question history:', err);
+        }
       }
     } catch (error) {
       console.error('Failed to submit answer:', error);
@@ -107,6 +128,7 @@ function PracticeSessionContent() {
     setCurrentFeedback(null);
     setSelfClarity(null);
     setSelfConfidence(null);
+    setPriorAnswer(null);
 
     if (isLastQuestion) {
       // Go to completion page
@@ -266,6 +288,30 @@ function PracticeSessionContent() {
 
             {currentFeedback && (
               <div className="space-y-6 mb-8">
+                {/* You've answered this before. Shown after feedback, never
+                    before - the point is to see how far you've come, not to
+                    copy last time's attempt. */}
+                {priorAnswer && (
+                  <details className="group bg-bg-main rounded-lg border border-border-hairline overflow-hidden">
+                    <summary className="cursor-pointer list-none px-4 py-3 flex items-center justify-between gap-3 hover:bg-bg-surface transition">
+                      <span className="font-body text-sm font-medium text-text-primary">
+                        You answered this before — see what you wrote
+                      </span>
+                      <svg className="w-4 h-4 text-text-secondary group-open:rotate-180 transition shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </summary>
+                    <div className="px-4 pb-4 border-t border-border-hairline pt-3">
+                      <p className="font-body text-xs text-text-secondary mb-2">
+                        {new Date(priorAnswer.completed_at).toLocaleDateString()}
+                      </p>
+                      <p className="font-body text-sm text-text-secondary whitespace-pre-wrap">
+                        {priorAnswer.written_answer}
+                      </p>
+                    </div>
+                  </details>
+                )}
+
                 {/* Calibration: only shown when they committed to a self-rating
                     before seeing this, otherwise there's nothing to compare. */}
                 {selfClarity !== null && typeof currentFeedback.assessedClarity === 'number' && (

@@ -14,6 +14,8 @@ interface DashboardStatus {
   gettingStartedDismissed: boolean;
   coverLetterCount: number;
   appliedCount: number;
+  interviewingCount: number;
+  offerCount: number;
 }
 
 function DashboardContent() {
@@ -120,6 +122,24 @@ function DashboardContent() {
           <p className="font-body text-text-inverse/75">{heroSubtitle}</p>
         </div>
 
+        {/* Outcomes, not activity. Sessions logged and words written are
+            vanity numbers; applications sent and what came back is the only
+            progress that means anything. Hidden until there's something real
+            to show, so it never reads as an empty scoreboard. */}
+        {hasApplied && (
+          <div className="bg-bg-surface rounded-lg border border-border-hairline p-6 mb-8">
+            <h3 className="font-display text-lg font-bold text-text-primary mb-4">Where you&apos;re up to</h3>
+            <div className="grid grid-cols-3 gap-4">
+              <OutcomeStat label="Applications sent" value={status?.appliedCount ?? 0} />
+              <OutcomeStat label="Got to interview" value={status?.interviewingCount ?? 0} />
+              <OutcomeStat label="Offers" value={status?.offerCount ?? 0} highlight />
+            </div>
+            <p className="font-body text-xs text-text-secondary mt-4">
+              Update a cover letter&apos;s status when you hear back, and this keeps track for you.
+            </p>
+          </div>
+        )}
+
         {/* The three stages of the journey, in the order the CV page's own
             header advertises: build it, write for a role, prepare to talk
             about it. Presented in sequence rather than as unordered peers. */}
@@ -200,6 +220,21 @@ function DashboardContent() {
           </div>
         )}
       </main>
+    </div>
+  );
+}
+
+function OutcomeStat({ label, value, highlight }: { label: string; value: number; highlight?: boolean }) {
+  return (
+    <div>
+      <div
+        className={`font-display text-3xl font-bold ${
+          highlight && value > 0 ? 'text-text-on-success' : 'text-accent-tertiary'
+        }`}
+      >
+        {value}
+      </div>
+      <p className="font-body text-xs text-text-secondary mt-0.5">{label}</p>
     </div>
   );
 }
