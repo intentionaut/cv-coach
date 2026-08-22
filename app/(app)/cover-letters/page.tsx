@@ -7,7 +7,6 @@ import { formatRelativeTime } from '@/lib/format';
 import { EVENTS, track } from '@/lib/analytics/events';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { REUSABLE_QUESTIONS } from '@/lib/data/cover-letter-questions';
-import BackToDashboard from '@/components/ui/BackToDashboard';
 
 type ApplicationStatus = 'draft' | 'applied' | 'interviewing' | 'offer' | 'rejected';
 
@@ -349,7 +348,6 @@ function CoverLettersContent() {
           <p className="font-body text-text-secondary">
             Answer a few questions once, then reuse them every time you write to a new role.
           </p>
-          <BackToDashboard className="font-body text-text-link hover:text-text-cta font-medium mt-4 inline-block" />
         </div>
 
         {cvs.length === 0 ? (

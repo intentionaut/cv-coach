@@ -91,41 +91,13 @@ function DashboardContent() {
 
   return (
     <div className="min-h-screen bg-bg-main">
-      {/* Header */}
-      <header className="bg-bg-surface shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-          <div>
-            <div className="flex items-center gap-2">
-              <Image src="/friday-logo.png" alt="" width={31} height={31} />
-              <h1 className="font-display text-2xl font-bold text-text-primary">Friday</h1>
-            </div>
-            <p className="font-body text-sm text-text-secondary">
-              {sessionStatus === 'loading' ? ' ' : `Welcome back, ${session?.user?.name?.split(' ')[0]}`}
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            {session?.user?.email === 'dasilvasaielle@gmail.com' && (
-              <button
-                onClick={() => router.push('/admin/invite')}
-                title="Admin only"
-                className="font-body px-4 py-2 text-sm text-accent-tertiary border border-accent-tertiary/30 hover:bg-accent-tertiary/10 rounded-lg transition"
-              >
-                Invite User
-              </button>
-            )}
-            <button
-              onClick={() => router.push('/settings')}
-              className="font-body px-4 py-2 text-sm text-text-secondary hover:bg-bg-main rounded-lg transition"
-            >
-              Settings
-            </button>
-            <button
-              onClick={() => signOut({ callbackUrl: '/login' })}
-              className="font-body px-4 py-2 text-sm text-text-muted hover:text-text-secondary hover:bg-bg-main rounded-lg transition"
-            >
-              Sign Out
-            </button>
-          </div>
+      {/* Logo, settings and sign-out all live in the sidebar now, so this is
+          just the greeting. */}
+      <header className="bg-bg-surface border-b border-border-hairline">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
+          <p className="font-body text-sm text-text-secondary">
+            {sessionStatus === 'loading' ? ' ' : `Welcome back, ${session?.user?.name?.split(' ')[0]}`}
+          </p>
         </div>
       </header>
 

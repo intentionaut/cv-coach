@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { useRouter } from 'next/navigation';
-import BackToDashboard from '@/components/ui/BackToDashboard';
 import { EVENTS, track } from '@/lib/analytics/events';
 
 interface PracticeSession {
@@ -138,7 +137,6 @@ function CoachingContent() {
     <div className="min-h-screen bg-bg-main">
       <header className="bg-bg-surface shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <BackToDashboard className="font-body text-text-link hover:text-text-cta mb-2 inline-block" />
           <h1 className="font-display text-2xl font-bold text-text-primary">Interview Practice</h1>
           <p className="font-body text-sm text-text-secondary">Build confidence with written interview practice</p>
         </div>

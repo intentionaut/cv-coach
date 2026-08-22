@@ -624,12 +624,6 @@ function CVEditorContent() {
             <span aria-hidden="true">→</span>
             <span>4. Apply</span>
           </div>
-          <button
-            onClick={() => router.push('/dashboard')}
-            className="font-body text-text-link hover:text-text-cta font-medium mt-4"
-          >
-            ← Back to Dashboard
-          </button>
         </div>
 
         {/* My CVs */}
