@@ -23,6 +23,19 @@ interface CvOption {
   jobTitle: string;
 }
 
+interface CategoryStat {
+  category: string;
+  answered: number;
+  avgClarity: number;
+}
+
+interface Strengths {
+  categories: CategoryStat[];
+  strongest: CategoryStat | null;
+  weakest: CategoryStat | null;
+  totalAnswered: number;
+}
+
 function CoachingContent() {
   const router = useRouter();
   const [sessions, setSessions] = useState<PracticeSession[]>([]);
@@ -30,11 +43,25 @@ function CoachingContent() {
   const [cvs, setCvs] = useState<CvOption[]>([]);
   // '' means general practice, not tied to any particular role.
   const [selectedCvId, setSelectedCvId] = useState('');
+  const [strengths, setStrengths] = useState<Strengths | null>(null);
 
   useEffect(() => {
     fetchSessions();
     fetchCvs();
+    fetchStrengths();
   }, []);
+
+  // Patterns across sessions, not per-answer feedback - the thing you can
+  // only see once you've practised a few times.
+  const fetchStrengths = async () => {
+    try {
+      const response = await fetch('/api/interview/strengths');
+      if (!response.ok) return;
+      setStrengths(await response.json());
+    } catch (error) {
+      console.error('Failed to fetch strengths:', error);
+    }
+  };
 
   const fetchSessions = async () => {
     try {
@@ -181,6 +208,47 @@ function CoachingContent() {
             </div>
           </div>
         </div>
+
+        {/* Patterns across sessions. Only appears once there's enough
+            practice for a pattern to be real rather than noise. */}
+        {strengths?.strongest && strengths?.weakest && (
+          <div className="bg-bg-surface rounded-lg shadow border border-border-hairline p-6 mb-8">
+            <h3 className="font-display text-lg font-bold text-text-primary mb-1">
+              What&apos;s emerging across your practice
+            </h3>
+            <p className="font-body text-xs text-text-secondary mb-4">
+              Based on {strengths.totalAnswered} answers so far
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+              <div className="bg-success/15 border border-success/30 rounded-lg p-4">
+                <p className="font-body text-xs uppercase tracking-wide text-text-on-success mb-1">
+                  Strongest so far
+                </p>
+                <p className="font-display font-bold text-text-primary capitalize">
+                  {strengths.strongest.category.replace(/-/g, ' ')}
+                </p>
+                <p className="font-body text-xs text-text-secondary mt-0.5">
+                  averaging {strengths.strongest.avgClarity}/5 over {strengths.strongest.answered} answers
+                </p>
+              </div>
+              <div className="bg-alert/25 border border-alert rounded-lg p-4">
+                <p className="font-body text-xs uppercase tracking-wide text-text-on-alert mb-1">
+                  Worth more practice
+                </p>
+                <p className="font-display font-bold text-text-primary capitalize">
+                  {strengths.weakest.category.replace(/-/g, ' ')}
+                </p>
+                <p className="font-body text-xs text-text-secondary mt-0.5">
+                  averaging {strengths.weakest.avgClarity}/5 over {strengths.weakest.answered} answers
+                </p>
+              </div>
+            </div>
+            <p className="font-body text-xs text-text-secondary">
+              A weaker category usually means less practice, not less ability — these are the questions worth
+              sitting with.
+            </p>
+          </div>
+        )}
 
         {/* Past Sessions */}
         <div className="bg-bg-surface rounded-lg shadow">

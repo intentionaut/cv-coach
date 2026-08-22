@@ -380,13 +380,45 @@ export default function PhoneCallSimulator({
                   </div>
                 )}
 
-                {feedback.improvements && feedback.improvements.length > 0 && (
+                {/* STAR, condensed to a single row - this panel sits inside
+                    the call UI and can't take the full four-card treatment. */}
+                {feedback.starApplicable && feedback.star && (
                   <div>
-                    <p className="font-body text-accent-secondary text-xs font-semibold mb-2">→ TO IMPROVE</p>
+                    <p className="font-body text-text-inverse/75 text-xs font-semibold mb-2">STRUCTURE</p>
+                    <div className="flex gap-2">
+                      {(['situation', 'task', 'action', 'result'] as const).map(key => {
+                        const part = feedback.star?.[key];
+                        if (!part) return null;
+                        return (
+                          <span
+                            key={key}
+                            className={`font-body text-xs px-2 py-1 rounded capitalize ${
+                              part.present
+                                ? 'bg-success/25 text-text-inverse'
+                                : 'bg-cta-primary/30 text-text-inverse'
+                            }`}
+                          >
+                            {part.present ? '✓' : '✕'} {key}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* `questions` is the current shape; `improvements` kept so
+                    answers recorded before the Socratic rewrite still show. */}
+                {(feedback.questions?.length > 0 || feedback.improvements?.length > 0) && (
+                  <div>
+                    <p className="font-body text-accent-secondary text-xs font-semibold mb-2">
+                      {feedback.questions?.length > 0 ? '→ WORTH THINKING ABOUT' : '→ TO IMPROVE'}
+                    </p>
                     <ul className="space-y-1">
-                      {feedback.improvements.slice(0, 2).map((improvement: string, idx: number) => (
-                        <li key={idx} className="font-body text-text-inverse/75 text-xs">• {improvement}</li>
-                      ))}
+                      {(feedback.questions ?? feedback.improvements)
+                        .slice(0, 2)
+                        .map((item: string, idx: number) => (
+                          <li key={idx} className="font-body text-text-inverse/75 text-xs">• {item}</li>
+                        ))}
                     </ul>
                   </div>
                 )}

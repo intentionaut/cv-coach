@@ -1,0 +1,16 @@
+-- Drops progress_metrics, which was created in the original schema and never
+-- written to by any code path.
+--
+-- It was a denormalised cache: total_interviews, average_score,
+-- improvement_trend, strong_categories, needs_work_categories. Every one of
+-- those is derivable from interview_sessions and coaching_recommendations,
+-- and at this scale those queries are trivial - so the cache would buy no
+-- performance while introducing a real way for the numbers to drift out of
+-- sync with the source data. In a feature whose entire job is telling someone
+-- the truth about their own progress, a stale cache is worse than no cache.
+--
+-- The genuinely useful thing it gestured at - strong vs. weak question
+-- categories - now exists as /api/interview/strengths, computed live.
+--
+-- Safe to drop: zero rows have ever been written, and nothing references it.
+DROP TABLE IF EXISTS progress_metrics;
