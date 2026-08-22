@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
     const availableSkills = FILM_THEATRE_SKILLS;
 
     // Use Claude to analyze the CV and provide improvement suggestions
-    const message = await anthropic.messages.create({
+    const claudeStream = anthropic.messages.stream({
       model,
       max_tokens: 12000,
       messages: [
@@ -94,10 +94,26 @@ Please analyze the CV and provide:
 7. **Formatting & Presentation**: Specific suggestions for visual improvements
 8. **Language & Voice Coaching**: For notably weak or generic lines, quote the real line (current), name the underlying technique in one sentence (principle), and demonstrate it with an adjacent-scenario example (example) per principle 4 - plus a short reason grounded in sounding human, not just "stronger"
 
-Return a JSON object with this structure:
+9. **Role fit** (ONLY when a job description was given above - otherwise return roleFit as null): where this CV already lines up with the posting, and where it doesn't. Every gap must carry the question that would help them work out whether they actually have that thing. Distinguish "they haven't evidenced this" from "they can't do this" - early-career candidates routinely have relevant experience they simply didn't think to write down, and the question should help them dig it out.
+
+CRITICAL - THE SCORE IS A SINGLE NUMBER:
+There is exactly one score: overallScore. When a job description is given, that score reflects **how ready this CV is for that specific role** - CV quality and role fit together, not two separate judgements. When no job description is given, it reflects CV quality against general film and theatre industry standards. Never produce a separate fit score. Make sure the section scores, roleFit content, and overallScore all tell a consistent story - they must not contradict each other.
+
+Be honest with the number. A lower score for a genuine step-up role is useful information, not a failure, and scoreRationale should say so plainly. Equally, don't manufacture problems to seem rigorous.
+
+Return a JSON object with EXACTLY these keys in EXACTLY this order (the order matters - the interface reveals them progressively as they arrive):
 {
   "overallScore": number,
+  "scoreRationale": "one honest sentence on what that number reflects and what it doesn't",
   "confidenceBoosters": ["string"],
+  "priorityImprovements": [
+    { "priority": number, "section": "string", "change": "string", "impact": "string" }
+  ],
+  "roleFit": {
+    "strongOverlap": [ { "requirement": "string", "evidence": "string" } ],
+    "gaps": [ { "requirement": "string", "missing": "string", "question": "string" } ],
+    "notEvidenced": ["string"]
+  },
   "sections": {
     "summary": { "score": number, "improvements": ["string"] },
     "experience": { "score": number, "improvements": ["string"] },
@@ -105,16 +121,13 @@ Return a JSON object with this structure:
     "education": { "score": number, "improvements": ["string"] },
     "projects": { "score": number, "improvements": ["string"] }
   },
-  "priorityImprovements": [
-    { "priority": number, "section": "string", "change": "string", "impact": "string" }
-  ],
   "quantificationPrompts": [
     { "section": "string", "item": "string", "questions": ["string"], "exampleAnswers": ["string"] }
   ],
-  "formattingTips": ["string"],
   "languageUpgrades": [
     { "current": "string", "principle": "string", "example": "string", "reason": "string" }
-  ]
+  ],
+  "formattingTips": ["string"]
 }
 
 Return ONLY the JSON object, no additional text.`
@@ -122,91 +135,110 @@ Return ONLY the JSON object, no additional text.`
       ]
     });
 
-    // If Claude hit the max_tokens ceiling mid-response, content.text.text is
-    // silently cut off mid-JSON - the JSON.parse below would fail with a
-    // generic "Unexpected end of JSON input" that gives no hint this was a
-    // truncation, not a malformed response. Catch it explicitly here instead.
-    if (message.stop_reason === 'max_tokens') {
-      console.error('CV analysis truncated: Claude hit max_tokens before finishing the response', {
-        cvId,
-        model,
-        stopReason: message.stop_reason,
-        usage: message.usage
-      });
-      return NextResponse.json(
-        {
-          error:
-            'Your CV analysis was too long to complete in one pass. Try again - this is usually transient.'
-        },
-        { status: 502 }
-      );
-    }
-
-    const textContent = message.content.find(block => block.type === 'text');
-    if (!textContent || textContent.type !== 'text') {
-      throw new Error('No text response from Claude');
-    }
-
-    // Parse Claude's JSON response - strip markdown code fences and extract JSON
-    let jsonText = textContent.text.trim();
-
-    // Remove markdown code fences if present
-    if (jsonText.startsWith('```')) {
-      jsonText = jsonText.replace(/^```(?:json)?\n?/g, '').replace(/\n?```$/g, '');
-    }
-
-    // Extract just the JSON object (find first { to last })
-    const firstBrace = jsonText.indexOf('{');
-    const lastBrace = jsonText.lastIndexOf('}');
-    if (firstBrace !== -1 && lastBrace !== -1) {
-      jsonText = jsonText.substring(firstBrace, lastBrace + 1);
-    }
-
-    let analysis;
-    try {
-      analysis = JSON.parse(jsonText);
-    } catch (parseError: any) {
-      // A raw "Unexpected token" message is useless without seeing what
-      // Claude actually returned - log enough of the real text to diagnose
-      // a prompt/schema mismatch without dumping the entire (long) response.
-      console.error('CV analysis JSON parse failed:', {
-        cvId,
-        model,
-        parseErrorMessage: parseError.message,
-        responseLength: jsonText.length,
-        responseStart: jsonText.slice(0, 500),
-        responseEnd: jsonText.slice(-500)
-      });
-      throw parseError;
-    }
-
     // title is VARCHAR(255) - jobDescription can be a full pasted job
     // posting, so it has to be truncated or a long one blows the column and
     // the whole insert fails after Claude has already run (and been paid
     // for). Prefer the short jobTitle when there is one.
     const titleRole = (jobTitle || jobDescription || 'Film/Theatre').replace(/\s+/g, ' ').trim().slice(0, 200);
 
-    // Store the full analysis (not just priorityImprovements) so a returning
-    // user's session can be rebuilt from the database without another Claude
-    // call - re-analyzing on every login was burning API cost for no reason.
-    await db.query(
-      `INSERT INTO coaching_recommendations (
-        user_id, cv_id, type, priority, title, description, action_items, created_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())`,
-      [
-        session.user.id,
-        cvId,
-        'cv_analysis',
-        'high',
-        `CV Analysis for ${titleRole}`,
-        `Overall Score: ${analysis.overallScore}/100`,
-        JSON.stringify(analysis)
-      ]
-    );
+    // Streamed rather than awaited whole: the analysis takes tens of seconds
+    // to generate, and the schema is ordered so the score and headline
+    // guidance arrive first. The client parses the partial JSON as it lands
+    // (see lib/partial-json.ts) and reveals each field the moment it
+    // completes, instead of showing a spinner for the full duration.
+    const encoder = new TextEncoder();
+    const userId = session.user.id;
 
-    return NextResponse.json({
-      success: true,
-      analysis
+    const readable = new ReadableStream({
+      async start(controller) {
+        let full = '';
+        try {
+          for await (const event of claudeStream) {
+            if (
+              event.type === 'content_block_delta' &&
+              event.delta.type === 'text_delta'
+            ) {
+              full += event.delta.text;
+              controller.enqueue(encoder.encode(event.delta.text));
+            }
+          }
+
+          const finalMessage = await claudeStream.finalMessage();
+          if (finalMessage.stop_reason === 'max_tokens') {
+            // The JSON is cut off mid-structure. The client will simply never
+            // see the trailing fields; log it so a recurring ceiling problem
+            // is visible rather than looking like flaky output.
+            console.error('CV analysis truncated: hit max_tokens before finishing', {
+              cvId,
+              model,
+              usage: finalMessage.usage
+            });
+          }
+
+          // Persist so a returning user's session rebuilds from the database
+          // without paying for another Claude call.
+          let jsonText = full.trim();
+          if (jsonText.startsWith('```')) {
+            jsonText = jsonText.replace(/^```(?:json)?\n?/g, '').replace(/\n?```$/g, '');
+          }
+          const firstBrace = jsonText.indexOf('{');
+          const lastBrace = jsonText.lastIndexOf('}');
+          if (firstBrace !== -1 && lastBrace !== -1) {
+            jsonText = jsonText.substring(firstBrace, lastBrace + 1);
+          }
+
+          try {
+            const analysis = JSON.parse(jsonText);
+            await db.query(
+              `INSERT INTO coaching_recommendations (
+                user_id, cv_id, type, priority, title, description, action_items, created_at
+              ) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())`,
+              [
+                userId,
+                cvId,
+                'cv_analysis',
+                'high',
+                `CV Analysis for ${titleRole}`,
+                `Overall Score: ${analysis.overallScore}/100`,
+                JSON.stringify(analysis)
+              ]
+            );
+          } catch (persistError: any) {
+            // The user already has the streamed content on screen, so this
+            // isn't fatal to their session - but it means the analysis won't
+            // survive a reload, which is worth seeing in the logs.
+            console.error('CV analysis persist failed:', {
+              cvId,
+              model,
+              message: persistError?.message,
+              responseLength: jsonText.length,
+              responseStart: jsonText.slice(0, 500),
+              responseEnd: jsonText.slice(-500)
+            });
+          }
+        } catch (streamError: any) {
+          console.error('CV analysis stream error:', {
+            cvId,
+            model,
+            message: streamError?.message,
+            name: streamError?.name,
+            status: streamError?.status,
+            anthropicError: streamError?.error
+          });
+        } finally {
+          controller.close();
+        }
+      }
+    });
+
+    return new Response(readable, {
+      headers: {
+        'Content-Type': 'text/plain; charset=utf-8',
+        'Cache-Control': 'no-store',
+        // Streaming is the whole point here - make sure nothing downstream
+        // decides to helpfully buffer the response before it reaches us.
+        'X-Accel-Buffering': 'no'
+      }
     });
   } catch (error: any) {
     // A plain `console.error(label, error)` on an Anthropic SDK error prints

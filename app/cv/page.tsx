@@ -5,6 +5,7 @@ import Link from 'next/link';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { useRouter } from 'next/navigation';
 import type { AtsReport } from '@/lib/ats/checks';
+import { parsePartialJson } from '@/lib/partial-json';
 
 // Type definitions
 interface CVData {
@@ -42,6 +43,8 @@ interface CVData {
 
 interface Analysis {
   overallScore: number;
+  scoreRationale?: string;
+  roleFit?: RoleMatch | null;
   confidenceBoosters: string[];
   sections: {
     summary?: { score: number; improvements: string[] };
@@ -75,8 +78,6 @@ interface Analysis {
 // Deliberately gap-shaped rather than verdict-shaped: every gap carries the
 // question that helps the user work out whether they actually have the thing.
 interface RoleMatch {
-  matchScore: number;
-  scoreRationale: string;
   strongOverlap: Array<{ requirement: string; evidence: string }>;
   gaps: Array<{ requirement: string; missing: string; question: string }>;
   notEvidenced: string[];
@@ -190,9 +191,7 @@ function CVEditorContent() {
   // opened automatically when something is genuinely broken (e.g. an
   // image-based CV that most systems can't read at all).
   const [atsOpen, setAtsOpen] = useState(false);
-  const [roleMatch, setRoleMatch] = useState<RoleMatch | null>(null);
-  const [matching, setMatching] = useState(false);
-  const [matchError, setMatchError] = useState<string | null>(null);
+  const [analyzeError, setAnalyzeError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadingJob, setUploadingJob] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -220,8 +219,7 @@ function CVEditorContent() {
     setCvData(null);
     setAnalysis(null);
     setAtsReport(null);
-    setRoleMatch(null);
-    setMatchError(null);
+    setAnalyzeError(null);
     setJobTitle('');
     setJobDescription('');
     setEditingJobTitle(false);
@@ -258,27 +256,6 @@ function CVEditorContent() {
     }
   };
 
-  // Unlike the ATS checks, this is a Claude call - so it stays behind an
-  // explicit button rather than running on open.
-  const handleMatch = async () => {
-    if (!selectedCvId) return;
-    setMatching(true);
-    setMatchError(null);
-    try {
-      const response = await fetch(`/api/cv/${selectedCvId}/match`, { method: 'POST' });
-      const result = await response.json();
-      if (result.success) {
-        setRoleMatch(result.match);
-      } else {
-        setMatchError(result.error || 'Something went wrong. Please try again.');
-      }
-    } catch (error) {
-      console.error('Match error:', error);
-      setMatchError('Something went wrong. Please check your connection and try again.');
-    } finally {
-      setMatching(false);
-    }
-  };
 
   // Deterministic and free, so it just runs whenever a CV is opened rather
   // than sitting behind a button - there's no cost to weigh up.
@@ -544,6 +521,7 @@ function CVEditorContent() {
     if (!dataToAnalyze || !selectedCvId) return;
 
     setAnalyzing(true);
+    setAnalyzeError(null);
     try {
       const response = await fetch('/api/cv/analyze', {
         method: 'POST',
@@ -556,19 +534,45 @@ function CVEditorContent() {
         }),
       });
 
-      const result = await response.json();
-      if (result.success) {
-        setAnalysis(result.analysis);
+      // Non-OK responses are still JSON errors; only a 200 is a stream.
+      if (!response.ok || !response.body) {
+        const err = await response.json().catch(() => ({}));
+        setAnalyzeError(err.error || 'Analysis failed. Please try again.');
+        return;
+      }
+
+      // Read the stream and re-render on each chunk. The schema is ordered
+      // so the score arrives first, so the panel fills in from the top
+      // rather than appearing all at once after a long wait.
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const partial = parsePartialJson(buffer);
+        if (partial && typeof partial.overallScore === 'number') {
+          setAnalysis(partial as Analysis);
+        }
+      }
+
+      const finalAnalysis = parsePartialJson(buffer);
+      if (finalAnalysis && typeof finalAnalysis.overallScore === 'number') {
+        setAnalysis(finalAnalysis as Analysis);
         setEditableCVText(generateCVText(dataToAnalyze));
         setCvs(prev => prev.map(cv => (
-          cv.id === selectedCvId ? { ...cv, hasAnalysis: true, score: result.analysis.overallScore } : cv
+          cv.id === selectedCvId
+            ? { ...cv, hasAnalysis: true, score: finalAnalysis.overallScore }
+            : cv
         )));
       } else {
-        alert(`Analysis failed: ${result.error}`);
+        setAnalyzeError('The analysis came back incomplete. Please try again.');
       }
     } catch (error) {
       console.error('Analysis error:', error);
-      alert('Failed to analyze CV');
+      setAnalyzeError('Something went wrong. Please check your connection and try again.');
     } finally {
       setAnalyzing(false);
     }
@@ -797,6 +801,13 @@ function CVEditorContent() {
             )}
           </div>
 
+          {analyzeError && (
+            <div className="mx-6 mb-4 flex items-start gap-2 bg-cta-primary/10 border border-cta-primary/30 rounded-lg p-3">
+              <span className="text-text-cta text-sm mt-0.5" aria-hidden="true">⚠</span>
+              <p className="font-body text-sm text-text-cta">{analyzeError}</p>
+            </div>
+          )}
+
           <details className="group border-t border-border-hairline">
             <summary className="cursor-pointer list-none px-6 py-3 flex items-center gap-2 hover:bg-bg-main transition">
               <span className="font-body text-sm font-medium text-text-link">
@@ -844,115 +855,6 @@ function CVEditorContent() {
             </div>
           </details>
 
-          {/* How this CV lines up against the posting. Only offered once
-              there's a job description to compare against - without one
-              there's nothing to match, and a score would be invented. */}
-          {cvData && jobDescription.trim() && (
-            <div className="border-t border-border-hairline px-6 py-4">
-              {!roleMatch ? (
-                <div className="flex items-center justify-between gap-3 flex-wrap">
-                  <p className="font-body text-sm text-text-secondary">
-                    See how your CV lines up against this posting before you apply.
-                  </p>
-                  <button
-                    onClick={handleMatch}
-                    disabled={matching}
-                    className="font-body px-6 py-3 bg-bg-surface border-2 border-accent-tertiary text-accent-tertiary rounded-lg font-bold hover:bg-accent-secondary/15 transition disabled:opacity-50"
-                  >
-                    {matching ? 'Comparing...' : 'Check my match'}
-                  </button>
-                </div>
-              ) : (
-                <div>
-                  <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
-                    <div className="flex-1 min-w-[200px]">
-                      <h4 className="font-display font-bold text-text-primary">How you line up</h4>
-                      <p className="font-body text-sm text-text-secondary mt-1">{roleMatch.scoreRationale}</p>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-display text-4xl font-bold text-accent-tertiary">
-                        {roleMatch.matchScore}
-                      </div>
-                      <p className="font-body text-xs text-text-secondary">out of 100</p>
-                    </div>
-                  </div>
-
-                  {roleMatch.strongOverlap?.length > 0 && (
-                    <div className="mb-4">
-                      <p className="font-body text-xs uppercase tracking-wide text-text-secondary mb-2">
-                        Already lines up
-                      </p>
-                      <ul className="space-y-2">
-                        {roleMatch.strongOverlap.map((item, idx) => (
-                          <li key={idx} className="font-body text-sm text-text-secondary flex items-start gap-2">
-                            <span className="text-success shrink-0">✓</span>
-                            <span>
-                              <span className="text-text-primary font-medium">{item.requirement}</span>
-                              {' — '}
-                              {item.evidence}
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                  {roleMatch.gaps?.length > 0 && (
-                    <div className="mb-4">
-                      <p className="font-body text-xs uppercase tracking-wide text-text-secondary mb-2">
-                        Worth closing before you apply
-                      </p>
-                      <ul className="space-y-3">
-                        {roleMatch.gaps.map((gap, idx) => (
-                          <li key={idx} className="border-l-2 border-accent-secondary pl-3">
-                            <p className="font-body text-sm font-medium text-text-primary">{gap.requirement}</p>
-                            <p className="font-body text-xs text-text-secondary mt-0.5">{gap.missing}</p>
-                            <p className="font-body text-sm text-text-primary mt-1">{gap.question}</p>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                  {roleMatch.notEvidenced?.length > 0 && (
-                    <div className="mb-4">
-                      <p className="font-body text-xs uppercase tracking-wide text-text-secondary mb-2">
-                        Your CV says nothing about
-                      </p>
-                      <div className="flex flex-wrap gap-1.5">
-                        {roleMatch.notEvidenced.map((item, idx) => (
-                          <span
-                            key={idx}
-                            className="font-body text-xs px-2 py-1 bg-bg-main rounded border border-border-hairline text-text-secondary"
-                          >
-                            {item}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="flex items-center justify-between gap-3 flex-wrap pt-2 border-t border-border-hairline">
-                    <p className="font-body text-xs text-text-secondary max-w-md">
-                      One reading of the posting, not the employer&apos;s. A lower score for a role
-                      that stretches you is information, not a reason to skip it.
-                    </p>
-                    <button
-                      onClick={handleMatch}
-                      disabled={matching}
-                      className="font-body text-sm text-text-link hover:text-text-cta font-medium disabled:opacity-50"
-                    >
-                      {matching ? 'Comparing...' : 'Check again'}
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {matchError && (
-                <p className="font-body text-sm text-text-cta mt-3">{matchError}</p>
-              )}
-            </div>
-          )}
         </div>
 
         {/* Canvas: CV content always visible; analysis appears alongside it
@@ -1177,7 +1079,20 @@ function CVEditorContent() {
                 <div className="border-b border-border-hairline px-8 py-6">
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
-                      <h2 className="font-display text-3xl font-bold text-text-primary">Your CV Score</h2>
+                      <h2 className="font-display text-3xl font-bold text-text-primary">
+                        {jobTitle.trim() ? `Your CV for ${jobTitle.trim()}` : 'Your CV Score'}
+                      </h2>
+                      {/* When a role is set the score reflects readiness for
+                          that role, so say which it is rather than leaving
+                          the number ambiguous. */}
+                      <p className="font-body text-xs text-text-secondary mt-1">
+                        {jobTitle.trim()
+                          ? 'Strength and fit for this role, scored together'
+                          : 'Scored against general film and theatre industry standards'}
+                      </p>
+                      {analysis.scoreRationale && (
+                        <p className="font-body text-text-primary mt-3 max-w-2xl">{analysis.scoreRationale}</p>
+                      )}
                       <p className="font-body text-text-secondary mt-3 max-w-2xl">
                         {analysis.overallScore >= 80 ? (
                           "You're in great shape! A few refinements will make your CV even stronger."
@@ -1196,6 +1111,76 @@ function CVEditorContent() {
                     </div>
                   </div>
                 </div>
+
+                {/* Role fit, folded into the same analysis rather than shown
+                    as a competing second score - the number above already
+                    accounts for it when a job description is set. */}
+                {analysis.roleFit && (
+                  (analysis.roleFit.strongOverlap?.length > 0 ||
+                    analysis.roleFit.gaps?.length > 0 ||
+                    analysis.roleFit.notEvidenced?.length > 0) && (
+                    <div className="px-8 py-6 border-b border-border-hairline">
+                      <h3 className="font-display text-lg font-bold text-text-primary mb-4">
+                        Against this posting
+                      </h3>
+
+                      {analysis.roleFit.strongOverlap?.length > 0 && (
+                        <div className="mb-4">
+                          <p className="font-body text-xs uppercase tracking-wide text-text-secondary mb-2">
+                            Already lines up
+                          </p>
+                          <ul className="space-y-2">
+                            {analysis.roleFit.strongOverlap.map((item, idx) => (
+                              <li key={idx} className="font-body text-sm text-text-secondary flex items-start gap-2">
+                                <span className="text-success shrink-0">✓</span>
+                                <span>
+                                  <span className="text-text-primary font-medium">{item.requirement}</span>
+                                  {' — '}
+                                  {item.evidence}
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {analysis.roleFit.gaps?.length > 0 && (
+                        <div className="mb-4">
+                          <p className="font-body text-xs uppercase tracking-wide text-text-secondary mb-2">
+                            Worth closing before you apply
+                          </p>
+                          <ul className="space-y-3">
+                            {analysis.roleFit.gaps.map((gap, idx) => (
+                              <li key={idx} className="border-l-2 border-accent-secondary pl-3">
+                                <p className="font-body text-sm font-medium text-text-primary">{gap.requirement}</p>
+                                <p className="font-body text-xs text-text-secondary mt-0.5">{gap.missing}</p>
+                                <p className="font-body text-sm text-text-primary mt-1">{gap.question}</p>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {analysis.roleFit.notEvidenced?.length > 0 && (
+                        <div>
+                          <p className="font-body text-xs uppercase tracking-wide text-text-secondary mb-2">
+                            Your CV says nothing about
+                          </p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {analysis.roleFit.notEvidenced.map((item, idx) => (
+                              <span
+                                key={idx}
+                                className="font-body text-xs px-2 py-1 bg-bg-main rounded border border-border-hairline text-text-secondary"
+                              >
+                                {item}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )
+                )}
 
                 {/* What's already working - leads with strengths, not just
                     problems to fix, before anything else. */}
