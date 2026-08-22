@@ -3,6 +3,7 @@ import { Epilogue, Rosario, Geist_Mono } from "next/font/google";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import "./globals.css";
 import Providers from "./providers";
+import Footer from "@/components/layout/Footer";
 
 const epilogue = Epilogue({
   variable: "--font-display",
@@ -34,6 +35,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     >
       <body className="min-h-full flex flex-col">
         <Providers>{children}</Providers>
+        <Footer />
       </body>
       <GoogleAnalytics gaId="G-046F7P2YBS" />
     </html>

@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
+import Footer from '@/components/layout/Footer';
 
 // Every value below is read from the live tokens in app/globals.css - this
 // page is meant to stay in sync with what's actually implemented, not a
@@ -294,6 +295,18 @@ export default function DesignSystemPage() {
               <span className="text-text-cta text-sm mt-0.5" aria-hidden="true">⚠</span>
               <p className="font-body text-sm text-text-cta">Inline error/warning message - text: text-cta.</p>
             </div>
+          </div>
+        </Section>
+
+        <Section title="Footer">
+          <p className="font-body text-sm text-text-secondary mb-4">
+            Mounted once in the root layout, so every page gets it — don&apos;t add
+            per-page footers. Uses <code className="font-mono text-xs bg-bg-surface px-1.5 py-0.5 rounded border border-border-hairline">mt-auto</code>{' '}
+            against the flex-column body so it sits at the bottom of short pages
+            rather than floating mid-screen.
+          </p>
+          <div className="rounded-lg border border-border-hairline overflow-hidden">
+            <Footer />
           </div>
         </Section>
 

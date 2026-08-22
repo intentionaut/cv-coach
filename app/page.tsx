@@ -109,17 +109,6 @@ export default function Home() {
         </section>
       </main>
 
-      <footer className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-center">
-        <p className="font-body text-xs text-text-secondary">
-          <a href="/terms" className="text-text-link underline">
-            Terms &amp; Conditions
-          </a>{' '}
-          &middot;{' '}
-          <a href="/privacy" className="text-text-link underline">
-            Privacy Policy
-          </a>
-        </p>
-      </footer>
     </div>
   );
 }
