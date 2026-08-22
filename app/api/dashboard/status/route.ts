@@ -15,7 +15,8 @@ export async function GET(req: NextRequest) {
 
     const userId = session.user.id;
 
-    const [cvResult, sessionsResult, userResult, coverLettersResult] = await Promise.all([
+    const [cvResult, sessionsResult, userResult, coverLettersResult, applicationsResult] =
+      await Promise.all([
       // analysed_count drives the CV card's "Draft" vs "Analysed" state -
       // counting distinct CVs that have at least one stored analysis, not
       // total analyses (re-analysing the same CV shouldn't inflate progress).
@@ -40,15 +41,18 @@ export async function GET(req: NextRequest) {
         `SELECT getting_started_dismissed_at FROM users WHERE id = $1`,
         [userId]
       ),
-      // applied_count = letters that have actually been sent somewhere, the
-      // real end of the funnel, vs. drafts still being worked on.
+      db.query(`SELECT COUNT(*)::int AS count FROM cover_letters WHERE user_id = $1`, [userId]),
+      // Outcomes come from applications, not cover letters - a job applied
+      // for by emailing a CV has no letter but is still an application, and
+      // was invisible here before 014.
       db.query(
         `SELECT
            COUNT(*)::int AS count,
            COUNT(*) FILTER (WHERE status <> 'draft')::int AS applied_count,
            COUNT(*) FILTER (WHERE status IN ('interviewing', 'offer'))::int AS interviewing_count,
-           COUNT(*) FILTER (WHERE status = 'offer')::int AS offer_count
-         FROM cover_letters WHERE user_id = $1`,
+           COUNT(*) FILTER (WHERE status = 'offer')::int AS offer_count,
+           COUNT(*) FILTER (WHERE status = 'no_response')::int AS no_response_count
+         FROM applications WHERE user_id = $1`,
         [userId]
       )
     ]);
@@ -61,9 +65,11 @@ export async function GET(req: NextRequest) {
       latestInterviewAt: sessionsResult.rows[0]?.latest || null,
       gettingStartedDismissed: !!userResult.rows[0]?.getting_started_dismissed_at,
       coverLetterCount: coverLettersResult.rows[0]?.count || 0,
-      appliedCount: coverLettersResult.rows[0]?.applied_count || 0,
-      interviewingCount: coverLettersResult.rows[0]?.interviewing_count || 0,
-      offerCount: coverLettersResult.rows[0]?.offer_count || 0
+      applicationCount: applicationsResult.rows[0]?.count || 0,
+      appliedCount: applicationsResult.rows[0]?.applied_count || 0,
+      interviewingCount: applicationsResult.rows[0]?.interviewing_count || 0,
+      offerCount: applicationsResult.rows[0]?.offer_count || 0,
+      noResponseCount: applicationsResult.rows[0]?.no_response_count || 0
     });
   } catch (error: any) {
     console.error('Dashboard status error:', error);

@@ -48,9 +48,11 @@ export function setUserProgress(progress: {
   cvCount: number;
   cvAnalysedCount: number;
   coverLetterCount: number;
+  applicationCount: number;
   appliedCount: number;
   interviewingCount: number;
   offerCount: number;
+  noResponseCount: number;
   interviewSessionCount: number;
 }) {
   if (typeof window === 'undefined' || !initialized) return;
@@ -77,9 +79,14 @@ export function setUserProgress(progress: {
       'CV Count': progress.cvCount,
       'CVs Analysed': progress.cvAnalysedCount,
       'Cover Letters': progress.coverLetterCount,
+      'Applications Tracked': progress.applicationCount,
       'Applications Sent': progress.appliedCount,
       'Interviews Reached': progress.interviewingCount,
       'Offers': progress.offerCount,
+      // Sent minus every outcome, positive or negative. The ratio of this to
+      // Applications Sent is the number that tells you whether the CV work is
+      // landing at all.
+      'No Response': progress.noResponseCount,
       'Practice Sessions': progress.interviewSessionCount,
       'Furthest Stage': stage
     });

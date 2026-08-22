@@ -15,9 +15,16 @@ export async function GET(
 
     const { id } = await params;
 
+    // Status and applied_at are read off the application that owns this
+    // letter; the COALESCE covers rows written before 014.
     const result = await db.query(
-      `SELECT id, cv_id, company_name, job_title, job_description, content, status, applied_at, updated_at
-       FROM cover_letters WHERE id = $1 AND user_id = $2`,
+      `SELECT cl.id, cl.cv_id, cl.application_id, cl.company_name, cl.job_title,
+              cl.job_description, cl.content, cl.updated_at,
+              COALESCE(a.status, cl.status) AS status,
+              COALESCE(a.applied_at, cl.applied_at) AS applied_at
+       FROM cover_letters cl
+       LEFT JOIN applications a ON a.id = cl.application_id
+       WHERE cl.id = $1 AND cl.user_id = $2`,
       [id, session.user.id]
     );
     if (result.rows.length === 0) {
@@ -28,6 +35,7 @@ export async function GET(
     return NextResponse.json({
       id: letter.id,
       cvId: letter.cv_id,
+      applicationId: letter.application_id,
       companyName: letter.company_name || '',
       jobTitle: letter.job_title,
       jobDescription: letter.job_description || '',
@@ -60,19 +68,16 @@ export async function PATCH(
     }
 
     const { id } = await params;
-    const { companyName, jobTitle, jobDescription, content, status } = await req.json();
-
-    const validStatuses = ['draft', 'applied', 'interviewing', 'offer', 'rejected'];
-    if (status !== undefined && !validStatuses.includes(status)) {
-      return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
-    }
+    // Status is deliberately not accepted here - it belongs to the
+    // application, and PATCH /api/applications/[id] is where it's set. Two
+    // writable copies of the same fact is how they drift.
+    const { companyName, jobTitle, jobDescription, content } = await req.json();
 
     if (
       companyName === undefined &&
       jobTitle === undefined &&
       jobDescription === undefined &&
-      content === undefined &&
-      status === undefined
+      content === undefined
     ) {
       return NextResponse.json({ error: 'Nothing to update' }, { status: 400 });
     }
@@ -95,23 +100,41 @@ export async function PATCH(
       sets.push(`content = $${sets.length + 1}`);
       values.push(content);
     }
-    if (status !== undefined) {
-      sets.push(`status = $${sets.length + 1}`);
-      values.push(status);
-      // Only stamped the first time - keeps the original "applied" date
-      // even as status moves on to interviewing/offer/rejected later.
-      if (status === 'applied') {
-        sets.push('applied_at = COALESCE(applied_at, NOW())');
-      }
-    }
     sets.push('updated_at = NOW()');
 
     const result = await db.query(
-      `UPDATE cover_letters SET ${sets.join(', ')} WHERE id = $${values.length + 1} AND user_id = $${values.length + 2} RETURNING id`,
+      `UPDATE cover_letters SET ${sets.join(', ')} WHERE id = $${values.length + 1} AND user_id = $${values.length + 2} RETURNING id, application_id`,
       [...values, id, session.user.id]
     );
     if (result.rows.length === 0) {
       return NextResponse.json({ error: 'Cover letter not found' }, { status: 404 });
+    }
+
+    // Correcting the company or role on the letter is correcting it on the
+    // job you're going for, so the application follows.
+    const applicationId = result.rows[0].application_id;
+    if (applicationId && (companyName !== undefined || jobTitle !== undefined || jobDescription !== undefined)) {
+      const appSets: string[] = [];
+      const appValues: any[] = [];
+      if (companyName !== undefined) {
+        appSets.push(`company_name = $${appSets.length + 1}`);
+        appValues.push(companyName || null);
+      }
+      if (jobTitle !== undefined && jobTitle.trim()) {
+        appSets.push(`job_title = $${appSets.length + 1}`);
+        appValues.push(jobTitle.trim());
+      }
+      if (jobDescription !== undefined) {
+        appSets.push(`job_description = $${appSets.length + 1}`);
+        appValues.push(jobDescription || null);
+      }
+      if (appSets.length > 0) {
+        appSets.push('updated_at = NOW()');
+        await db.query(
+          `UPDATE applications SET ${appSets.join(', ')} WHERE id = $${appValues.length + 1} AND user_id = $${appValues.length + 2}`,
+          [...appValues, applicationId, session.user.id]
+        );
+      }
     }
 
     return NextResponse.json({ success: true });
