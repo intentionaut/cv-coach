@@ -1077,19 +1077,21 @@ function CVEditorContent() {
               <div className="lg:col-span-3 bg-bg-surface rounded-lg shadow-lg border border-border-hairline">
                 {/* Header */}
                 <div className="border-b border-border-hairline px-8 py-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <h2 className="font-display text-3xl font-bold text-text-primary">
-                        {jobTitle.trim() ? `Your CV for ${jobTitle.trim()}` : 'Your CV Score'}
-                      </h2>
-                      {/* When a role is set the score reflects readiness for
-                          that role, so say which it is rather than leaving
-                          the number ambiguous. */}
-                      <p className="font-body text-xs text-text-secondary mt-1">
-                        {jobTitle.trim()
-                          ? 'Strength and fit for this role, scored together'
-                          : 'Scored against general film and theatre industry standards'}
-                      </p>
+                  {/* items-start, not items-center: the left column's height
+                      varies with the rationale and role title, and a
+                      vertically-drifting score reads as an accident. */}
+                  <div className="flex items-start justify-between gap-6">
+                    <div className="flex-1 min-w-0">
+                      {/* Role sits on its own line beneath a fixed heading:
+                          real job titles run long ("Office Rotational
+                          Assistant (Apprenticeship Programme)") and wrecked
+                          the layout when interpolated into the h2. */}
+                      <h2 className="font-display text-3xl font-bold text-text-primary">Your CV</h2>
+                      {jobTitle.trim() && (
+                        <h3 className="font-display text-lg font-semibold text-text-secondary mt-1">
+                          {jobTitle.trim()}
+                        </h3>
+                      )}
                       {analysis.scoreRationale && (
                         <p className="font-body text-text-primary mt-3 max-w-2xl">{analysis.scoreRationale}</p>
                       )}
@@ -1105,7 +1107,7 @@ function CVEditorContent() {
                         )}
                       </p>
                     </div>
-                    <div className="text-right ml-8">
+                    <div className="text-right shrink-0">
                       <div className="font-display text-5xl font-bold text-accent-tertiary">{analysis.overallScore}</div>
                       <p className="font-body text-sm text-text-secondary mt-1">out of 100</p>
                     </div>
