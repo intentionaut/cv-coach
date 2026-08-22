@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
+import { ChevronDownIcon } from '@/components/ui/icons';
 
 // Answers are deliberately written to be useful without disclosing how the
 // product works internally: no prompt content, model names, scoring weights,
@@ -214,15 +215,7 @@ export default function FaqPage() {
             >
               <summary className="cursor-pointer list-none px-5 py-4 flex items-center justify-between gap-4 hover:bg-bg-main transition">
                 <h2 className="font-display font-bold text-text-primary">{item.q}</h2>
-                <svg
-                  className="w-4 h-4 text-text-secondary group-open:rotate-180 transition shrink-0"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
+                <ChevronDownIcon className="w-4 h-4 text-text-secondary group-open:rotate-180 transition shrink-0" />
               </summary>
               <div className="px-5 pb-5 font-body text-sm text-text-secondary border-t border-border-hairline pt-4">
                 {item.a}

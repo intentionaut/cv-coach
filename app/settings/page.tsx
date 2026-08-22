@@ -2,10 +2,9 @@
 
 import { useState } from 'react';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
-import { useRouter } from 'next/navigation';
+import BackToDashboard from '@/components/ui/BackToDashboard';
 
 function SettingsContent() {
-  const router = useRouter();
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [status, setStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
@@ -55,12 +54,7 @@ function SettingsContent() {
       <header className="bg-bg-surface shadow-sm">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
           <h1 className="font-display text-2xl font-bold text-text-primary">Settings</h1>
-          <button
-            onClick={() => router.push('/dashboard')}
-            className="font-body px-4 py-2 text-sm text-text-secondary hover:bg-bg-main rounded-lg transition"
-          >
-            Back to Dashboard
-          </button>
+          <BackToDashboard className="font-body px-4 py-2 text-sm text-text-secondary hover:bg-bg-main rounded-lg transition" />
         </div>
       </header>
 

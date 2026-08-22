@@ -1,6 +1,9 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import Footer from '@/components/layout/Footer';
+import { ChevronDownIcon, ChevronRightIcon, EditIcon, SpinnerIcon } from '@/components/ui/icons';
+import BackToDashboard from '@/components/ui/BackToDashboard';
+import { FeedbackStrengths, FeedbackQuestions, StarPanel } from '@/components/coaching/FeedbackPanel';
 
 // Every value below is read from the live tokens in app/globals.css - this
 // page is meant to stay in sync with what's actually implemented, not a
@@ -295,6 +298,67 @@ export default function DesignSystemPage() {
               <span className="text-text-cta text-sm mt-0.5" aria-hidden="true">⚠</span>
               <p className="font-body text-sm text-text-cta">Inline error/warning message - text: text-cta.</p>
             </div>
+          </div>
+        </Section>
+
+        <Section title="Shared components">
+          <p className="font-body text-sm text-text-secondary mb-4">
+            Extracted because they appeared in three or more places. Import these
+            rather than re-authoring the markup — a copy that drifts is how the
+            product stops feeling like one product.
+          </p>
+
+          <h3 className="font-display text-sm font-bold text-text-secondary uppercase tracking-wide mb-3">
+            Icons
+          </h3>
+          <div className="bg-bg-surface rounded-lg border border-border-hairline p-6 flex flex-wrap items-center gap-8 mb-6">
+            {[
+              { el: <ChevronDownIcon className="w-5 h-5 text-text-primary" />, name: 'ChevronDownIcon' },
+              { el: <ChevronRightIcon className="w-5 h-5 text-text-primary" />, name: 'ChevronRightIcon' },
+              { el: <EditIcon className="w-5 h-5 text-text-primary" />, name: 'EditIcon' },
+              { el: <SpinnerIcon className="w-5 h-5 text-text-primary" />, name: 'SpinnerIcon' }
+            ].map(i => (
+              <div key={i.name} className="flex flex-col items-center gap-2">
+                {i.el}
+                <code className="font-mono text-xs text-text-secondary">{i.name}</code>
+              </div>
+            ))}
+          </div>
+
+          <h3 className="font-display text-sm font-bold text-text-secondary uppercase tracking-wide mb-3">
+            Coaching feedback
+          </h3>
+          <p className="font-body text-sm text-text-secondary mb-3">
+            One shape for feedback everywhere — CV, cover letter, interview. Strengths
+            are statements; the other side is always questions, never instructions, so
+            the work stays the user&apos;s own.
+          </p>
+          <div className="bg-bg-surface rounded-lg border border-border-hairline p-6 space-y-6 mb-6">
+            <FeedbackStrengths items={['Opens with a specific moment rather than a claim.']} />
+            <FeedbackQuestions
+              items={['This says you "helped with lighting" — what were you actually doing?']}
+            />
+            <StarPanel
+              star={{
+                situation: { present: true, note: 'Sets the shoot and the problem clearly.' },
+                task: { present: false, note: 'Never says what was actually yours to solve.' },
+                action: { present: true, note: 'Concrete steps you took.' },
+                result: { present: false, note: 'Ends on the action — what happened next?' }
+              }}
+            />
+          </div>
+
+          <h3 className="font-display text-sm font-bold text-text-secondary uppercase tracking-wide mb-3">
+            Navigation
+          </h3>
+          <div className="bg-bg-surface rounded-lg border border-border-hairline p-6">
+            <BackToDashboard />
+            <p className="font-body text-xs text-text-secondary mt-3">
+              Just the link, not a whole page header — the six pages using it place it
+              differently, and one layout component forced over all of them would be a
+              worse abstraction than the duplication it replaced. Renders an anchor, so
+              cmd-click and open-in-new-tab work.
+            </p>
           </div>
         </Section>
 

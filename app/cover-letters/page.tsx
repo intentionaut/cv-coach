@@ -2,8 +2,11 @@
 
 import { useState, useEffect, useRef, Suspense } from 'react';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import { EditIcon } from '@/components/ui/icons';
+import { formatRelativeTime } from '@/lib/format';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { REUSABLE_QUESTIONS } from '@/lib/data/cover-letter-questions';
+import BackToDashboard from '@/components/ui/BackToDashboard';
 
 type ApplicationStatus = 'draft' | 'applied' | 'interviewing' | 'offer' | 'rejected';
 
@@ -33,17 +36,6 @@ interface Feedback {
   strengths: string[];
   questions: string[];
 }
-
-const formatRelativeTime = (iso: string): string => {
-  const diffMs = Date.now() - new Date(iso).getTime();
-  const minutes = Math.floor(diffMs / 60000);
-  if (minutes < 1) return 'just now';
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  return `${days}d ago`;
-};
 
 function CoverLettersContent() {
   const router = useRouter();
@@ -317,9 +309,7 @@ function CoverLettersContent() {
   };
 
   const pencilIcon = (
-    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-    </svg>
+    <EditIcon className="w-3.5 h-3.5" />
   );
 
   if (loadingLetters) {
@@ -335,12 +325,7 @@ function CoverLettersContent() {
           <p className="font-body text-text-secondary">
             Answer a few questions once, then reuse them every time you write to a new role.
           </p>
-          <button
-            onClick={() => router.push('/dashboard')}
-            className="font-body text-text-link hover:text-text-cta font-medium mt-4"
-          >
-            ← Back to Dashboard
-          </button>
+          <BackToDashboard className="font-body text-text-link hover:text-text-cta font-medium mt-4 inline-block" />
         </div>
 
         {cvs.length === 0 ? (

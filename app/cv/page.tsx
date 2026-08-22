@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import { ChevronDownIcon, EditIcon } from '@/components/ui/icons';
+import { formatRelativeTime } from '@/lib/format';
 import { useRouter } from 'next/navigation';
 import type { AtsReport } from '@/lib/ats/checks';
 import { parsePartialJson } from '@/lib/partial-json';
@@ -156,17 +158,6 @@ const generateCVText = (cv: CVData): string => {
 // selection needs to be found separately rather than assumed to be list[0].
 const mostRecentlyUpdated = (list: CvListItem[]): CvListItem =>
   list.reduce((a, b) => (new Date(a.updatedAt) > new Date(b.updatedAt) ? a : b));
-
-const formatRelativeTime = (iso: string): string => {
-  const diffMs = Date.now() - new Date(iso).getTime();
-  const minutes = Math.floor(diffMs / 60000);
-  if (minutes < 1) return 'just now';
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  return `${days}d ago`;
-};
 
 function CVEditorContent() {
   const router = useRouter();
@@ -681,9 +672,7 @@ function CVEditorContent() {
                           aria-label={`Rename ${cv.name}`}
                           title="Rename"
                         >
-                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                          </svg>
+                          <EditIcon className="w-3.5 h-3.5" />
                         </button>
                         {isActive && (
                           <button
@@ -744,9 +733,7 @@ function CVEditorContent() {
                     aria-label="Edit job title"
                     title="Edit"
                   >
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                    </svg>
+                    <EditIcon className="w-3.5 h-3.5" />
                   </button>
                 </div>
               ) : (
@@ -816,9 +803,7 @@ function CVEditorContent() {
               <span className="font-body text-sm font-medium text-text-link">
                 {jobDescription.trim() ? 'Edit job description' : 'Add a job description (optional)'}
               </span>
-              <svg className="w-4 h-4 text-text-secondary group-open:rotate-180 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
+              <ChevronDownIcon className="w-4 h-4 text-text-secondary group-open:rotate-180 transition" />
             </summary>
             <div className="px-6 pb-6">
               <textarea
@@ -1003,9 +988,7 @@ function CVEditorContent() {
                         </span>
                         <p className="font-body text-xs text-text-secondary">checks passed</p>
                       </div>
-                      <svg className="w-4 h-4 text-text-secondary group-open/ats:rotate-180 transition shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
+                      <ChevronDownIcon className="w-4 h-4 text-text-secondary group-open/ats:rotate-180 transition shrink-0" />
                     </div>
                   </summary>
 
@@ -1059,9 +1042,7 @@ function CVEditorContent() {
                       <span className="font-body text-xs font-medium text-text-link">
                         What these checks can&apos;t tell you
                       </span>
-                      <svg className="w-4 h-4 text-text-secondary group-open:rotate-180 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
+                      <ChevronDownIcon className="w-4 h-4 text-text-secondary group-open:rotate-180 transition" />
                     </summary>
                     <div className="px-5 pb-4">
                       <ul className="font-body text-xs text-text-secondary space-y-1 list-disc list-inside">
@@ -1274,9 +1255,7 @@ function CVEditorContent() {
                                 <p className="font-body text-sm text-text-secondary">{analysis.sections.summary.improvements.length} suggestions</p>
                               </div>
                             </div>
-                            <svg className="w-5 h-5 text-text-secondary group-open:rotate-180 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                            </svg>
+                            <ChevronDownIcon className="w-5 h-5 text-text-secondary group-open:rotate-180 transition" />
                           </div>
                         </summary>
                         <div className="px-4 pb-4 space-y-2">
@@ -1312,9 +1291,7 @@ function CVEditorContent() {
                                 <p className="font-body text-sm text-text-secondary">{analysis.sections.experience.improvements.length} suggestions</p>
                               </div>
                             </div>
-                            <svg className="w-5 h-5 text-text-secondary group-open:rotate-180 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                            </svg>
+                            <ChevronDownIcon className="w-5 h-5 text-text-secondary group-open:rotate-180 transition" />
                           </div>
                         </summary>
                         <div className="px-4 pb-4 space-y-2">
@@ -1350,9 +1327,7 @@ function CVEditorContent() {
                                 <p className="font-body text-sm text-text-secondary">{analysis.sections.skills.improvements.length} suggestions</p>
                               </div>
                             </div>
-                            <svg className="w-5 h-5 text-text-secondary group-open:rotate-180 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                            </svg>
+                            <ChevronDownIcon className="w-5 h-5 text-text-secondary group-open:rotate-180 transition" />
                           </div>
                         </summary>
                         <div className="px-4 pb-4 space-y-2">
@@ -1400,9 +1375,7 @@ function CVEditorContent() {
                                 <p className="font-body text-sm text-text-secondary">{analysis.quantificationPrompts.length} prompts to help you recall specifics</p>
                               </div>
                             </div>
-                            <svg className="w-5 h-5 text-text-secondary group-open:rotate-180 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                            </svg>
+                            <ChevronDownIcon className="w-5 h-5 text-text-secondary group-open:rotate-180 transition" />
                           </div>
                         </summary>
                         <div className="px-4 pb-4 space-y-4">
@@ -1441,9 +1414,7 @@ function CVEditorContent() {
                                 <p className="font-body text-sm text-text-secondary">{analysis.languageUpgrades.length} lines worth rethinking in your own words</p>
                               </div>
                             </div>
-                            <svg className="w-5 h-5 text-text-secondary group-open:rotate-180 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                            </svg>
+                            <ChevronDownIcon className="w-5 h-5 text-text-secondary group-open:rotate-180 transition" />
                           </div>
                         </summary>
                         <div className="px-4 pb-4 space-y-4">

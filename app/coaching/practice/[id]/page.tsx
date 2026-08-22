@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import { ChevronDownIcon } from '@/components/ui/icons';
 import { getGenericPracticeSet, InterviewQuestion } from '@/lib/data/interview-questions';
 
 interface Answer {
@@ -297,9 +298,7 @@ function PracticeSessionContent() {
                       <span className="font-body text-sm font-medium text-text-primary">
                         You answered this before — see what you wrote
                       </span>
-                      <svg className="w-4 h-4 text-text-secondary group-open:rotate-180 transition shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
+                      <ChevronDownIcon className="w-4 h-4 text-text-secondary group-open:rotate-180 transition shrink-0" />
                     </summary>
                     <div className="px-4 pb-4 border-t border-border-hairline pt-3">
                       <p className="font-body text-xs text-text-secondary mb-2">
