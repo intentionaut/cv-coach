@@ -5,32 +5,11 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { ChevronDownIcon } from '@/components/ui/icons';
-
-export const PRODUCT_PAGES = [
-  {
-    href: '/product/improve-your-cv',
-    label: 'Improve your CV',
-    blurb: 'Find the detail you left off the page'
-  },
-  {
-    href: '/product/learn-to-interview',
-    label: 'Learn to interview',
-    blurb: 'Know which part of your answer is missing'
-  },
-  {
-    href: '/product/practice-interview-calls',
-    label: 'Practice interview calls',
-    blurb: 'Hear yourself before an employer does'
-  },
-  {
-    href: '/product/track-your-growth',
-    label: 'Track your growth',
-    blurb: 'Proof you are getting better at this'
-  }
-];
+import { PRODUCT_PAGES } from '@/lib/data/product-pages';
 
 export default function MarketingNav({ signedIn }: { signedIn: boolean }) {
   const [open, setOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
   const wrapRef = useRef<HTMLDivElement>(null);
 
@@ -51,10 +30,28 @@ export default function MarketingNav({ signedIn }: { signedIn: boolean }) {
     };
   }, []);
 
-  // Route change should dismiss it, otherwise it hangs open over the new page.
+  // Route change should dismiss both, otherwise they hang open over the new
+  // page.
   useEffect(() => {
     setOpen(false);
+    setMobileOpen(false);
   }, [pathname]);
+
+  // Escape closes the mobile panel, and the page behind it doesn't scroll
+  // while it's open - both are what anyone who's used a menu before expects.
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMobileOpen(false);
+    };
+    document.addEventListener('keydown', onKey);
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.body.style.overflow = previous;
+    };
+  }, [mobileOpen]);
 
   return (
     <header className="bg-bg-surface border-b border-border-hairline sticky top-0 z-40">
@@ -64,7 +61,7 @@ export default function MarketingNav({ signedIn }: { signedIn: boolean }) {
           <span className="font-display text-xl font-bold text-text-primary">Friday</span>
         </Link>
 
-        <nav className="flex items-center gap-2 sm:gap-5" aria-label="Main">
+        <nav className="hidden md:flex items-center gap-2 sm:gap-5" aria-label="Main">
           <div className="relative" ref={wrapRef}>
             <button
               onClick={() => setOpen(o => !o)}
@@ -118,7 +115,101 @@ export default function MarketingNav({ signedIn }: { signedIn: boolean }) {
             {signedIn ? 'Dashboard' : 'Sign in'}
           </Link>
         </nav>
+
+        {/* Below md the links collapse into a panel that opens downward from
+            the button that summons it - no left/right mismatch to guess at,
+            and the standard shape for a marketing header with this few
+            links. */}
+        <div className="md:hidden flex items-center gap-3">
+          <Link
+            href={signedIn ? '/dashboard' : '/login'}
+            className="font-body px-4 py-2 text-sm bg-cta-primary text-text-on-cta rounded-lg font-bold hover:opacity-90 transition whitespace-nowrap"
+          >
+            {signedIn ? 'Dashboard' : 'Sign in'}
+          </Link>
+          <button
+            onClick={() => setMobileOpen(o => !o)}
+            aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
+            aria-expanded={mobileOpen}
+            aria-controls="marketing-mobile-menu"
+            className="p-2 -mr-2 rounded-lg text-text-primary hover:bg-bg-main transition"
+          >
+            {mobileOpen ? <CloseGlyph /> : <MenuGlyph />}
+          </button>
+        </div>
       </div>
+
+      {mobileOpen && (
+        <>
+          <div
+            className="md:hidden fixed inset-0 top-[57px] bg-text-primary/30 z-30"
+            onClick={() => setMobileOpen(false)}
+            aria-hidden="true"
+          />
+          <div
+            id="marketing-mobile-menu"
+            className="md:hidden relative z-40 bg-bg-surface border-t border-border-hairline max-h-[calc(100vh-57px)] overflow-y-auto"
+          >
+            <div className="px-4 py-4">
+              <p className="font-mono text-[10px] uppercase tracking-widest text-text-secondary mb-2">
+                Product
+              </p>
+              <ul className="space-y-0.5 mb-4">
+                {PRODUCT_PAGES.map(page => (
+                  <li key={page.href}>
+                    <Link
+                      href={page.href}
+                      className={`block px-3 py-2.5 rounded-lg transition ${
+                        pathname === page.href ? 'bg-accent-secondary/20' : 'hover:bg-bg-main'
+                      }`}
+                    >
+                      <span className="font-body text-sm font-semibold text-text-primary block">
+                        {page.label}
+                      </span>
+                      <span className="font-body text-xs text-text-secondary block mt-0.5">
+                        {page.blurb}
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+
+              <div className="border-t border-border-hairline pt-3 space-y-0.5">
+                <Link
+                  href="/faq"
+                  className="font-body block px-3 py-2.5 rounded-lg text-sm font-medium text-text-primary hover:bg-bg-main transition"
+                >
+                  FAQ
+                </Link>
+                {!signedIn && (
+                  <Link
+                    href="/login?join=1"
+                    className="font-body block px-3 py-2.5 rounded-lg text-sm font-medium text-text-primary hover:bg-bg-main transition"
+                  >
+                    Ask for beta access
+                  </Link>
+                )}
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </header>
+  );
+}
+
+function MenuGlyph() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function CloseGlyph() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <path d="M5 5l10 10M15 5L5 15" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+    </svg>
   );
 }

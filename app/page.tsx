@@ -1,10 +1,9 @@
 import type { Metadata } from 'next';
-import Image from 'next/image';
 import Link from 'next/link';
-import { canSeeMarketingPages } from '@/lib/flags';
 import FilmDivider from '@/components/ui/FilmDivider';
 import CoachingExchange from '@/components/marketing/CoachingExchange';
 import BetaSignup from '@/components/marketing/BetaSignup';
+import MarketingNav from '@/components/marketing/MarketingNav';
 
 /**
  * The homepage.
@@ -51,44 +50,9 @@ export const metadata: Metadata = {
 };
 
 export default function Home() {
-  // Appears on its own once NEXT_PUBLIC_MARKETING_PAGES flips to 'public' -
-  // linking to pages that 404 for visitors would be worse than no nav. No
-  // email to pass: anyone still on this page is signed out by definition, so
-  // the owner-preview case can't apply here.
-  const showProductNav = canSeeMarketingPages();
-
   return (
     <div className="min-h-screen bg-bg-main">
-      <header className="bg-bg-surface border-b border-border-hairline">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center gap-4">
-          <div className="flex items-center gap-2">
-            <Image src="/friday-logo.png" alt="" width={40} height={40} />
-            <span className="font-display text-2xl font-bold text-text-primary">Friday</span>
-          </div>
-          <div className="flex items-center gap-4">
-            {showProductNav && (
-              <Link
-                href="/product"
-                className="font-body hidden sm:inline text-sm font-medium text-text-secondary hover:text-text-primary transition"
-              >
-                Product
-              </Link>
-            )}
-            <Link
-              href="/faq"
-              className="font-body hidden sm:inline text-sm font-medium text-text-secondary hover:text-text-primary transition"
-            >
-              FAQ
-            </Link>
-            <Link
-              href="/login"
-              className="font-body bg-cta-primary text-text-on-cta px-5 py-2 rounded-lg font-bold hover:opacity-90 transition"
-            >
-              Sign in
-            </Link>
-          </div>
-        </div>
-      </header>
+      <MarketingNav signedIn={false} />
 
       <main>
         {/* 1. Hero - the refusal, framed as what you gain, with the product's

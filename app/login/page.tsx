@@ -1,21 +1,49 @@
 'use client';
 
 import { signIn } from 'next-auth/react';
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
+import { useSearchParams } from 'next/navigation';
 import BetaSignup from '@/components/marketing/BetaSignup';
+import { GoogleIcon } from '@/components/ui/icons';
 
-export default function LoginPage() {
+/**
+ * One auth surface, two doors.
+ *
+ * Friday is invite-only, so this page serves two people who look identical on
+ * arrival: someone who already has an account, and someone who wants one and
+ * can't have it yet. Splitting them across two pages meant the second group
+ * hit a form they couldn't use and left.
+ *
+ * A segmented control rather than a link buried under the form: both paths
+ * are equally legitimate here, and the convention people already know from
+ * every other signed-out page is a visible pair of tabs.
+ *
+ * Which tab opens is driven by where they came from - `?join=1` on every
+ * marketing CTA - so intent survives the click instead of making them choose
+ * again. Header "Sign in" lands on sign-in, as the label promises.
+ */
+
+type Tab = 'signin' | 'join';
+
+function LoginContent() {
+  const searchParams = useSearchParams();
+  const [tab, setTab] = useState<Tab>(searchParams.get('join') ? 'join' : 'signin');
+
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
 
   const handleGoogleSignIn = async () => {
     setLoading(true);
     try {
       await signIn('google', { callbackUrl: '/dashboard' });
-    } catch (error) {
-      console.error('Sign in error:', error);
+    } catch (err) {
+      console.error('Sign in error:', err);
+      setError('Could not reach Google. Please try again.');
       setLoading(false);
     }
   };
@@ -25,121 +53,216 @@ export default function LoginPage() {
     setError('');
     setLoading(true);
     try {
-      const result = await signIn('credentials', {
-        email,
-        password,
-        redirect: false
-      });
-
+      const result = await signIn('credentials', { email, password, redirect: false });
       if (result?.error) {
+        // Deliberately doesn't say which of the two was wrong - that would
+        // confirm to a stranger whether an address has an account here.
         setError('Incorrect email or password.');
         setLoading(false);
         return;
       }
-
       window.location.href = '/dashboard';
-    } catch (error) {
-      console.error('Sign in error:', error);
+    } catch (err) {
+      console.error('Sign in error:', err);
       setError('Something went wrong. Please try again.');
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-bg-main flex items-center justify-center p-4">
-      <div className="bg-bg-surface rounded-lg shadow-xl p-8 w-full max-w-md">
-        <div className="space-y-4">
-          <button
-            onClick={handleGoogleSignIn}
-            disabled={loading}
-            className="font-body w-full flex items-center justify-center gap-3 bg-bg-surface border-2 border-border-hairline text-text-primary py-3 px-4 rounded-lg font-medium hover:bg-bg-main transition disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <svg className="w-5 h-5" viewBox="0 0 24 24">
-              <path
-                fill="#4285F4"
-                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-              />
-              <path
-                fill="#34A853"
-                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-              />
-              <path
-                fill="#FBBC05"
-                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-              />
-              <path
-                fill="#EA4335"
-                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-              />
-            </svg>
-            {loading ? 'Signing in...' : 'Sign in with Google'}
-          </button>
+    <div className="min-h-screen bg-bg-main flex flex-col items-center justify-center p-4">
+      <Link href="/" className="flex items-center gap-2 mb-6">
+        <Image src="/friday-logo.png" alt="" width={32} height={32} />
+        <span className="font-display text-2xl font-bold text-text-primary">Friday</span>
+      </Link>
 
-          <div className="flex items-center gap-3">
-            <div className="flex-1 h-px bg-border-hairline" />
-            <span className="font-body text-xs text-text-secondary">or</span>
-            <div className="flex-1 h-px bg-border-hairline" />
-          </div>
+      <div className="bg-bg-surface rounded-lg shadow-xl p-6 sm:p-8 w-full max-w-md">
+        {/* Segmented control. role="tablist" so it's announced as a choice
+            rather than two loose buttons. */}
+        <div
+          role="tablist"
+          aria-label="Sign in or request access"
+          className="flex p-1 bg-bg-main rounded-lg mb-6"
+        >
+          <TabButton active={tab === 'signin'} onClick={() => setTab('signin')} controls="panel-signin">
+            Sign in
+          </TabButton>
+          <TabButton active={tab === 'join'} onClick={() => setTab('join')} controls="panel-join">
+            Request access
+          </TabButton>
+        </div>
 
-          <form onSubmit={handlePasswordSignIn} className="space-y-3">
-            <input
-              type="email"
-              required
-              placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="font-body w-full border-2 border-border-hairline rounded-lg py-3 px-4 text-text-primary bg-bg-surface focus:outline-none focus:border-accent-tertiary"
-            />
-            <input
-              type="password"
-              required
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="font-body w-full border-2 border-border-hairline rounded-lg py-3 px-4 text-text-primary bg-bg-surface focus:outline-none focus:border-accent-tertiary"
-            />
-            {error && (
-              <p className="font-body text-sm text-text-cta">{error}</p>
-            )}
+        {tab === 'signin' ? (
+          <div id="panel-signin" role="tabpanel">
+            <h1 className="font-display text-xl font-bold text-text-primary mb-1">Welcome back</h1>
+            <p className="font-body text-sm text-text-secondary mb-6">
+              Pick up where you left off.
+            </p>
+
             <button
-              type="submit"
+              onClick={handleGoogleSignIn}
               disabled={loading}
-              className="font-body w-full bg-cta-primary text-text-on-cta py-3 px-4 rounded-lg font-bold hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              className="font-body w-full flex items-center justify-center gap-3 bg-bg-surface border-2 border-border-hairline text-text-primary py-3 px-4 rounded-lg font-medium hover:bg-bg-main transition disabled:opacity-50"
             >
-              {loading ? 'Signing in...' : 'Sign in with Password'}
+              <GoogleIcon className="w-5 h-5" />
+              Continue with Google
             </button>
-          </form>
-        </div>
 
-        {/* Friday is invite-only, so most people arriving here don't have an
-            account and can't make one. Saying so — and offering the waitlist
-            instead of nothing — is the difference between a dead end and a
-            signup. */}
-        <div className="mt-8 bg-bg-surface border border-border-hairline rounded-lg p-6">
-          <h2 className="font-display text-lg font-bold text-text-primary mb-1">
-            Haven&apos;t got an account?
-          </h2>
-          <p className="font-body text-sm text-text-secondary mb-4">
-            Friday is in private beta, so accounts are invite-only for now. Leave your email
-            and we&apos;ll let you know when there&apos;s a place.
-          </p>
-          <BetaSignup source="login" />
-        </div>
+            <div className="flex items-center gap-3 my-5">
+              <span className="h-px flex-1 bg-border-hairline" />
+              <span className="font-body text-xs text-text-secondary">or</span>
+              <span className="h-px flex-1 bg-border-hairline" />
+            </div>
 
-        <div className="font-body mt-8 text-center text-xs text-text-secondary">
-          <p>
-            By using Friday, you agree to our{' '}
-            <a href="/terms" className="text-text-link underline">
-              Terms &amp; Conditions
-            </a>{' '}
-            and{' '}
-            <a href="/privacy" className="text-text-link underline">
-              Privacy Policy
-            </a>
-            .
-          </p>
-        </div>
+            <form onSubmit={handlePasswordSignIn} className="space-y-3">
+              <div>
+                <label
+                  htmlFor="email"
+                  className="font-body text-sm font-semibold text-text-primary block mb-1"
+                >
+                  Email
+                </label>
+                <input
+                  id="email"
+                  type="email"
+                  required
+                  autoComplete="email"
+                  inputMode="email"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  aria-invalid={!!error}
+                  placeholder="you@example.com"
+                  className="font-body w-full px-3 py-2.5 border border-border-hairline rounded-lg bg-bg-main text-text-primary text-sm focus:ring-2 focus:ring-accent-tertiary focus:border-transparent"
+                />
+              </div>
+
+              <div>
+                <label
+                  htmlFor="password"
+                  className="font-body text-sm font-semibold text-text-primary block mb-1"
+                >
+                  Password
+                </label>
+                <div className="relative">
+                  <input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    autoComplete="current-password"
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    aria-invalid={!!error}
+                    className="font-body w-full px-3 py-2.5 pr-16 border border-border-hairline rounded-lg bg-bg-main text-text-primary text-sm focus:ring-2 focus:ring-accent-tertiary focus:border-transparent"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(s => !s)}
+                    className="font-body absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1 text-xs font-semibold text-text-secondary hover:text-text-primary transition"
+                  >
+                    {showPassword ? 'Hide' : 'Show'}
+                  </button>
+                </div>
+              </div>
+
+              {error && (
+                <p role="alert" className="font-body text-sm text-text-cta">
+                  {error}
+                </p>
+              )}
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="font-body w-full px-6 py-3 bg-cta-primary text-text-on-cta rounded-lg font-bold hover:opacity-90 transition disabled:opacity-50"
+              >
+                {loading ? 'Signing in...' : 'Sign in'}
+              </button>
+            </form>
+
+            <p className="font-body text-sm text-text-secondary mt-5">
+              Haven&apos;t got an account?{' '}
+              <button
+                onClick={() => setTab('join')}
+                className="text-text-link underline font-medium"
+              >
+                Ask for beta access
+              </button>
+              .
+            </p>
+          </div>
+        ) : (
+          <div id="panel-join" role="tabpanel">
+            <h1 className="font-display text-xl font-bold text-text-primary mb-1">
+              Ask for beta access
+            </h1>
+            <p className="font-body text-sm text-text-secondary mb-6">
+              Friday is invite-only while it&apos;s early. We&apos;re letting people in a
+              handful at a time so we can read what everyone sends back.
+            </p>
+
+            <BetaSignup source="login" />
+
+            <p className="font-body text-sm text-text-secondary mt-5">
+              Already have an account?{' '}
+              <button
+                onClick={() => setTab('signin')}
+                className="text-text-link underline font-medium"
+              >
+                Sign in
+              </button>
+              .
+            </p>
+          </div>
+        )}
       </div>
+
+      <p className="font-body mt-6 text-center text-xs text-text-secondary max-w-md">
+        By using Friday, you agree to our{' '}
+        <Link href="/terms" className="text-text-link underline">
+          Terms &amp; Conditions
+        </Link>{' '}
+        and{' '}
+        <Link href="/privacy" className="text-text-link underline">
+          Privacy Policy
+        </Link>
+        .
+      </p>
     </div>
+  );
+}
+
+function TabButton({
+  active,
+  onClick,
+  controls,
+  children
+}: {
+  active: boolean;
+  onClick: () => void;
+  controls: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      role="tab"
+      aria-selected={active}
+      aria-controls={controls}
+      onClick={onClick}
+      className={`font-body flex-1 px-4 py-2 rounded-md text-sm font-semibold transition ${
+        active
+          ? 'bg-bg-surface text-text-primary shadow-sm'
+          : 'text-text-secondary hover:text-text-primary'
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-bg-main" />}>
+      <LoginContent />
+    </Suspense>
   );
 }

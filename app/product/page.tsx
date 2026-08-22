@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { PRODUCT_PAGES } from '@/components/marketing/MarketingNav';
+import { PRODUCT_PAGES } from '@/lib/data/product-pages';
 
 export const metadata = {
   title: 'Product — Friday',
