@@ -21,8 +21,7 @@ export async function GET(
     const { id } = await params;
 
     const result = await db.query(
-      `SELECT personal_info, summary, experience, education, skills,
-              raw_text, job_description
+      `SELECT personal_info, summary, experience, education, skills, raw_text
        FROM cv_data WHERE id = $1 AND user_id = $2`,
       [id, session.user.id]
     );
@@ -37,8 +36,7 @@ export async function GET(
       experience: cv.experience || [],
       education: cv.education || [],
       skills: cv.skills || [],
-      rawText: cv.raw_text,
-      jobDescription: cv.job_description
+      rawText: cv.raw_text
     });
 
     return NextResponse.json({ success: true, report });

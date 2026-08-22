@@ -37,11 +37,6 @@ export interface AtsReport {
   assessed: number;
   /** Things no text-based tool can verify - shown to the user verbatim. */
   notAssessable: string[];
-  /** Only present when a job description was available to compare against. */
-  keywordOverlap?: {
-    matched: string[];
-    missing: string[];
-  };
 }
 
 export interface AtsInput {
@@ -57,8 +52,14 @@ export interface AtsInput {
   education?: Array<{ degree?: string; institution?: string }>;
   skills?: string[];
   rawText?: string | null;
-  jobDescription?: string | null;
 }
+
+// Deliberately NOT checked here: keyword overlap against a job description.
+// Naive term matching can only compare surface words - it can't tell that
+// "coordinated a crew" answers a posting asking for "team leadership" - so
+// it pushes toward keyword-stuffing, the exact ATS-first framing the CV
+// coaching prompt was rewritten to move away from. Claude's analysis reads
+// the posting properly and gives better, less contradictory advice.
 
 /** Things that genuinely cannot be determined from extracted text. */
 const NOT_ASSESSABLE = [
@@ -67,32 +68,6 @@ const NOT_ASSESSABLE = [
   'Text inside images or graphics, which most systems cannot read at all',
   'Font embedding and encoding problems specific to your file'
 ];
-
-// Deliberately small stopword list - enough to stop "the/and/with" dominating
-// a keyword comparison without pretending to be real language processing.
-const STOPWORDS = new Set([
-  'the', 'and', 'for', 'with', 'you', 'your', 'our', 'are', 'will', 'have', 'has',
-  'this', 'that', 'from', 'they', 'their', 'them', 'been', 'were', 'was', 'not',
-  'but', 'all', 'can', 'able', 'who', 'what', 'when', 'where', 'which', 'how',
-  'more', 'other', 'such', 'into', 'out', 'about', 'across', 'within', 'must',
-  'should', 'would', 'could', 'also', 'any', 'each', 'both', 'work', 'working',
-  'role', 'job', 'team', 'teams', 'well', 'good', 'great', 'strong', 'including',
-  'experience', 'experienced', 'skills', 'ability', 'looking', 'want', 'need'
-]);
-
-function words(text: string): string[] {
-  return text
-    .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, ' ')
-    .split(/\s+/)
-    .filter(Boolean);
-}
-
-function meaningfulTerms(text: string): string[] {
-  return Array.from(
-    new Set(words(text).filter(w => w.length > 3 && !STOPWORDS.has(w)))
-  );
-}
 
 export function runAtsChecks(input: AtsInput): AtsReport {
   const checks: AtsCheck[] = [];
@@ -301,50 +276,19 @@ export function runAtsChecks(input: AtsInput): AtsReport {
     );
   }
 
-  // --- Keyword overlap, only when there's a job description to compare
-  // against. Informational rather than pass/fail: a low overlap can be
-  // perfectly reasonable if the role is a genuine step up. ---
-  let keywordOverlap: AtsReport['keywordOverlap'];
-  if (input.jobDescription?.trim()) {
-    const cvText = [
-      input.summary || '',
-      skills.join(' '),
-      experience.map(e => `${e.title || ''} ${e.company || ''} ${e.description || ''}`).join(' '),
-      education.map(e => `${e.degree || ''} ${e.institution || ''}`).join(' ')
-    ].join(' ');
-    const cvTerms = new Set(words(cvText));
-    const jdTerms = meaningfulTerms(input.jobDescription);
-
-    const matched = jdTerms.filter(t => cvTerms.has(t));
-    const missing = jdTerms.filter(t => !cvTerms.has(t));
-    keywordOverlap = { matched: matched.slice(0, 25), missing: missing.slice(0, 25) };
-
-    const ratio = jdTerms.length > 0 ? matched.length / jdTerms.length : 0;
-    checks.push(
-      ratio >= 0.3
-        ? {
-            id: 'keywords',
-            label: 'Overlap with the job description',
-            status: 'pass',
-            detail: `${matched.length} of ${jdTerms.length} notable terms from the posting appear in your CV.`
-          }
-        : {
-            id: 'keywords',
-            label: 'Overlap with the job description',
-            status: 'warn',
-            detail: `Only ${matched.length} of ${jdTerms.length} notable terms from the posting appear in your CV.`,
-            fix: 'Where a missing term genuinely describes something you have done, use the posting’s wording for it. Do not add anything untrue.'
-          }
-    );
-  }
-
   const passed = checks.filter(c => c.status === 'pass').length;
 
+  // Ordered by what needs attention, not by the order checks happen to run
+  // in. Anything actionable surfaces first; passing checks are reassurance,
+  // not information, so they sink to the bottom. Sort is stable, so the
+  // grouping above is preserved within each severity band.
+  const severity: Record<AtsStatus, number> = { fail: 0, warn: 1, pass: 2 };
+  const ordered = [...checks].sort((a, b) => severity[a.status] - severity[b.status]);
+
   return {
-    checks,
+    checks: ordered,
     passed,
     assessed: checks.length,
-    notAssessable: NOT_ASSESSABLE,
-    keywordOverlap
+    notAssessable: NOT_ASSESSABLE
   };
 }

@@ -175,6 +175,10 @@ function CVEditorContent() {
   const [editingJobTitle, setEditingJobTitle] = useState(false);
   const [analysis, setAnalysis] = useState<Analysis | null>(null);
   const [atsReport, setAtsReport] = useState<AtsReport | null>(null);
+  // Collapsed by default so the coaching score stays the headline, but
+  // opened automatically when something is genuinely broken (e.g. an
+  // image-based CV that most systems can't read at all).
+  const [atsOpen, setAtsOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadingJob, setUploadingJob] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -245,7 +249,9 @@ function CVEditorContent() {
       const response = await fetch(`/api/cv/${id}/ats`);
       if (!response.ok) return;
       const data = await response.json();
-      setAtsReport(data.report || null);
+      const report: AtsReport | null = data.report || null;
+      setAtsReport(report);
+      setAtsOpen(!!report?.checks.some(c => c.status === 'fail'));
     } catch (error) {
       console.error('Failed to load ATS report:', error);
     }
@@ -919,23 +925,38 @@ function CVEditorContent() {
                   Always shows what it could NOT check, so the number never
                   implies more authority than it has. */}
               {atsReport && (
-                <div className="mt-4 bg-bg-surface rounded-lg shadow-lg border border-border-hairline overflow-hidden">
-                  <div className="px-5 py-4 border-b border-border-hairline flex items-center justify-between gap-3 flex-wrap">
+                <details
+                  open={atsOpen}
+                  onToggle={(e) => setAtsOpen((e.currentTarget as HTMLDetailsElement).open)}
+                  className="group/ats mt-4 bg-bg-surface rounded-lg shadow-lg border border-border-hairline overflow-hidden"
+                >
+                  <summary className="cursor-pointer list-none px-5 py-4 flex items-center justify-between gap-3 flex-wrap hover:bg-bg-main transition">
                     <div>
                       <h3 className="font-display font-bold text-text-primary">Can a machine read this?</h3>
                       <p className="font-body text-xs text-text-secondary mt-0.5">
-                        Automated checks before a human ever sees it
+                        {(() => {
+                          const fails = atsReport.checks.filter(c => c.status === 'fail').length;
+                          const warns = atsReport.checks.filter(c => c.status === 'warn').length;
+                          if (fails > 0) return `${fails} thing${fails === 1 ? '' : 's'} to fix before applying`;
+                          if (warns > 0) return `${warns} thing${warns === 1 ? '' : 's'} worth a look`;
+                          return 'Everything checkable passed';
+                        })()}
                       </p>
                     </div>
-                    <div className="text-right">
-                      <span className="font-display text-2xl font-bold text-accent-tertiary">
-                        {atsReport.passed}/{atsReport.assessed}
-                      </span>
-                      <p className="font-body text-xs text-text-secondary">checks passed</p>
+                    <div className="flex items-center gap-3">
+                      <div className="text-right">
+                        <span className="font-display text-xl font-bold text-accent-tertiary">
+                          {atsReport.passed}/{atsReport.assessed}
+                        </span>
+                        <p className="font-body text-xs text-text-secondary">checks passed</p>
+                      </div>
+                      <svg className="w-4 h-4 text-text-secondary group-open/ats:rotate-180 transition shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
                     </div>
-                  </div>
+                  </summary>
 
-                  <ul className="divide-y divide-border-hairline">
+                  <ul className="divide-y divide-border-hairline border-t border-border-hairline">
                     {atsReport.checks.map(check => (
                       <li key={check.id} className="px-5 py-3 flex items-start gap-3">
                         <span
@@ -951,41 +972,32 @@ function CVEditorContent() {
                           {check.status === 'pass' ? '✓' : check.status === 'warn' ? '!' : '✕'}
                         </span>
                         <div className="min-w-0">
-                          <p className="font-body text-sm font-semibold text-text-primary">
+                          <p
+                            className={`font-body text-sm ${
+                              check.status === 'pass'
+                                ? 'text-text-secondary'
+                                : 'font-semibold text-text-primary'
+                            }`}
+                          >
                             {check.label}
                             <span className="sr-only">
                               {check.status === 'pass' ? ' — passed' : check.status === 'warn' ? ' — worth a look' : ' — needs fixing'}
                             </span>
                           </p>
-                          <p className="font-body text-xs text-text-secondary mt-0.5">{check.detail}</p>
-                          {check.fix && (
-                            <p className="font-body text-xs text-text-primary mt-1">{check.fix}</p>
+                          {/* Detail and fix only where there's something to act
+                              on. On a passing check the tick already says it. */}
+                          {check.status !== 'pass' && (
+                            <>
+                              <p className="font-body text-xs text-text-secondary mt-0.5">{check.detail}</p>
+                              {check.fix && (
+                                <p className="font-body text-xs text-text-primary mt-1">{check.fix}</p>
+                              )}
+                            </>
                           )}
                         </div>
                       </li>
                     ))}
                   </ul>
-
-                  {atsReport.keywordOverlap && atsReport.keywordOverlap.missing.length > 0 && (
-                    <div className="px-5 py-4 border-t border-border-hairline">
-                      <p className="font-body text-xs font-semibold text-text-primary mb-2">
-                        In the job description, not in your CV
-                      </p>
-                      <div className="flex flex-wrap gap-1.5">
-                        {atsReport.keywordOverlap.missing.slice(0, 12).map(term => (
-                          <span
-                            key={term}
-                            className="font-body text-xs px-2 py-0.5 bg-bg-main rounded border border-border-hairline text-text-secondary"
-                          >
-                            {term}
-                          </span>
-                        ))}
-                      </div>
-                      <p className="font-body text-xs text-text-secondary mt-2">
-                        Only worth adding where the word genuinely describes something you&apos;ve done.
-                      </p>
-                    </div>
-                  )}
 
                   {/* The denominator. Without this the score above would imply
                       a completeness no text-based tool can actually deliver. */}
@@ -1006,7 +1018,7 @@ function CVEditorContent() {
                       </ul>
                     </div>
                   </details>
-                </div>
+                </details>
               )}
             </div>
 
