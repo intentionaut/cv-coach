@@ -3,6 +3,8 @@ import Image from 'next/image';
 import Footer from '@/components/layout/Footer';
 import { ChevronDownIcon, ChevronRightIcon, EditIcon, SpinnerIcon } from '@/components/ui/icons';
 import BackToDashboard from '@/components/ui/BackToDashboard';
+import FilmDivider from '@/components/ui/FilmDivider';
+import CoachingExchange from '@/components/marketing/CoachingExchange';
 import { FeedbackStrengths, FeedbackQuestions, StarPanel } from '@/components/coaching/FeedbackPanel';
 
 // Every value below is read from the live tokens in app/globals.css - this
@@ -298,6 +300,57 @@ export default function DesignSystemPage() {
               <span className="text-text-cta text-sm mt-0.5" aria-hidden="true">⚠</span>
               <p className="font-body text-sm text-text-cta">Inline error/warning message - text: text-cta.</p>
             </div>
+          </div>
+        </Section>
+
+        <Section title="Marketing surfaces">
+          <p className="font-body text-sm text-text-secondary mb-6">
+            Two patterns that exist only on logged-out pages. Both came out of one
+            decision: no stock photography of people. This audience is training to
+            read images for a living and reads generic &ldquo;creative team&rdquo;
+            stock as fake immediately — which would undercut a product whose whole
+            argument is that it doesn&apos;t overclaim.
+          </p>
+
+          <h3 className="font-display text-sm font-bold text-text-secondary uppercase tracking-wide mb-3">
+            Coaching exchange
+          </h3>
+          <p className="font-body text-sm text-text-secondary mb-3">
+            The homepage&apos;s proof. Every competitor promises to write it for you,
+            so claiming the opposite in prose reads as marketing — showing three lines
+            of the real thing doesn&apos;t. <strong>Rule:</strong> the response is
+            always a question. A paste-ready sentence here would contradict the
+            product on its own homepage.
+          </p>
+          <div className="max-w-md mb-8">
+            <CoachingExchange
+              line="Responsible for various on-set duties"
+              question="Which two of those duties would you be trusted with again? And who decided you were the one doing them?"
+            />
+          </div>
+
+          <h3 className="font-display text-sm font-bold text-text-secondary uppercase tracking-wide mb-3">
+            Film divider
+          </h3>
+          <p className="font-body text-sm text-text-secondary mb-3">
+            A sprocket-hole strip for separating marketing sections — the only piece
+            of industry decoration on the site, kept this restrained deliberately.
+            Pure CSS (<code className="font-mono text-xs">.film-perforation</code>),
+            so it fills any width, costs no request and never becomes an LCP problem.
+            Always <code className="font-mono text-xs">aria-hidden</code>: it carries
+            mood, not meaning.
+          </p>
+          <div className="bg-bg-surface rounded-lg border border-border-hairline p-6 mb-3">
+            <p className="font-mono text-[10px] uppercase tracking-widest text-text-secondary mb-2">
+              tone=&quot;light&quot; — on cream
+            </p>
+            <FilmDivider />
+          </div>
+          <div className="bg-accent-tertiary rounded-lg p-6 mb-6">
+            <p className="font-mono text-[10px] uppercase tracking-widest text-text-inverse/70 mb-2">
+              tone=&quot;dark&quot; — on navy
+            </p>
+            <FilmDivider tone="dark" />
           </div>
         </Section>
 

@@ -66,3 +66,37 @@ body {
   color: var(--foreground);
   font-family: var(--font-body), -apple-system, sans-serif;
 }
+
+/* Film perforation divider.
+   A sprocket-hole strip for separating marketing sections. It's the one piece
+   of industry decoration on the site, and it stays this restrained on purpose:
+   the alternative was stock photography of people pretending to be film crew,
+   which this audience reads as fake faster than most.
+   Pure CSS, so it fills any width, costs no request, and never becomes an LCP
+   problem. Two variants because it sits on both grounds:
+     .film-perforation        — on cream (bg-main / bg-surface)
+     .film-perforation-invert — on navy (accent-tertiary)
+   Always aria-hidden: it carries mood, not meaning. */
+.film-perforation,
+.film-perforation-invert {
+  height: 14px;
+  background-repeat: repeat-x;
+  background-size: 100% 6px;
+  background-position: 0 center;
+}
+
+.film-perforation {
+  background-image: repeating-linear-gradient(
+    to right,
+    var(--color-border-hairline) 0 14px,
+    transparent 14px 34px
+  );
+}
+
+.film-perforation-invert {
+  background-image: repeating-linear-gradient(
+    to right,
+    rgba(247, 241, 227, 0.28) 0 14px,
+    transparent 14px 34px
+  );
+}
