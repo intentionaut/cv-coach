@@ -37,6 +37,50 @@ There is exactly **one** coaching score. When a job description is set it means 
 
 The **ATS panel is not a second score.** It's mechanical readability (can software parse the file), deterministic, zero AI cost, reported as "11/14 checks passed". Keep it visually subordinate to the coaching score.
 
+## Scope and sequencing — learned the expensive way
+
+Migration 014 built an applications table with `source` and `notes` columns, plus a
+backfill, three routes and a full list/detail UI, all from a one-line preference.
+Migration 015 existed almost entirely to undo it. The rules below are what that cost.
+
+- **UX before schema.** Don't commit a table or column until the surface that reads it
+  is agreed. Columns are the most expensive thing to change and they were moved first;
+  `source` and `notes` were fields only a job-search tracker needs, sitting in the
+  schema before anyone had decided Friday wasn't one.
+- **Clarify scope and intent before a *new* feature.** Additive migrations are fine to
+  proceed on. Destructive ones — DROP, DELETE, constraint changes — always need explicit
+  approval first.
+- **Expand/contract stays.** Additive first, contract in a separate migration once the
+  new code is live. That pattern is the only reason the 014→015 correction was a cleanup
+  rather than a data-loss incident.
+- **Backfills may not assert user-attested facts.** 014's turned unsent cover-letter
+  drafts into sent applications — claiming something about real people that wasn't true,
+  and corrupting the exact metrics the feature existed to produce. Timestamps and derived
+  values are fine to compute; outcomes, confirmations and anything phrased in the first
+  person must come from the user.
+- **Competitive check for anything standalone.** Before building a surface that looks
+  like a standalone tool, name the incumbent and say why we beat it. LinkedIn, Mandy and
+  ScreenSkills already track job searches. Not needed for surfaces that clearly extend an
+  existing flow.
+
+## UI rules beyond the design system
+
+`/design-system` covers tokens and components. These cover structure, and each one is a
+correction that was actually made:
+
+- **Default to the standard pattern.** A hamburger on the left opens a left drawer, over
+  a scrim, with Escape and body-scroll lock. Ship the accessibility furniture with it:
+  `aria-expanded`, `aria-controls`, `inert` on off-screen panels, `motion-reduce`.
+- **Lay out for worst-case real content.** Long role titles, long company names, zero
+  items, many items. `min-w-0`, `truncate`, `break-words`, `items-start` and `flex-wrap`
+  are defaults wherever a variable-length string shares a row with a control.
+- **Every element earns its place.** Sidebar counts, generic banner headings and passing
+  checks listed alongside failures were all removed as noise. Sort by severity, collapse
+  what's fine, let the exception stand out.
+- **One verdict per concept.** Two `/100` numbers on one page read as competing verdicts.
+  Where a second measure is genuinely different — the ATS panel is mechanical
+  readability, not quality — make it visually subordinate and say what it can't tell you.
+
 ## Conventions worth following
 
 - **Design system first.** `/design-system` renders the live tokens and shared components. Check it before authoring new UI; if you add a genuinely new pattern, document it there.
