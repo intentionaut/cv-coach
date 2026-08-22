@@ -15,13 +15,13 @@ export async function GET(
 
     const { id } = await params;
 
-    // Status and applied_at are read off the application that owns this
-    // letter; the COALESCE covers rows written before 014.
+    // Status and applied_at belong to the application this letter was sent
+    // as part of. Null means it hasn't been sent.
     const result = await db.query(
       `SELECT cl.id, cl.cv_id, cl.application_id, cl.company_name, cl.job_title,
               cl.job_description, cl.content, cl.updated_at,
-              COALESCE(a.status, cl.status) AS status,
-              COALESCE(a.applied_at, cl.applied_at) AS applied_at
+              a.status AS status,
+              a.applied_at AS applied_at
        FROM cover_letters cl
        LEFT JOIN applications a ON a.id = cl.application_id
        WHERE cl.id = $1 AND cl.user_id = $2`,

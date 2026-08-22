@@ -20,11 +20,11 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Status now lives on the application, not the letter. COALESCE covers
-    // any letter written before 014 backfilled one; 015 drops the old column.
+    // Status lives on the application, and a letter only has one once the
+    // user has said they applied - so null here means "written, not sent".
     const result = await db.query(
       `SELECT cl.id, cl.company_name, cl.job_title, cl.updated_at, cl.application_id,
-              COALESCE(a.status, cl.status) AS status,
+              a.status AS status,
               cd.name AS cv_name
        FROM cover_letters cl
        JOIN cv_data cd ON cd.id = cl.cv_id
@@ -163,41 +163,10 @@ Write the cover letter now. Return ONLY the letter text, no additional commentar
     }
     const content = textContent.text.trim();
 
-    // Every letter belongs to an application. Writing one for a role you
-    // haven't logged yet creates the application implicitly - the user is
-    // clearly going for the job, so making them declare it twice is friction
-    // for nothing.
-    let finalApplicationId: string | null = applicationId || null;
-    if (finalApplicationId) {
-      const owns = await db.query(
-        `SELECT id FROM applications WHERE id = $1 AND user_id = $2`,
-        [finalApplicationId, session.user.id]
-      );
-      if (owns.rows.length === 0) {
-        return NextResponse.json({ error: 'Application not found' }, { status: 404 });
-      }
-      // Keep the application current with whatever was typed into the letter
-      // form, and attach the CV if it didn't have one.
-      await db.query(
-        `UPDATE applications
-         SET company_name = COALESCE($1, company_name),
-             job_description = COALESCE($2, job_description),
-             cv_id = COALESCE(cv_id, $3),
-             updated_at = NOW()
-         WHERE id = $4`,
-        [companyName || null, jobDescription || null, cvId, finalApplicationId]
-      );
-    } else {
-      const created = await db.query(
-        `INSERT INTO applications (
-           user_id, cv_id, company_name, job_title, job_description, status, updated_at
-         ) VALUES ($1, $2, $3, $4, $5, 'draft', NOW())
-         RETURNING id`,
-        [session.user.id, cvId, companyName || null, jobTitle.trim(), jobDescription || null]
-      );
-      finalApplicationId = created.rows[0].id;
-    }
-
+    // Writing a letter is not applying for the job - plenty get drafted and
+    // never sent. The application is created when the user says so, by
+    // clicking "I applied", which is what attaches this letter to it.
+    // `applicationId` is only set when the letter was started from one.
     const result = await db.query(
       `INSERT INTO cover_letters (user_id, cv_id, application_id, company_name, job_title, job_description, content, updated_at)
        VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
@@ -205,7 +174,7 @@ Write the cover letter now. Return ONLY the letter text, no additional commentar
       [
         session.user.id,
         cvId,
-        finalApplicationId,
+        applicationId || null,
         companyName || null,
         jobTitle.trim(),
         jobDescription || null,
@@ -216,7 +185,7 @@ Write the cover letter now. Return ONLY the letter text, no additional commentar
     return NextResponse.json({
       success: true,
       letterId: result.rows[0].id,
-      applicationId: finalApplicationId,
+      applicationId: applicationId || null,
       content
     });
   } catch (error: any) {

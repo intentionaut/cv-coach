@@ -17,7 +17,8 @@ export async function GET(
     const { id } = await params;
 
     const result = await db.query(
-      `SELECT a.*, cd.name AS cv_name
+      `SELECT a.id, a.company_name, a.job_title, a.job_description, a.status,
+              a.applied_at, a.created_at, a.updated_at, a.cv_id, cd.name AS cv_name
        FROM applications a
        LEFT JOIN cv_data cd ON cd.id = a.cv_id
        WHERE a.id = $1 AND a.user_id = $2`,
@@ -29,8 +30,8 @@ export async function GET(
     const app = result.rows[0];
 
     const letters = await db.query(
-      `SELECT id, content IS NOT NULL AND content <> '' AS has_content, updated_at
-       FROM cover_letters WHERE application_id = $1 ORDER BY created_at ASC`,
+      `SELECT id, updated_at FROM cover_letters
+       WHERE application_id = $1 ORDER BY created_at ASC`,
       [id]
     );
 
@@ -39,19 +40,13 @@ export async function GET(
       companyName: app.company_name || '',
       jobTitle: app.job_title,
       jobDescription: app.job_description || '',
-      source: app.source || '',
       status: app.status,
       appliedAt: app.applied_at,
-      notes: app.notes || '',
       cvId: app.cv_id,
       cvName: app.cv_name,
       createdAt: app.created_at,
       updatedAt: app.updated_at,
-      letters: letters.rows.map((row: any) => ({
-        id: row.id,
-        hasContent: row.has_content,
-        updatedAt: row.updated_at
-      }))
+      letters: letters.rows.map((row: any) => ({ id: row.id, updatedAt: row.updated_at }))
     });
   } catch (error: any) {
     console.error('Application fetch error:', {
@@ -66,6 +61,11 @@ export async function GET(
   }
 }
 
+/**
+ * Outcomes, plus corrections to the two fields worth holding as structured
+ * data: who it was for and what the role was. Deliberately nothing else -
+ * notes and channel-tracking belong to the platforms that already do them.
+ */
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -77,8 +77,7 @@ export async function PATCH(
     }
 
     const { id } = await params;
-    const body = await req.json();
-    const { companyName, jobTitle, jobDescription, source, status, notes, cvId } = body;
+    const { companyName, jobTitle, status } = await req.json();
 
     if (status !== undefined && !APPLICATION_STATUSES.includes(status as ApplicationStatus)) {
       return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
@@ -89,26 +88,18 @@ export async function PATCH(
 
     const sets: string[] = [];
     const values: any[] = [];
-    const push = (col: string, val: any) => {
-      sets.push(`${col} = $${sets.length + 1}`);
-      values.push(val);
-    };
 
-    if (companyName !== undefined) push('company_name', companyName || null);
-    if (jobTitle !== undefined) push('job_title', jobTitle.trim());
-    if (jobDescription !== undefined) push('job_description', jobDescription || null);
-    if (source !== undefined) push('source', source || null);
-    if (notes !== undefined) push('notes', notes || null);
-    if (cvId !== undefined) push('cv_id', cvId || null);
-
+    if (companyName !== undefined) {
+      sets.push(`company_name = $${sets.length + 1}`);
+      values.push(companyName?.trim() || null);
+    }
+    if (jobTitle !== undefined) {
+      sets.push(`job_title = $${sets.length + 1}`);
+      values.push(jobTitle.trim());
+    }
     if (status !== undefined) {
-      push('status', status);
-      // Stamped once, the first time it leaves draft, and preserved after -
-      // moving on to interviewing or rejected shouldn't rewrite the date you
-      // actually sent it.
-      if (status !== 'draft') {
-        sets.push('applied_at = COALESCE(applied_at, NOW())');
-      }
+      sets.push(`status = $${sets.length + 1}`);
+      values.push(status);
     }
 
     if (sets.length === 0) {
@@ -152,8 +143,15 @@ export async function DELETE(
 
     const { id } = await params;
 
-    // Cover letters cascade with the application, which is the intent: the
-    // letter was written for this job and has no meaning without it.
+    // Detach rather than cascade: the letter is the user's own work and
+    // outlives the record of having sent it. 015 changes the foreign key to
+    // match, but doing it explicitly here keeps behaviour right either way.
+    await db.query(
+      `UPDATE cover_letters SET application_id = NULL
+       WHERE application_id = $1 AND user_id = $2`,
+      [id, session.user.id]
+    );
+
     const result = await db.query(
       `DELETE FROM applications WHERE id = $1 AND user_id = $2 RETURNING id`,
       [id, session.user.id]

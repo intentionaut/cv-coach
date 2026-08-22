@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import db from '@/lib/db/client';
-import { APPLICATION_STATUSES, type ApplicationStatus } from '@/lib/applications';
 
 export async function GET() {
   try {
@@ -11,19 +10,19 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Ordered by most recent activity rather than creation: a job search is
-    // worked on out of order, and the thing you touched last is usually the
-    // thing you're thinking about.
+    // `status <> 'draft'` covers rows left over from 014's backfill, where
+    // every existing cover letter became an application whether or not it had
+    // been sent. 015 deletes those; this keeps the list honest until it runs.
     const result = await db.query(
       `SELECT
-         a.id, a.company_name, a.job_title, a.source, a.status,
-         a.applied_at, a.notes, a.created_at, a.updated_at,
+         a.id, a.company_name, a.job_title, a.status,
+         a.applied_at, a.created_at, a.updated_at,
          a.cv_id, cd.name AS cv_name,
          (SELECT COUNT(*)::int FROM cover_letters cl WHERE cl.application_id = a.id) AS letter_count
        FROM applications a
        LEFT JOIN cv_data cd ON cd.id = a.cv_id
-       WHERE a.user_id = $1
-       ORDER BY a.updated_at DESC`,
+       WHERE a.user_id = $1 AND a.status <> 'draft'
+       ORDER BY a.applied_at DESC NULLS LAST, a.created_at DESC`,
       [session.user.id]
     );
 
@@ -32,10 +31,8 @@ export async function GET() {
         id: row.id,
         companyName: row.company_name || '',
         jobTitle: row.job_title,
-        source: row.source || '',
         status: row.status,
         appliedAt: row.applied_at,
-        notes: row.notes || '',
         cvId: row.cv_id,
         cvName: row.cv_name,
         letterCount: row.letter_count,
@@ -56,6 +53,16 @@ export async function GET() {
   }
 }
 
+/**
+ * "I applied."
+ *
+ * The only way an application is created. It's always triggered from something
+ * the user already has - a CV they tailored or a letter they wrote - and that
+ * thing gets attached, which is what makes the record worth anything later.
+ *
+ * Role, company and job description are carried over from the source rather
+ * than re-asked. The user has already typed them once.
+ */
 export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -63,55 +70,80 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { companyName, jobTitle, jobDescription, source, status, cvId, notes, appliedAt } =
-      await req.json();
+    const { cvId, coverLetterId, companyName, jobTitle } = await req.json();
 
-    if (!jobTitle?.trim()) {
-      return NextResponse.json({ error: 'A job title is required' }, { status: 400 });
-    }
-    if (status && !APPLICATION_STATUSES.includes(status as ApplicationStatus)) {
-      return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
+    if (!cvId && !coverLetterId) {
+      return NextResponse.json(
+        { error: 'An application has to come from a CV or a cover letter' },
+        { status: 400 }
+      );
     }
 
-    // A CV is optional, but if one is named it has to be the user's own.
-    if (cvId) {
-      const owns = await db.query(`SELECT id FROM cv_data WHERE id = $1 AND user_id = $2`, [
-        cvId,
-        session.user.id
-      ]);
-      if (owns.rows.length === 0) {
+    let sourceCvId: string | null = cvId || null;
+    let derivedJobTitle: string | null = jobTitle?.trim() || null;
+    let derivedCompany: string | null = companyName?.trim() || null;
+    let derivedDescription: string | null = null;
+
+    if (coverLetterId) {
+      const letter = await db.query(
+        `SELECT id, cv_id, company_name, job_title, job_description
+         FROM cover_letters WHERE id = $1 AND user_id = $2`,
+        [coverLetterId, session.user.id]
+      );
+      if (letter.rows.length === 0) {
+        return NextResponse.json({ error: 'Cover letter not found' }, { status: 404 });
+      }
+      const row = letter.rows[0];
+      sourceCvId = sourceCvId || row.cv_id;
+      derivedJobTitle = derivedJobTitle || row.job_title;
+      derivedCompany = derivedCompany || row.company_name;
+      derivedDescription = row.job_description;
+    }
+
+    if (sourceCvId) {
+      const cv = await db.query(
+        `SELECT id, job_title, job_description FROM cv_data WHERE id = $1 AND user_id = $2`,
+        [sourceCvId, session.user.id]
+      );
+      if (cv.rows.length === 0) {
         return NextResponse.json({ error: 'CV not found' }, { status: 404 });
       }
+      derivedJobTitle = derivedJobTitle || cv.rows[0].job_title;
+      derivedDescription = derivedDescription || cv.rows[0].job_description;
     }
 
-    const finalStatus: ApplicationStatus = status || 'draft';
+    if (!derivedJobTitle?.trim()) {
+      return NextResponse.json(
+        { error: 'We need to know what role this was for' },
+        { status: 400 }
+      );
+    }
 
-    // Logging something you already sent is the common case for applications
-    // made outside Friday, so applied_at is stamped immediately rather than
-    // waiting for a later status change it already passed.
-    const stampApplied =
-      appliedAt || (finalStatus !== 'draft' ? new Date().toISOString() : null);
-
-    const result = await db.query(
+    const created = await db.query(
       `INSERT INTO applications (
          user_id, cv_id, company_name, job_title, job_description,
-         source, status, applied_at, notes, updated_at
-       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
+         status, applied_at, updated_at
+       ) VALUES ($1, $2, $3, $4, $5, 'applied', NOW(), NOW())
        RETURNING id`,
       [
         session.user.id,
-        cvId || null,
-        companyName || null,
-        jobTitle.trim(),
-        jobDescription || null,
-        source || null,
-        finalStatus,
-        stampApplied,
-        notes || null
+        sourceCvId,
+        derivedCompany,
+        derivedJobTitle.trim(),
+        derivedDescription
       ]
     );
+    const applicationId = created.rows[0].id;
 
-    return NextResponse.json({ success: true, applicationId: result.rows[0].id });
+    if (coverLetterId) {
+      await db.query(
+        `UPDATE cover_letters SET application_id = $1, updated_at = NOW()
+         WHERE id = $2 AND user_id = $3`,
+        [applicationId, coverLetterId, session.user.id]
+      );
+    }
+
+    return NextResponse.json({ success: true, applicationId });
   } catch (error: any) {
     console.error('Application create error:', {
       message: error?.message,
@@ -119,7 +151,7 @@ export async function POST(req: NextRequest) {
       stack: error?.stack
     });
     return NextResponse.json(
-      { error: 'Failed to create application', details: error.message },
+      { error: 'Failed to record your application', details: error.message },
       { status: 500 }
     );
   }
