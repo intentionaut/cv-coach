@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { canSeeMarketingPages } from '@/lib/flags';
 import FilmDivider from '@/components/ui/FilmDivider';
 import CoachingExchange from '@/components/marketing/CoachingExchange';
+import BetaSignup from '@/components/marketing/BetaSignup';
 
 /**
  * The homepage.
@@ -115,7 +116,12 @@ export default function Home() {
                   >
                     Start with your CV
                   </Link>
-                  <span className="font-body text-sm text-text-inverse/70">In private beta.</span>
+                  <a
+                    href="#beta"
+                    className="font-body text-sm text-text-inverse/70 underline hover:text-text-on-tertiary transition"
+                  >
+                    In private beta — ask for access
+                  </a>
                 </div>
               </div>
 
@@ -221,26 +227,56 @@ export default function Home() {
           </div>
         </section>
 
-        {/* 5. Close */}
-        <section className="bg-bg-surface border-t border-border-hairline">
-          <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 text-center">
-            <h2 className="font-display text-2xl sm:text-3xl font-bold text-text-primary mb-4 text-balance">
-              Start with the CV you&apos;ve got
-            </h2>
-            <p className="font-body text-text-secondary mb-8 max-w-xl mx-auto">
-              Not the one you keep meaning to rewrite. Upload it as it is, get a straight read on
-              what&apos;s working, and see what a rewrite looks like when you&apos;re the one
-              writing it.
-            </p>
-            <Link
-              href="/login"
-              className="font-body inline-block bg-cta-primary text-text-on-cta px-8 py-3 rounded-lg font-bold hover:opacity-90 transition text-lg"
-            >
-              Start with your CV
-            </Link>
+        {/* 5. Close — the ask is for beta access, not a signup, because
+            accounts are invite-only. The slate says how early this is before
+            the copy has to. */}
+        <section id="beta" className="bg-accent-tertiary text-text-on-tertiary scroll-mt-4">
+          <FilmDivider tone="dark" />
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-20">
+            <div className="flex flex-wrap gap-x-10 gap-y-3 pb-8 mb-8 border-b border-text-inverse/20">
+              <SlateField label="Status" value="Private beta" />
+              <SlateField label="Crew call" value="Now" />
+              <SlateField label="Places" value="A handful at a time" />
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16">
+              <div>
+                <h2 className="font-display text-2xl sm:text-3xl font-bold mb-4 text-balance">
+                  You can pitch a scene in your sleep. Can you pitch yourself?
+                </h2>
+                <p className="font-body text-text-inverse/85 leading-relaxed mb-5">
+                  Friday is genuinely early. We&apos;re letting people in a handful at a
+                  time, because at this size it&apos;s still possible to read everything you
+                  send back and act on it.
+                </p>
+                <p className="font-body text-sm text-text-inverse/75 leading-relaxed">
+                  If you&apos;re going for your first roles in film, TV, theatre or
+                  broadcast, you&apos;re exactly who we want shaping what gets built next.
+                </p>
+              </div>
+
+              <div>
+                <p className="font-mono text-xs uppercase tracking-widest text-accent-secondary mb-3">
+                  Two questions. That&apos;s it.
+                </p>
+                <BetaSignup source="home" tone="dark" />
+              </div>
+            </div>
           </div>
         </section>
+
       </main>
+    </div>
+  );
+}
+
+function SlateField({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p className="font-mono text-[10px] uppercase tracking-widest text-text-inverse/60">
+        {label}
+      </p>
+      <p className="font-display text-sm font-bold text-text-on-tertiary mt-0.5">{value}</p>
     </div>
   );
 }

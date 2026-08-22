@@ -53,6 +53,12 @@ export const EVENTS = {
   // dataset, and therefore the interview rate, rests on.
   APPLICATIONS_VIEWED: 'Applications Viewed',
 
+  // --- Getting in ---
+  // The top of the funnel while Friday is invite-only. `source` says which
+  // page persuaded them, which is the only way to know whether the product
+  // pages are doing anything.
+  BETA_SIGNUP: 'Beta Signup',
+
   // --- Practice ---
   PRACTICE_STARTED: 'Practice Session Started',
   PRACTICE_ANSWER_SUBMITTED: 'Practice Answer Submitted',

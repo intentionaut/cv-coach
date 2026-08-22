@@ -2,6 +2,7 @@
 
 import { signIn } from 'next-auth/react';
 import { useState } from 'react';
+import BetaSignup from '@/components/marketing/BetaSignup';
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
@@ -108,6 +109,21 @@ export default function LoginPage() {
               {loading ? 'Signing in...' : 'Sign in with Password'}
             </button>
           </form>
+        </div>
+
+        {/* Friday is invite-only, so most people arriving here don't have an
+            account and can't make one. Saying so — and offering the waitlist
+            instead of nothing — is the difference between a dead end and a
+            signup. */}
+        <div className="mt-8 bg-bg-surface border border-border-hairline rounded-lg p-6">
+          <h2 className="font-display text-lg font-bold text-text-primary mb-1">
+            Haven&apos;t got an account?
+          </h2>
+          <p className="font-body text-sm text-text-secondary mb-4">
+            Friday is in private beta, so accounts are invite-only for now. Leave your email
+            and we&apos;ll let you know when there&apos;s a place.
+          </p>
+          <BetaSignup source="login" />
         </div>
 
         <div className="font-body mt-8 text-center text-xs text-text-secondary">

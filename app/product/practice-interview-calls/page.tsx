@@ -96,6 +96,7 @@ export default async function PracticeInterviewCallsPage() {
       </Section>
 
       <MarketingCta
+        source="product/practice-interview-calls"
         signedIn={signedIn}
         heading="Say one answer out loud"
         body="Take the question you're dreading most and answer it badly, alone, where the stakes are zero."
