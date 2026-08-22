@@ -2,11 +2,6 @@ import Link from 'next/link';
 
 /**
  * Shared furniture for the /product pages so all four read as one site.
- *
- * Every page ends with an honest-limits section. That's a deliberate content
- * rule, not decoration: the audience includes careers staff deciding whether
- * to put this in front of students, and a marketing page that admits what it
- * can't do is the one they can safely recommend.
  */
 
 export function MarketingHero({
@@ -106,27 +101,6 @@ export function ForTeachers({ children }: { children: React.ReactNode }) {
       <div className="font-body text-sm text-text-secondary space-y-3 leading-relaxed">
         {children}
       </div>
-    </div>
-  );
-}
-
-export function HonestLimits({ items }: { items: string[] }) {
-  return (
-    <div className="max-w-2xl">
-      <h2 className="font-display text-2xl font-bold text-text-primary mb-3">
-        What this won&apos;t do
-      </h2>
-      <p className="font-body text-text-secondary mb-4 leading-relaxed">
-        Worth being straight about, so nothing here is a surprise later.
-      </p>
-      <ul className="space-y-2">
-        {items.map((item, idx) => (
-          <li key={idx} className="font-body text-sm text-text-secondary flex items-start gap-2">
-            <span className="text-text-cta shrink-0" aria-hidden="true">—</span>
-            <span>{item}</span>
-          </li>
-        ))}
-      </ul>
     </div>
   );
 }

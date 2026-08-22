@@ -10,22 +10,22 @@ export const PRODUCT_PAGES = [
   {
     href: '/product/improve-your-cv',
     label: 'Improve your CV',
-    blurb: 'Feedback that asks questions instead of writing it for you'
+    blurb: 'Find the detail you left off the page'
   },
   {
     href: '/product/learn-to-interview',
     label: 'Learn to interview',
-    blurb: 'Structure your answers using what careers services already teach'
+    blurb: 'Know which part of your answer is missing'
   },
   {
     href: '/product/practice-interview-calls',
     label: 'Practice interview calls',
-    blurb: 'Say it out loud before you have to say it for real'
+    blurb: 'Hear yourself before an employer does'
   },
   {
     href: '/product/track-your-growth',
     label: 'Track your growth',
-    blurb: 'See what changed between your first draft and your fifth'
+    blurb: 'Proof you are getting better at this'
   }
 ];
 

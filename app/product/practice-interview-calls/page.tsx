@@ -7,14 +7,13 @@ import {
   Step,
   Pullquote,
   ForTeachers,
-  HonestLimits,
   MarketingCta
 } from '@/components/marketing/MarketingPage';
 
 export const metadata = {
   title: 'Practice interview calls — Friday',
   description:
-    'Say your answers out loud and hear how they actually land, before the conversation that counts.'
+    'Say your answers out loud, read back exactly what you said, and fix it somewhere it costs you nothing.'
 };
 
 export default async function PracticeInterviewCallsPage() {
@@ -25,113 +24,81 @@ export default async function PracticeInterviewCallsPage() {
     <>
       <MarketingHero
         eyebrow="Practice interview calls"
-        title="Writing an answer and saying it are not the same skill"
-        standfirst="Most people say their answer out loud for the very first time during the interview itself. That's a strange way to find out it doesn't work."
+        title="You've written the answer. You've never said it."
+        standfirst="For most people, the first time an answer leaves their mouth is during the interview that matters. Then they discover it runs ninety seconds too long and loses its thread in the middle."
       />
 
-      <Section title="What changes when you speak">
+      <Section title="Speaking is a separate skill">
         <Prose>
           <p>
-            On paper you can revise a sentence four times before anyone sees it. Out loud you
-            get one pass, in real time, while also managing nerves and someone else&apos;s
-            silence.
+            On paper you get four attempts at a sentence before anyone sees it. Out loud you get
+            one, in real time, while managing nerves and someone else&apos;s silence.
           </p>
           <p>
-            Answers that read beautifully often fall apart when spoken — they run long, lose
-            their thread halfway, or arrive at a point the speaker had already forgotten they
-            were making. None of that is visible on a page.
-          </p>
-          <p>
-            Film and TV also hire by phone far more than most industries. A production
-            coordinator ringing about availability on Thursday for a Monday start is a real
-            interview, even though nobody called it one.
+            Film and TV also hire by phone constantly. A coordinator ringing on Thursday about a
+            Monday start is an interview, whatever anyone called it. You rarely get warning, and
+            you never get a second take.
           </p>
         </Prose>
       </Section>
 
-      <Section title="How a practice call runs" tint>
+      <Section title="How a call works" tint>
         <div className="space-y-6 max-w-2xl">
-          <Step n={1} title="Pick what you're preparing for">
-            Point the call at one of your CVs and the questions follow that role, the same as
-            written practice.
+          <Step n={1} title="Choose what you're preparing for">
+            Attach it to one of your CVs and the questions follow that role.
           </Step>
-          <Step n={2} title="Answer out loud">
-            You hear the question and respond by speaking, in one take. No editing, no
-            backspace — which is the whole point.
+          <Step n={2} title="Answer out loud, one take">
+            You hear the question, you speak. No backspace, no second attempt. That constraint is
+            the entire exercise.
           </Step>
-          <Step n={3} title="Read back what you actually said">
-            Your answer is transcribed, so you can see the real shape of it. This tends to be
-            the uncomfortable, useful part: the repetitions and half-finished sentences are
-            all there in a way memory quietly smooths over.
+          <Step n={3} title="Read back exactly what you said">
+            Your answer comes back as text. This is the uncomfortable, genuinely useful bit — the
+            repetitions and abandoned sentences are all sitting there, in a way memory politely
+            edits out.
           </Step>
-          <Step n={4} title="Get the same structured read">
-            The feedback works exactly as it does in written practice — the same STAR
-            breakdown, the same questions back rather than a script. Consistency matters here:
-            you&apos;re learning one way of building an answer, not two.
+          <Step n={4} title="Same feedback as written practice">
+            The identical STAR breakdown and the same questions back. One method, whether you
+            type it or say it.
           </Step>
         </div>
       </Section>
 
       <Section>
         <Pullquote>
-          The first time you hear yourself say &ldquo;um, so basically&rdquo; four times in
-          ninety seconds, you stop doing it. Being told about it in the abstract never has the
-          same effect.
+          Hearing yourself say &ldquo;um, so basically&rdquo; four times in ninety seconds fixes
+          it permanently. Being told you use filler words does nothing.
         </Pullquote>
         <Prose>
           <p>
-            That&apos;s most of the value. Not the analysis — the evidence. A transcript is
-            hard to argue with, and it costs nothing to be wrong in front of.
+            That&apos;s the real value here — evidence, not analysis. A transcript is impossible
+            to argue with, and it costs nothing to be bad in front of.
+          </p>
+          <p>
+            What it catches: rambling, sentences that never land, an answer three times longer
+            than you thought, the point you made twice. What it can&apos;t: warmth, pace, whether
+            you sounded like someone worth having around at hour twelve. Get that from a person.
           </p>
         </Prose>
-      </Section>
-
-      <Section title="Being straight about what a transcript can show" tint>
-        <Prose>
-          <p>
-            A transcript captures what you said, not how you sounded. Filler words, false
-            starts, sentences that never resolve, an answer that runs three times longer than
-            you thought — all of that shows up clearly and is worth working on.
-          </p>
-          <p>
-            Warmth, pace, and whether you sounded like someone a crew would want on a long
-            shoot do not. The feedback says so rather than pretending otherwise, because a
-            tool that claims to assess your presence from a text file is guessing, and
-            you&apos;d be right not to trust it.
-          </p>
-        </Prose>
-      </Section>
-
-      <Section>
-        <ForTeachers>
-          <p>
-            Mock interviews are among the most valuable things a careers service offers and
-            among the hardest to scale — there are only so many hours, and students who most
-            need the practice are often the least likely to book a slot.
-          </p>
-          <p>
-            This isn&apos;t a substitute for that conversation. It&apos;s the rehearsal that
-            makes it worth having: students arrive having already heard themselves, so your
-            time with them can go on judgement and nuance rather than on the basics.
-          </p>
-        </ForTeachers>
       </Section>
 
       <Section tint>
-        <HonestLimits
-          items={[
-            'It cannot assess tone, pace, warmth or body language. It reads a transcript, and it tells you that.',
-            'It is not a substitute for a mock interview with a person who knows the industry.',
-            "Transcription is good, not perfect. Strong accents and background noise can garble a word or two.",
-            'You need a working microphone and somewhere you can talk out loud without feeling watched.'
-          ]}
-        />
+        <ForTeachers>
+          <p>
+            Mock interviews are the most valuable thing you offer and the hardest to scale. The
+            students who most need one are reliably the least likely to book it.
+          </p>
+          <p>
+            This is the rehearsal that happens before yours. Students arrive having already heard
+            themselves, so your hour goes on judgement, nuance and industry reality instead of on
+            telling someone they said &ldquo;like&rdquo; thirty times.
+          </p>
+        </ForTeachers>
       </Section>
 
       <MarketingCta
         signedIn={signedIn}
         heading="Say one answer out loud"
-        body="Take the question you're most dreading and answer it badly, in private, where it costs you nothing."
+        body="Take the question you're dreading most and answer it badly, alone, where the stakes are zero."
       />
     </>
   );

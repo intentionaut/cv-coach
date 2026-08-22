@@ -7,14 +7,13 @@ import {
   Step,
   Pullquote,
   ForTeachers,
-  HonestLimits,
   MarketingCta
 } from '@/components/marketing/MarketingPage';
 
 export const metadata = {
   title: 'Improve your CV — Friday',
   description:
-    'Friday asks you the questions that get your real experience onto the page, instead of writing it for you.'
+    'Your CV is probably underselling you. Friday helps you find the detail you left out and say it in your own words.'
 };
 
 export default async function ImproveYourCvPage() {
@@ -25,97 +24,92 @@ export default async function ImproveYourCvPage() {
     <>
       <MarketingHero
         eyebrow="Improve your CV"
-        title="You've done more than your CV says you have"
-        standfirst="Most people starting out in film and theatre undersell themselves — not because they lack experience, but because nobody ever taught them how to describe it. Friday helps you work that out, in your own words."
+        title="&ldquo;Assisted the art department.&rdquo;"
+        standfirst="What actually happened: the props delivery collapsed ninety minutes before the scene, you called round three hire houses, found the replacements, and the shoot stayed on schedule. Nobody reading your CV will ever know that."
       />
 
-      <Section title="The problem isn't your experience. It's the translation.">
+      <Section title="Everyone starting out has this problem">
         <Prose>
           <p>
-            You ran supplies across a ten-day shoot, kept three departments talking to each
-            other, and sorted a props crisis an hour before call time. On your CV it says{' '}
-            <em>&ldquo;assisted the art department.&rdquo;</em>
+            You know what you did on set. Writing it down is a completely different skill, and
+            nobody teaches it. So it comes out flat — &ldquo;supported the team&rdquo;,
+            &ldquo;various duties&rdquo;, &ldquo;helped where needed&rdquo; — and a hiring
+            manager skims past three years of real work in eight seconds.
           </p>
           <p>
-            That gap — between what you actually did and what you wrote down — is the single
-            most common reason good early-career applications get passed over. It&apos;s a
-            writing problem, not a worth problem, and it&apos;s learnable.
+            That gap isn&apos;t about your experience. It&apos;s about translation. And
+            translation is fixable.
           </p>
         </Prose>
       </Section>
 
       <Section title="How it works" tint>
         <div className="space-y-6 max-w-2xl">
-          <Step n={1} title="Upload what you've got">
-            A PDF, Word doc or plain text file. It doesn&apos;t need to be finished or good.
-            A rough first draft is a perfectly sensible place to start.
+          <Step n={1} title="Upload whatever you have">
+            PDF, Word, plain text. Rough is fine. Half-finished is fine.
           </Step>
-          <Step n={2} title="Tell it what you're going for">
-            Optional, but useful. Name the role, or paste the posting. Feedback on a CV aimed
-            at a camera traineeship is different from one aimed at a production office.
+          <Step n={2} title="Name the job">
+            Optional, but it sharpens everything. A CV for a camera traineeship needs different
+            emphasis from one for a production office, and Friday reads the posting properly.
           </Step>
-          <Step n={3} title="Get asked, not told">
-            Rather than rewriting your lines, Friday points at what&apos;s vague and asks the
-            question that unlocks it. <em>&ldquo;This says you helped with lighting — were you
-            rigging, operating, or assisting the gaffer? Do you remember the crew size?&rdquo;</em>{' '}
-            You answer from memory. The words stay yours.
+          <Step n={3} title="Answer the questions it asks you">
+            This is the part that does the work. Instead of rewriting your line, Friday asks:
+            were you rigging or operating? How big was the crew? How many shoot days? You
+            remember. You answer. The line becomes specific.
           </Step>
-          <Step n={4} title="Rewrite, re-upload, compare">
-            Bring the improved draft back and see what moved. The score history keeps the
-            earlier versions, so progress is visible rather than assumed.
+          <Step n={4} title="Come back with the new draft">
+            Upload the rewrite and see what shifted. The score history keeps every version, so
+            you can watch a CV go from 51 to 74 across a fortnight.
           </Step>
         </div>
       </Section>
 
       <Section>
         <Pullquote>
-          Plenty of tools will write your CV for you. Then you sit in the interview trying to
-          explain sentences you didn&apos;t write.
+          Plenty of tools will write your CV for you. Then you&apos;re in the room, being asked
+          about a sentence you didn&apos;t write.
         </Pullquote>
         <Prose>
           <p>
-            That&apos;s the reason Friday works the way it does. If a hiring manager asks you
-            about a line on your CV, you should be able to talk about it for five minutes
-            without effort — because you lived it and you chose how to describe it.
+            Friday never writes a line for you. Not as a limitation — as the entire design.
+            Every question it asks pulls a real detail out of your memory and onto the page, so
+            when someone says &ldquo;tell me about this shoot&rdquo;, you can talk for five
+            minutes without thinking.
           </p>
           <p>
-            The side effect is the useful bit: the skill of articulating your own work
-            transfers. It shows up in your cover letters, your interviews, and the conversation
-            you have with someone on a wrap party who asks what you&apos;ve been up to.
-          </p>
-        </Prose>
-      </Section>
-
-      <Section title="Two different kinds of feedback" tint>
-        <Prose>
-          <p>
-            <strong className="text-text-primary">Whether it reads well.</strong> One score,
-            with the reasoning behind it. If you&apos;ve added a job description, that score
-            reflects how ready the CV is for that specific role — so a lower number on an
-            ambitious application is information, not a verdict on you.
-          </p>
-          <p>
-            <strong className="text-text-primary">Whether software can read it at all.</strong>{' '}
-            Employers often run CVs through screening tools before a person sees them. A
-            separate set of mechanical checks looks at whether your contact details are
-            findable, your sections are recognisable, your dates parse, and — the one that
-            catches people out — whether your file is actually text rather than an image.
-            That check is instant and free, and it tells you plainly what it can&apos;t
-            verify.
+            You keep the skill afterwards. It shows up in your cover letters, your interviews,
+            and the conversation at the wrap party when someone asks what you&apos;ve been
+            working on.
           </p>
         </Prose>
       </Section>
 
-      <Section title="One CV per kind of role">
+      <Section title="Two questions, answered separately" tint>
         <Prose>
           <p>
-            Early careers in this industry rarely run in a straight line. You might be going
-            for a runner job, a broadcast apprenticeship and a theatre production role in the
-            same month — and the same CV won&apos;t serve all three well.
+            <strong className="text-text-primary">Does it read well?</strong> One score, and the
+            reasoning behind it. Add a job description and the score reflects that specific
+            role, so aiming high shows up as a stretch rather than a failure.
           </p>
           <p>
-            Friday keeps them separate, each aimed at its own kind of work. Your experience is
-            reusable. The framing isn&apos;t.
+            <strong className="text-text-primary">Can a machine read it at all?</strong> Most
+            employers run applications through screening software first. A separate instant
+            check looks at whether your contact details are findable, your dates parse, your
+            sections are recognisable — and whether your beautifully designed PDF is secretly an
+            image, which is the one that quietly kills applications.
+          </p>
+        </Prose>
+      </Section>
+
+      <Section title="Three jobs, three CVs">
+        <Prose>
+          <p>
+            In one month you might go for a runner role, a broadcast apprenticeship and a
+            theatre production job. The same CV won&apos;t land all three.
+          </p>
+          <p>
+            Keep a separate one for each kind of work, each with its own feedback and its own
+            history. Your experience is reusable. The framing is what changes.
           </p>
         </Prose>
       </Section>
@@ -123,33 +117,21 @@ export default async function ImproveYourCvPage() {
       <Section tint>
         <ForTeachers>
           <p>
-            Friday is built to support what you already teach, not to shortcut it. It gives
-            students structured, specific feedback between tutorials, and it deliberately
-            refuses to write anything for them — so the work you see is still theirs.
+            Friday gives students structured feedback between tutorials, and it never writes
+            anything for them — so what lands on your desk is still their work, in their voice.
           </p>
           <p>
-            The scoring is transparent about its own reach. Where something can&apos;t be
-            checked from a text file, the tool says so rather than implying authority it
-            doesn&apos;t have. That matters if you&apos;re recommending it to a cohort.
+            It also shows its reasoning. Students see why a line is weak, not just that it
+            scored badly, which makes the next tutorial a conversation about judgement rather
+            than a proofread.
           </p>
         </ForTeachers>
       </Section>
 
-      <Section>
-        <HonestLimits
-          items={[
-            'It will not write your CV. If you want finished sentences handed to you, this is the wrong tool.',
-            'It cannot promise you an interview. No tool can see how a given employer screens applications.',
-            'It knows UK film, TV and theatre conventions best. The coaching travels; some specifics may not.',
-            'It works from what you tell it. Experience you leave out stays invisible to it, same as to a hiring manager.'
-          ]}
-        />
-      </Section>
-
       <MarketingCta
         signedIn={signedIn}
-        heading="Start with the draft you already have"
-        body="It doesn't need to be tidy. The first pass is about finding what you've left out, not judging what's there."
+        heading="Find out what you left out"
+        body="Upload the CV you already have. The first pass usually surfaces two or three things you'd forgotten you'd done."
       />
     </>
   );
