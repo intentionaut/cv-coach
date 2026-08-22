@@ -4,6 +4,7 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import Anthropic from '@anthropic-ai/sdk';
 import db from '@/lib/db/client';
 import { getUserTier } from '@/lib/auth';
+import { logUsage } from '@/lib/ai/usage';
 import { getModelForTier } from '@/lib/tier';
 
 const anthropic = new Anthropic({
@@ -118,6 +119,15 @@ Provide feedback in this JSON structure:
 Return ONLY the JSON object, no markdown formatting.`
         }
       ]
+    });
+
+    logUsage({
+      userId: session.user.id,
+      surface: 'interview_answer',
+      model,
+      usage: feedbackMessage.usage,
+      tier,
+      succeeded: feedbackMessage.stop_reason !== 'max_tokens'
     });
 
     if (feedbackMessage.stop_reason === 'max_tokens') {

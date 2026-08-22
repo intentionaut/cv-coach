@@ -11,6 +11,7 @@ import mammoth from 'mammoth';
 import pdfParse from 'pdf-parse/lib/pdf-parse.js';
 import db from '@/lib/db/client';
 import { getUserTier } from '@/lib/auth';
+import { logUsage } from '@/lib/ai/usage';
 import { getModelForTier, getTierLimits } from '@/lib/tier';
 
 const DOCX_MIME_TYPE = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
@@ -188,6 +189,17 @@ IMPORTANT:
 - Return ONLY the JSON object, no markdown, no additional text`
         }
       ]
+    });
+
+    // Parsing is a fixed cost per upload, unlike analysis - worth separating
+    // so a re-upload loop doesn't get blamed on the wrong surface.
+    logUsage({
+      userId: session.user.id,
+      surface: 'cv_upload',
+      model,
+      usage: message.usage,
+      tier,
+      succeeded: message.stop_reason !== 'max_tokens'
     });
 
     const textContent = message.content.find(block => block.type === 'text');

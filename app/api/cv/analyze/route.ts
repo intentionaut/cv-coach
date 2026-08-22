@@ -5,6 +5,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import db from '@/lib/db/client';
 import { FILM_THEATRE_SKILLS } from '@/lib/data/film-skills';
 import { getUserTier } from '@/lib/auth';
+import { logUsage } from '@/lib/ai/usage';
 import { getModelForTier } from '@/lib/tier';
 
 const anthropic = new Anthropic({
@@ -164,6 +165,19 @@ Return ONLY the JSON object, no additional text.`
           }
 
           const finalMessage = await claudeStream.finalMessage();
+
+          // The single most expensive call in the app, and the only one a
+          // user can repeat without limit on paid tiers - so this is the row
+          // that decides cost per CV.
+          logUsage({
+            userId,
+            surface: 'cv_analysis',
+            model,
+            usage: finalMessage.usage,
+            tier,
+            succeeded: finalMessage.stop_reason !== 'max_tokens'
+          });
+
           if (finalMessage.stop_reason === 'max_tokens') {
             // The JSON is cut off mid-structure. The client will simply never
             // see the trailing fields; log it so a recurring ceiling problem

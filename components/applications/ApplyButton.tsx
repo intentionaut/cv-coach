@@ -92,6 +92,15 @@ export default function ApplyButton({
     );
   }
 
+  // Backing out is tracked, not ignored - see APPLICATION_ABANDONED.
+  const handleCancel = () => {
+    setOpen(false);
+    track(EVENTS.APPLICATION_ABANDONED, {
+      from: coverLetterId ? 'cover_letter' : 'cv',
+      hadTypedCompany: !!company.trim()
+    });
+  };
+
   if (!open) {
     return (
       <button
@@ -129,7 +138,7 @@ export default function ApplyButton({
           onChange={e => setCompany(e.target.value)}
           onKeyDown={e => {
             if (e.key === 'Enter') handleConfirm();
-            if (e.key === 'Escape') setOpen(false);
+            if (e.key === 'Escape') handleCancel();
           }}
           placeholder="Company or production"
           className="font-body flex-1 min-w-[200px] px-3 py-2 border border-border-hairline rounded-lg bg-bg-surface text-text-primary text-sm focus:ring-2 focus:ring-accent-tertiary focus:border-transparent"
@@ -142,7 +151,7 @@ export default function ApplyButton({
           {saving ? 'Saving...' : 'Done'}
         </button>
         <button
-          onClick={() => setOpen(false)}
+          onClick={handleCancel}
           className="font-body px-3 py-2 text-sm text-text-secondary hover:text-text-primary transition"
         >
           Cancel

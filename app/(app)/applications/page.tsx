@@ -68,6 +68,13 @@ function ApplicationsContent() {
   useEffect(() => {
     (async () => {
       const list = await loadList();
+      // Arrival is the denominator for "did they come back and close the
+      // loop" - Application Outcome Updated is meaningless without it.
+      track(EVENTS.APPLICATIONS_VIEWED, {
+        count: list.length,
+        isEmpty: list.length === 0,
+        awaitingReply: list.filter(a => a.status === 'applied').length
+      });
       const idParam = searchParams.get('id');
       if (idParam) {
         await loadDetail(idParam);
@@ -133,6 +140,7 @@ function ApplicationsContent() {
     try {
       const response = await fetch(`/api/applications/${id}`, { method: 'DELETE' });
       if (!response.ok) return;
+      track(EVENTS.APPLICATION_REMOVED, { hadOutcome: detail?.status !== 'applied' });
       const list = await loadList();
       if (list.length > 0) {
         await loadDetail(list[0].id);

@@ -42,6 +42,16 @@ export const EVENTS = {
   // --- Stage 3: applying, and what came back. The point of the product. ---
   APPLICATION_SENT: 'Application Sent',
   APPLICATION_OUTCOME_UPDATED: 'Application Outcome Updated',
+  // Opening "I applied" and backing out is a decision, not a non-event: the
+  // person either wasn't ready or didn't want to name the company. Without
+  // this, an abandoned apply looks identical to never having considered it.
+  APPLICATION_ABANDONED: 'Application Abandoned',
+  APPLICATION_REMOVED: 'Application Removed',
+  // Fired on arrival at /applications, with whether anything was there yet.
+  // Paired against Application Outcome Updated, this is what shows whether
+  // people come back to close the loop - the assumption the whole outcome
+  // dataset, and therefore the interview rate, rests on.
+  APPLICATIONS_VIEWED: 'Applications Viewed',
 
   // --- Practice ---
   PRACTICE_STARTED: 'Practice Session Started',

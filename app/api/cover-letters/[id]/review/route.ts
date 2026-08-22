@@ -4,6 +4,7 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import Anthropic from '@anthropic-ai/sdk';
 import db from '@/lib/db/client';
 import { getUserTier } from '@/lib/auth';
+import { logUsage } from '@/lib/ai/usage';
 import { getModelForTier } from '@/lib/tier';
 
 const anthropic = new Anthropic({
@@ -74,6 +75,17 @@ Return a JSON object with this structure:
 Return ONLY the JSON object, no additional text.`
         }
       ]
+    });
+
+    // Logged before the truncation check: a truncated call still burned the
+    // tokens, and failed spend is exactly the kind that goes unnoticed.
+    logUsage({
+      userId: session.user.id,
+      surface: 'cover_letter_review',
+      model,
+      usage: message.usage,
+      tier,
+      succeeded: message.stop_reason !== 'max_tokens'
     });
 
     if (message.stop_reason === 'max_tokens') {

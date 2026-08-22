@@ -5,6 +5,7 @@ import db from '@/lib/db/client';
 import Anthropic from '@anthropic-ai/sdk';
 import { DeepgramClient } from '@deepgram/sdk';
 import { getUserTier } from '@/lib/auth';
+import { logUsage, logTranscriptionUsage } from '@/lib/ai/usage';
 import { getModelForTier } from '@/lib/tier';
 
 const anthropic = new Anthropic({
@@ -88,6 +89,15 @@ export async function POST(req: NextRequest) {
         { status: 502 }
       );
     }
+
+    // Voice is the only surface billed by two providers. Deepgram charges per
+    // minute of audio, so its cost scales with how long the user talked -
+    // separate from the Claude call that follows.
+    logTranscriptionUsage({
+      userId: session.user.id,
+      model: 'nova-2',
+      audioSeconds: response.metadata?.duration || 0
+    });
 
     const transcript = response.results?.channels?.[0]?.alternatives?.[0]?.transcript || '';
     console.log('Transcript:', transcript);
@@ -188,6 +198,15 @@ This was spoken, so a transcript carries real signal a written answer doesn't - 
 
 Call submit_feedback with your analysis.`
       }]
+    });
+
+    logUsage({
+      userId: session.user.id,
+      surface: 'voice_answer',
+      model,
+      usage: feedbackMessage.usage,
+      tier,
+      succeeded: feedbackMessage.stop_reason !== 'max_tokens'
     });
 
     const toolUseBlock = feedbackMessage.content.find(

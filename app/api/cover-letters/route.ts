@@ -4,6 +4,7 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import Anthropic from '@anthropic-ai/sdk';
 import db from '@/lib/db/client';
 import { getUserTier } from '@/lib/auth';
+import { logUsage } from '@/lib/ai/usage';
 import { getModelForTier } from '@/lib/tier';
 import { REUSABLE_QUESTION_KEYS } from '@/lib/data/cover-letter-questions';
 
@@ -147,6 +148,15 @@ What they bring, in their own words: ${answerBank.strengths || 'Not provided'}
 Write the cover letter now. Return ONLY the letter text, no additional commentary, no markdown formatting, no subject line.`
         }
       ]
+    });
+
+    logUsage({
+      userId: session.user.id,
+      surface: 'cover_letter',
+      model,
+      usage: message.usage,
+      tier,
+      succeeded: message.stop_reason !== 'max_tokens'
     });
 
     if (message.stop_reason === 'max_tokens') {

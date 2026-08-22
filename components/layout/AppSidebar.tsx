@@ -127,7 +127,15 @@ export default function AppSidebar() {
 
       <div className="px-3 py-4 border-t border-border-hairline space-y-0.5 shrink-0">
         {isOwner(session?.user?.email) && (
-          <SidebarLink href="/admin/invite" label="Invite user" icon="✚" active={isActive('/admin')} />
+          <SidebarLink
+            href="/admin/metrics"
+            label="Metrics"
+            icon="📊"
+            active={isActive('/admin/metrics')}
+          />
+        )}
+        {isOwner(session?.user?.email) && (
+          <SidebarLink href="/admin/invite" label="Invite user" icon="✚" active={isActive('/admin/invite')} />
         )}
         <SidebarLink href="/settings" label="Settings" icon="⚙️" active={isActive('/settings')} />
         <button
