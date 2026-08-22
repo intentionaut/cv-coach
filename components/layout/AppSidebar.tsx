@@ -38,8 +38,13 @@ const GROUPS: Array<{
     ]
   },
   {
-    label: 'Practice',
-    items: [{ href: '/coaching', label: 'Interviews', icon: '🎤' }]
+    // Applications leads: it's the outcome, and interview practice is
+    // preparation for it rather than a peer.
+    label: 'Progress',
+    items: [
+      { href: '/applications', label: 'Applications', icon: '🎬' },
+      { href: '/coaching', label: 'Interviews', icon: '🎤' }
+    ]
   }
 ];
 
@@ -86,20 +91,14 @@ export default function AppSidebar() {
         )}
       </div>
 
-      {/* Dashboard and Applications sit above the groups because they're
-          about the search itself rather than the things you make for it. */}
-      <div className="px-3 space-y-0.5">
+      {/* Dashboard sits above the groups: it's the overview of everything
+          below it, not a peer of any one section. */}
+      <div className="px-3">
         <SidebarLink
           href="/dashboard"
           label="Dashboard"
           icon="🏠"
           active={pathname === '/dashboard'}
-        />
-        <SidebarLink
-          href="/applications"
-          label="Applications"
-          icon="🎬"
-          active={isActive('/applications')}
         />
       </div>
 
