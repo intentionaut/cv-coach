@@ -15,57 +15,38 @@ import { isOwner } from '@/lib/flags';
  * without bouncing through the middle. That's fine on a first visit and
  * tiresome by the tenth.
  *
- * Items are grouped rather than listed flat, and each carries its current
- * count. Showing everything with no hierarchy is overwhelming; hiding what
- * you haven't started yet leaves people wondering what they're missing.
- * Grouping plus state is the middle path - you can see the whole product and
- * where you are in it.
+ * Items are grouped rather than listed flat. Everything stays visible -
+ * hiding what you haven't started yet leaves people wondering what they're
+ * missing - but grouping gives it hierarchy so it doesn't read as a wall of
+ * options. Deliberately no counts or badges here: progress belongs on the
+ * dashboard, and a nav that reports numbers at you becomes noise you learn to
+ * ignore.
  *
  * The dashboard keeps the numbered first-run sequence. This is for people who
  * already know where they're going.
  */
 
-interface NavCounts {
-  cvCount: number;
-  coverLetterCount: number;
-  interviewSessionCount: number;
-}
-
 const GROUPS: Array<{
   label: string;
-  items: Array<{ href: string; label: string; icon: string; countKey?: keyof NavCounts }>;
+  items: Array<{ href: string; label: string; icon: string }>;
 }> = [
   {
     label: 'My documents',
     items: [
-      { href: '/cv', label: 'CVs', icon: '📝', countKey: 'cvCount' },
-      { href: '/cover-letters', label: 'Cover letters', icon: '✉️', countKey: 'coverLetterCount' }
+      { href: '/cv', label: 'CVs', icon: '📝' },
+      { href: '/cover-letters', label: 'Cover letters', icon: '✉️' }
     ]
   },
   {
     label: 'Practice',
-    items: [
-      { href: '/coaching', label: 'Interviews', icon: '🎤', countKey: 'interviewSessionCount' }
-    ]
+    items: [{ href: '/coaching', label: 'Interviews', icon: '🎤' }]
   }
 ];
 
 export default function AppSidebar() {
   const pathname = usePathname();
   const { data: session } = useSession();
-  const [counts, setCounts] = useState<NavCounts | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
-
-  // One fetch per full page load - client-side navigation keeps the layout
-  // mounted, so moving between sections doesn't re-request this.
-  useEffect(() => {
-    fetch('/api/dashboard/status')
-      .then(res => (res.ok ? res.json() : null))
-      .then(data => data && setCounts(data))
-      .catch(() => {
-        // Counts are a nicety; navigation works fine without them.
-      });
-  }, []);
 
   // Close the mobile drawer on navigation, otherwise it covers the page you
   // just asked for.
@@ -73,14 +54,21 @@ export default function AppSidebar() {
     setMobileOpen(false);
   }, [pathname]);
 
+  const firstName = session?.user?.name?.split(' ')[0];
+
   const isActive = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
 
   const nav = (
     <nav className="flex flex-col h-full" aria-label="Sections">
-      <Link href="/dashboard" className="flex items-center gap-2 px-5 py-5 shrink-0">
-        <Image src="/friday-logo.png" alt="" width={28} height={28} />
-        <span className="font-display text-xl font-bold text-text-primary">Friday</span>
-      </Link>
+      <div className="px-5 pt-5 pb-4 shrink-0">
+        <Link href="/dashboard" className="flex items-center gap-2">
+          <Image src="/friday-logo.png" alt="" width={28} height={28} />
+          <span className="font-display text-xl font-bold text-text-primary">Friday</span>
+        </Link>
+        {firstName && (
+          <p className="font-body text-sm text-text-secondary mt-1.5">Welcome back, {firstName}</p>
+        )}
+      </div>
 
       <div className="px-3">
         <SidebarLink
@@ -105,7 +93,6 @@ export default function AppSidebar() {
                     label={item.label}
                     icon={item.icon}
                     active={isActive(item.href)}
-                    count={item.countKey && counts ? counts[item.countKey] : undefined}
                   />
                 </li>
               ))}
@@ -169,14 +156,12 @@ function SidebarLink({
   href,
   label,
   icon,
-  active,
-  count
+  active
 }: {
   href: string;
   label: string;
   icon: string;
   active: boolean;
-  count?: number;
 }) {
   return (
     <Link
@@ -190,9 +175,6 @@ function SidebarLink({
     >
       <span className="w-5 text-center" aria-hidden="true">{icon}</span>
       <span className="flex-1">{label}</span>
-      {typeof count === 'number' && count > 0 && (
-        <span className="font-mono text-xs text-text-secondary tabular-nums">{count}</span>
-      )}
     </Link>
   );
 }
