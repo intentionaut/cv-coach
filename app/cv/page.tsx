@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { useRouter } from 'next/navigation';
+import type { AtsReport } from '@/lib/ats/checks';
 
 // Type definitions
 interface CVData {
@@ -173,6 +174,7 @@ function CVEditorContent() {
   const [jobDescription, setJobDescription] = useState('');
   const [editingJobTitle, setEditingJobTitle] = useState(false);
   const [analysis, setAnalysis] = useState<Analysis | null>(null);
+  const [atsReport, setAtsReport] = useState<AtsReport | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadingJob, setUploadingJob] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -199,6 +201,7 @@ function CVEditorContent() {
   const resetSelectedCvContent = () => {
     setCvData(null);
     setAnalysis(null);
+    setAtsReport(null);
     setJobTitle('');
     setJobDescription('');
     setEditingJobTitle(false);
@@ -229,8 +232,22 @@ function CVEditorContent() {
       if (data.analysis && data.analysis.priorityImprovements) {
         setAnalysis(data.analysis);
       }
+      loadAtsReport(id);
     } catch (error) {
       console.error('Failed to load CV:', error);
+    }
+  };
+
+  // Deterministic and free, so it just runs whenever a CV is opened rather
+  // than sitting behind a button - there's no cost to weigh up.
+  const loadAtsReport = async (id: string) => {
+    try {
+      const response = await fetch(`/api/cv/${id}/ats`);
+      if (!response.ok) return;
+      const data = await response.json();
+      setAtsReport(data.report || null);
+    } catch (error) {
+      console.error('Failed to load ATS report:', error);
     }
   };
 
@@ -399,6 +416,8 @@ function CVEditorContent() {
         await loadCvList();
         setSelectedCvId(result.cvId);
         setNewCvName('');
+        // The document itself changed, so the mechanical checks need redoing.
+        loadAtsReport(result.cvId);
         if (hadPriorAnalysis) {
           await handleAnalyze(result.data);
         }
@@ -892,6 +911,102 @@ function CVEditorContent() {
               </div>
               {uploadError && (
                 <p className="font-body text-sm text-text-cta mt-2">{uploadError}</p>
+              )}
+
+              {/* Mechanical readability checks. Deliberately separate from the
+                  coaching analysis: this is about whether a machine can read
+                  the document at all, not about whether the writing is good.
+                  Always shows what it could NOT check, so the number never
+                  implies more authority than it has. */}
+              {atsReport && (
+                <div className="mt-4 bg-bg-surface rounded-lg shadow-lg border border-border-hairline overflow-hidden">
+                  <div className="px-5 py-4 border-b border-border-hairline flex items-center justify-between gap-3 flex-wrap">
+                    <div>
+                      <h3 className="font-display font-bold text-text-primary">Can a machine read this?</h3>
+                      <p className="font-body text-xs text-text-secondary mt-0.5">
+                        Automated checks before a human ever sees it
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <span className="font-display text-2xl font-bold text-accent-tertiary">
+                        {atsReport.passed}/{atsReport.assessed}
+                      </span>
+                      <p className="font-body text-xs text-text-secondary">checks passed</p>
+                    </div>
+                  </div>
+
+                  <ul className="divide-y divide-border-hairline">
+                    {atsReport.checks.map(check => (
+                      <li key={check.id} className="px-5 py-3 flex items-start gap-3">
+                        <span
+                          aria-hidden="true"
+                          className={`shrink-0 mt-0.5 font-bold ${
+                            check.status === 'pass'
+                              ? 'text-success'
+                              : check.status === 'warn'
+                                ? 'text-text-on-alert'
+                                : 'text-text-cta'
+                          }`}
+                        >
+                          {check.status === 'pass' ? '✓' : check.status === 'warn' ? '!' : '✕'}
+                        </span>
+                        <div className="min-w-0">
+                          <p className="font-body text-sm font-semibold text-text-primary">
+                            {check.label}
+                            <span className="sr-only">
+                              {check.status === 'pass' ? ' — passed' : check.status === 'warn' ? ' — worth a look' : ' — needs fixing'}
+                            </span>
+                          </p>
+                          <p className="font-body text-xs text-text-secondary mt-0.5">{check.detail}</p>
+                          {check.fix && (
+                            <p className="font-body text-xs text-text-primary mt-1">{check.fix}</p>
+                          )}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+
+                  {atsReport.keywordOverlap && atsReport.keywordOverlap.missing.length > 0 && (
+                    <div className="px-5 py-4 border-t border-border-hairline">
+                      <p className="font-body text-xs font-semibold text-text-primary mb-2">
+                        In the job description, not in your CV
+                      </p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {atsReport.keywordOverlap.missing.slice(0, 12).map(term => (
+                          <span
+                            key={term}
+                            className="font-body text-xs px-2 py-0.5 bg-bg-main rounded border border-border-hairline text-text-secondary"
+                          >
+                            {term}
+                          </span>
+                        ))}
+                      </div>
+                      <p className="font-body text-xs text-text-secondary mt-2">
+                        Only worth adding where the word genuinely describes something you&apos;ve done.
+                      </p>
+                    </div>
+                  )}
+
+                  {/* The denominator. Without this the score above would imply
+                      a completeness no text-based tool can actually deliver. */}
+                  <details className="group border-t border-border-hairline">
+                    <summary className="cursor-pointer list-none px-5 py-3 flex items-center justify-between hover:bg-bg-main transition">
+                      <span className="font-body text-xs font-medium text-text-link">
+                        What these checks can&apos;t tell you
+                      </span>
+                      <svg className="w-4 h-4 text-text-secondary group-open:rotate-180 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </summary>
+                    <div className="px-5 pb-4">
+                      <ul className="font-body text-xs text-text-secondary space-y-1 list-disc list-inside">
+                        {atsReport.notAssessable.map((item, idx) => (
+                          <li key={idx}>{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  </details>
+                </div>
               )}
             </div>
 
