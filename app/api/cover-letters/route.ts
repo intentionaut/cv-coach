@@ -80,7 +80,10 @@ export async function POST(req: NextRequest) {
     }
 
     const cvResult = await db.query(
-      `SELECT name, personal_info, summary, experience, skills
+      // personal_info is deliberately not selected - the letter prompt has
+      // never used it, and contact details shouldn't be fetched into a
+      // request that ships to a third party. See lib/privacy.ts.
+      `SELECT name, summary, experience, skills
        FROM cv_data WHERE id = $1 AND user_id = $2`,
       [cvId, session.user.id]
     );

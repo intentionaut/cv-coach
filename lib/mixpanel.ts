@@ -1,4 +1,5 @@
 import mixpanel from 'mixpanel-browser';
+import { PRIVATE_SELECTOR } from '@/lib/privacy';
 
 let initialized = false;
 
@@ -21,6 +22,12 @@ export function initMixpanel() {
     api_host: 'https://api-eu.mixpanel.com',
     autocapture: true,
     track_pageview: true,
+    // Anything inside a PrivateRegion is blocked from capture. Declared here
+    // even though session recording is currently off, so the boundary is
+    // already in place the moment it's switched on rather than being
+    // remembered afterwards. See lib/privacy.ts.
+    record_block_selector: PRIVATE_SELECTOR,
+    record_mask_text_selector: PRIVATE_SELECTOR,
     debug: process.env.NODE_ENV !== 'production'
   });
   initialized = true;

@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import ApplyButton from '@/components/applications/ApplyButton';
+import PrivateRegion from '@/components/ui/PrivateRegion';
 import { ChevronDownIcon, EditIcon } from '@/components/ui/icons';
 import { formatRelativeTime } from '@/lib/format';
 import { useRouter } from 'next/navigation';
@@ -102,13 +103,10 @@ interface CvListItem {
 const generateCVText = (cv: CVData): string => {
   let text = '';
 
-  if (cv.contact) {
-    if (cv.contact.name) text += `${cv.contact.name}\n`;
-    if (cv.contact.email) text += `${cv.contact.email}\n`;
-    if (cv.contact.phone) text += `${cv.contact.phone}\n`;
-    if (cv.contact.location) text += `${cv.contact.location}\n`;
-    text += '\n';
-  }
+  // Contact details deliberately excluded - they render in their own
+  // PrivateRegion above this text, so the body can stay visible to a session
+  // recording or an admin without exposing name, email, phone or address.
+  // See lib/privacy.ts.
 
   if (cv.summary) {
     text += `PROFESSIONAL SUMMARY\n${cv.summary}\n\n`;
@@ -954,6 +952,19 @@ function CVEditorContent() {
                     id="cv-reupload"
                   />
                 </div>
+                {cvData?.contact && (
+                  <PrivateRegion className="px-6 py-4 border-b border-border-hairline bg-bg-main/40">
+                    <p className="font-mono text-[10px] uppercase tracking-widest text-text-secondary mb-1.5">
+                      Your contact details · kept private
+                    </p>
+                    <div className="font-body text-sm text-text-primary space-y-0.5">
+                      {cvData.contact.name && <p className="font-semibold">{cvData.contact.name}</p>}
+                      {cvData.contact.email && <p>{cvData.contact.email}</p>}
+                      {cvData.contact.phone && <p>{cvData.contact.phone}</p>}
+                      {cvData.contact.location && <p>{cvData.contact.location}</p>}
+                    </div>
+                  </PrivateRegion>
+                )}
                 <textarea
                   value={editableCVText}
                   onChange={(e) => setEditableCVText(e.target.value)}

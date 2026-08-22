@@ -81,6 +81,38 @@ correction that was actually made:
   Where a second measure is genuinely different — the ATS panel is mechanical
   readability, not quality — make it visually subordinate and say what it can't tell you.
 
+## Contact details are a protected class
+
+A CV splits into two kinds of data with completely different risk, and the split
+is structural rather than a masking setting:
+
+- **Contact details** (name, email, phone, address) are directly identifying, the
+  most regulated category, and of *no coaching value* — nobody needs to read a
+  phone number to say the bullet points are vague.
+- **CV content** (summary, experience, education, skills) is what the product
+  exists to work on. It must stay visible to the coach, the user, and — with
+  consent — a session recording.
+
+The rule: **contact details never leave the database in readable form, and never
+render outside a `PrivateRegion`.** That covers AI prompts, session replay, admin
+views, exports and logs, so a new feature inherits the boundary instead of having
+to remember it.
+
+Two mirrored enforcement points, both in `lib/privacy.ts`:
+- **Server** — `redactContact()` before anything crosses a network boundary we
+  don't own. It swaps values for presence booleans (`hasEmail: true`) because the
+  coach genuinely needs to know what's *missing*, never what it says.
+- **Client** — `<PrivateRegion>` carries `data-private`, the single selector every
+  masking mechanism keys off.
+
+Two leaks this caught when it was introduced, both worth not reintroducing:
+`/api/cv/analyze` was serialising the whole CV object — name, email, phone,
+address — into the Claude prompt on every analysis, and `/api/cover-letters` was
+selecting `personal_info` it never used.
+
+`generateCVText()` on the CV page deliberately omits the contact block: it renders
+separately in a `PrivateRegion` so the CV body can stay visible.
+
 ## Conventions worth following
 
 - **Design system first.** `/design-system` renders the live tokens and shared components. Check it before authoring new UI; if you add a genuinely new pattern, document it there.

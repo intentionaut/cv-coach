@@ -7,6 +7,7 @@ import { FILM_THEATRE_SKILLS } from '@/lib/data/film-skills';
 import { getUserTier } from '@/lib/auth';
 import { logUsage } from '@/lib/ai/usage';
 import { getModelForTier } from '@/lib/tier';
+import { redactContact } from '@/lib/privacy';
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY || '',
@@ -61,10 +62,12 @@ Target Role: ${jobTitle || 'No specific role given - assess generally against th
 ${jobDescription ? `\nJob Description:\n${jobDescription}` : ''}
 
 Current CV Data:
-${JSON.stringify(cvData, null, 2)}
+${JSON.stringify(redactContact(cvData), null, 2)}
 
 Available Film/Theatre Industry Skills for Reference:
 ${JSON.stringify(availableSkills, null, 2)}
+
+NOTE ON CONTACT DETAILS: the CV's contact block is deliberately withheld. You get only "contactPresence" booleans, which is enough to tell them what is missing. You never need the values, so don't ask for them or quote them back.
 
 IMPORTANT: First identify any MISSING essential information (email, phone, location, professional summary) and include tasks to add these in your recommendations.
 
