@@ -13,6 +13,12 @@ export function initMixpanel() {
     return;
   }
   mixpanel.init(token, {
+    // The Mixpanel project is on EU data residency. Without this the SDK
+    // defaults to the US ingestion cluster, which silently DISCARDS events
+    // for an EU project - no console error, no failed request, track() just
+    // returns and nothing ever arrives. That cost us a day of "the
+    // instrumentation looks fine but the dashboard is empty".
+    api_host: 'https://api-eu.mixpanel.com',
     autocapture: true,
     track_pageview: true,
     debug: process.env.NODE_ENV !== 'production'
