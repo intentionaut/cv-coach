@@ -8,11 +8,12 @@ import ProtectedRoute from '@/components/auth/ProtectedRoute';
 
 interface DashboardStatus {
   cvCount: number;
+  cvAnalysedCount: number;
   interviewSessionCount: number;
   latestInterviewAt: string | null;
-  skillsAssessedCount: number;
   gettingStartedDismissed: boolean;
   coverLetterCount: number;
+  appliedCount: number;
 }
 
 function DashboardContent() {
@@ -37,17 +38,39 @@ function DashboardContent() {
   };
 
   const hasCv = (status?.cvCount ?? 0) > 0;
+  const hasAnalysedCv = (status?.cvAnalysedCount ?? 0) > 0;
   const hasInterviewed = (status?.interviewSessionCount ?? 0) > 0;
-  const hasSkillsAssessed = (status?.skillsAssessedCount ?? 0) > 0;
   const hasCoverLetter = (status?.coverLetterCount ?? 0) > 0;
-  const allStepsDone = status !== null && hasCv && hasInterviewed && hasSkillsAssessed;
+  const hasApplied = (status?.appliedCount ?? 0) > 0;
+
+  // Every step here must be reachable in the product as it actually exists -
+  // this previously included a skills assessment that was never buildable,
+  // so the checklist could never complete and never self-dismissed.
+  const allStepsDone = status !== null && hasCv && hasCoverLetter && hasInterviewed;
   const showGettingStarted = status !== null && !status.gettingStartedDismissed && !allStepsDone;
 
-  const heroSubtitle = status === null
-    ? 'AI-powered coaching to help you land your first gig in the film industry'
-    : allStepsDone
-      ? `${status.interviewSessionCount} interview session${status.interviewSessionCount === 1 ? '' : 's'} completed — keep the momentum going`
-      : 'AI-powered coaching to help you land your first gig in the film industry';
+  // Reflects real progress rather than sitting on one static line forever -
+  // leads with applications sent, since that's the outcome that actually
+  // matters, and falls back through the earlier stages of the journey.
+  const heroSubtitle = (() => {
+    if (status === null) {
+      return 'AI-powered coaching to help you land your first gig in the film industry';
+    }
+    if (hasApplied) {
+      const n = status.appliedCount;
+      return `${n} application${n === 1 ? '' : 's'} sent — keep the momentum going`;
+    }
+    if (allStepsDone) {
+      return "You've worked through every stage — time to start applying";
+    }
+    if (hasAnalysedCv) {
+      return 'Your CV has feedback waiting — next, write a cover letter for a role you want';
+    }
+    if (hasCv) {
+      return "Your CV is uploaded — get feedback on it when you're ready";
+    }
+    return 'AI-powered coaching to help you land your first gig in the film industry';
+  })();
 
   return (
     <div className="min-h-screen bg-bg-main">
@@ -97,62 +120,61 @@ function DashboardContent() {
           <p className="font-body text-text-inverse/75">{heroSubtitle}</p>
         </div>
 
-        {/* Quick Actions Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        {/* The three stages of the journey, in the order the CV page's own
+            header advertises: build it, write for a role, prepare to talk
+            about it. Presented in sequence rather than as unordered peers. */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <ActionCard
+            step={1}
             title="Build Your CV"
             description={
-              hasCv
-                ? 'Keep refining your CV as your experience grows'
-                : 'Create your professional CV with your experience and projects'
+              hasAnalysedCv
+                ? 'Keep refining it as your experience grows'
+                : hasCv
+                  ? 'Get coaching feedback on what you have so far'
+                  : 'Upload your CV and get specific, honest feedback'
             }
             icon="📝"
             iconLabel="CV document"
-            done={hasCv}
+            badge={hasAnalysedCv ? 'Reviewed' : hasCv ? 'Draft' : null}
             actionLabel={hasCv ? 'Continue' : 'Get Started'}
             onClick={() => router.push('/cv')}
           />
 
           <ActionCard
+            step={2}
             title="Write a Cover Letter"
             description={
-              hasCoverLetter
-                ? 'Write another, or refine one you already have'
-                : 'Answer a few questions once, reuse them for every letter after'
+              hasApplied
+                ? 'Write another for the next role you go for'
+                : hasCoverLetter
+                  ? 'Finish your draft and mark it applied when you send it'
+                  : 'Answer a few questions once, reuse them for every letter after'
             }
             icon="✉️"
             iconLabel="Envelope"
-            done={hasCoverLetter}
+            badge={hasApplied ? `${status?.appliedCount} sent` : hasCoverLetter ? 'Draft' : null}
             actionLabel={hasCoverLetter ? 'Continue' : 'Get Started'}
             onClick={() => router.push('/cover-letters')}
           />
 
           <ActionCard
+            step={3}
             title="Practice Interviews"
             description={
               hasInterviewed
-                ? `${status?.interviewSessionCount} session${status?.interviewSessionCount === 1 ? '' : 's'} completed — keep practicing`
-                : 'Answer film industry questions and get AI-powered feedback'
+                ? 'Keep practising — your answers sharpen with repetition'
+                : 'Answer real film industry questions and get feedback'
             }
             icon="🎤"
             iconLabel="Microphone"
-            done={hasInterviewed}
+            badge={
+              hasInterviewed
+                ? `${status?.interviewSessionCount} session${status?.interviewSessionCount === 1 ? '' : 's'}`
+                : null
+            }
             actionLabel={hasInterviewed ? 'Continue' : 'Get Started'}
             onClick={() => router.push('/coaching')}
-          />
-
-          <ActionCard
-            title="Skills Assessment"
-            description={
-              hasSkillsAssessed
-                ? 'Revisit your skills as you grow'
-                : 'Track your technical, creative, and soft skills progress'
-            }
-            icon="⭐"
-            iconLabel="Star"
-            done={hasSkillsAssessed}
-            actionLabel={hasSkillsAssessed ? 'Continue' : 'Get Started'}
-            onClick={() => router.push('/skills')}
           />
         </div>
 
@@ -171,9 +193,9 @@ function DashboardContent() {
               <span aria-hidden="true">🚀</span> Getting Started
             </h3>
             <div className="space-y-3">
-              <Step number={1} text="Build your CV with your experience, education, and projects" done={hasCv} />
-              <Step number={2} text="Practice interview questions and get personalized feedback" done={hasInterviewed} />
-              <Step number={3} text="Track your skills and monitor your improvement over time" done={hasSkillsAssessed} />
+              <Step number={1} text="Upload your CV and get coaching feedback on it" done={hasCv} />
+              <Step number={2} text="Write a cover letter for a role you actually want" done={hasCoverLetter} />
+              <Step number={3} text="Practice interview questions and get feedback on your answers" done={hasInterviewed} />
             </div>
           </div>
         )}
@@ -182,12 +204,14 @@ function DashboardContent() {
   );
 }
 
-function ActionCard({ title, description, icon, iconLabel, done, actionLabel, onClick }: {
+function ActionCard({ step, title, description, icon, iconLabel, badge, actionLabel, onClick }: {
+  step: number;
   title: string;
   description: string;
   icon: string;
   iconLabel: string;
-  done: boolean;
+  /** Real progress state ("Draft", "Reviewed", "2 sent"), or null if not begun. */
+  badge: string | null;
   actionLabel: string;
   onClick: () => void;
 }) {
@@ -196,13 +220,16 @@ function ActionCard({ title, description, icon, iconLabel, done, actionLabel, on
       onClick={onClick}
       className="bg-bg-surface hover:bg-bg-main rounded-lg p-6 text-left transition transform hover:scale-105 border border-border-hairline relative"
     >
-      {done && (
-        <span className="absolute top-4 right-4 text-xs font-body font-medium text-success bg-success/10 px-2 py-1 rounded-full">
-          Started
+      {badge && (
+        <span className="absolute top-4 right-4 text-xs font-body font-medium text-text-on-success bg-success/25 px-2 py-1 rounded-full">
+          {badge}
         </span>
       )}
-      <div className="text-4xl mb-3" aria-hidden="true">
-        {icon}
+      <div className="flex items-center gap-2 mb-3">
+        <span className="font-body text-xs font-bold text-accent-tertiary" aria-hidden="true">
+          {step}.
+        </span>
+        <span className="text-4xl" aria-hidden="true">{icon}</span>
       </div>
       <span className="sr-only">{iconLabel}</span>
       <h3 className="font-display text-lg font-bold text-text-primary mb-2">{title}</h3>
