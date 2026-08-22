@@ -7,25 +7,21 @@ import { formatRelativeTime } from '@/lib/format';
 import { EVENTS, track } from '@/lib/analytics/events';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { REUSABLE_QUESTIONS } from '@/lib/data/cover-letter-questions';
-
-type ApplicationStatus = 'draft' | 'applied' | 'interviewing' | 'offer' | 'rejected';
+import {
+  STATUS_LABELS,
+  OUTCOME_STATUSES,
+  type ApplicationStatus
+} from '@/lib/applications';
 
 interface LetterListItem {
   id: string;
+  applicationId: string | null;
   companyName: string;
   jobTitle: string;
   status: ApplicationStatus;
   cvName: string;
   updatedAt: string;
 }
-
-const STATUS_LABELS: Record<ApplicationStatus, string> = {
-  draft: 'Draft',
-  applied: 'Applied',
-  interviewing: 'Interviewing',
-  offer: 'Offer',
-  rejected: 'Rejected'
-};
 
 interface CvOption {
   id: string;
@@ -46,6 +42,10 @@ function CoverLettersContent() {
   const [cvs, setCvs] = useState<CvOption[]>([]);
   const [selectedLetterId, setSelectedLetterId] = useState<string | null>(null);
   const [creatingNew, setCreatingNew] = useState(false);
+
+  // The application this letter is for. Status lives there now, so the
+  // "I applied" control writes to it rather than to the letter.
+  const [applicationId, setApplicationId] = useState<string | null>(null);
 
   // New-letter setup flow
   const [newCvId, setNewCvId] = useState('');
@@ -70,6 +70,10 @@ function CoverLettersContent() {
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [reviewing, setReviewing] = useState(false);
 
+  // Set when the role/company came from an application the user picked. The
+  // CV's own job_title is the fallback, not an override - it would otherwise
+  // clobber the prefill when loadSetupForCv resolves.
+  const roleCameFromApplication = useRef(false);
   const fieldsSaveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const contentSaveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -96,6 +100,7 @@ function CoverLettersContent() {
     setFeedback(null);
     setLetterStatus('draft');
     setLetterAppliedAt(null);
+    setApplicationId(null);
   };
 
   const startNewLetter = async (presetCvId?: string) => {
@@ -105,11 +110,29 @@ function CoverLettersContent() {
     setAnswerDrafts({});
     setEditingAnswerKey(null);
     setGenerateError(null);
+    roleCameFromApplication.current = false;
     if (presetCvId) {
       setNewCvId(presetCvId);
     } else if (cvs.length > 0 && !newCvId) {
       setNewCvId(cvs[0].id);
     }
+  };
+
+  // Arriving from an application ("Write one") starts a letter already
+  // pointed at that job, so the role and company aren't retyped.
+  const startNewLetterForApplication = async (id: string) => {
+    const response = await fetch(`/api/applications/${id}`);
+    if (!response.ok) {
+      await startNewLetter();
+      return;
+    }
+    const app = await response.json();
+    await startNewLetter(app.cvId || undefined);
+    roleCameFromApplication.current = true;
+    setApplicationId(id);
+    setCompanyName(app.companyName || '');
+    setJobTitle(app.jobTitle || '');
+    setJobDescription(app.jobDescription || '');
   };
 
   const loadSetupForCv = async (cvId: string) => {
@@ -121,8 +144,10 @@ function CoverLettersContent() {
       const data = await response.json();
       setExistingAnswers(data.answers || {});
       setNeedsAnswers(data.needsAnswers || []);
-      setJobTitle(data.cv.jobTitle || '');
-      setJobDescription(data.cv.jobDescription || '');
+      if (!roleCameFromApplication.current) {
+        setJobTitle(data.cv.jobTitle || '');
+        setJobDescription(data.cv.jobDescription || '');
+      }
     } catch (error) {
       console.error('Failed to load cover letter setup:', error);
     } finally {
@@ -144,6 +169,7 @@ function CoverLettersContent() {
       setContent(data.content || '');
       setLetterStatus(data.status || 'draft');
       setLetterAppliedAt(data.appliedAt || null);
+      setApplicationId(data.applicationId || null);
     } catch (error) {
       console.error('Failed to load cover letter:', error);
     }
@@ -153,11 +179,17 @@ function CoverLettersContent() {
     (async () => {
       await loadCvOptions();
       const list = await loadLetterList();
-      // Arriving from the CV page with a specific CV in mind ("Write a
-      // Cover Letter for this CV") should always land in the new-letter
-      // flow for that CV, not on whatever letter was most recently touched.
+      // Arriving with something specific in mind - a CV to write for, an
+      // application to write for, or a letter to open - always wins over
+      // whatever was most recently touched.
       const cvIdParam = searchParams.get('cvId');
-      if (cvIdParam) {
+      const applicationIdParam = searchParams.get('applicationId');
+      const letterIdParam = searchParams.get('letterId');
+      if (letterIdParam) {
+        await selectLetter(letterIdParam);
+      } else if (applicationIdParam) {
+        await startNewLetterForApplication(applicationIdParam);
+      } else if (cvIdParam) {
         await startNewLetter(cvIdParam);
       } else if (list.length > 0) {
         await selectLetter(list[0].id);
@@ -236,6 +268,7 @@ function CoverLettersContent() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           cvId: newCvId,
+          applicationId: applicationId || undefined,
           companyName: companyName || undefined,
           jobTitle: jobTitle.trim(),
           jobDescription: jobDescription || undefined,
@@ -254,6 +287,7 @@ function CoverLettersContent() {
         });
         setContent(result.content);
         setCreatingNew(false);
+        setApplicationId(result.applicationId || null);
         await loadLetterList();
         setSelectedLetterId(result.letterId);
       } else {
@@ -294,14 +328,14 @@ function CoverLettersContent() {
     }
   };
 
-  // Captures that the user actually applied, and lets status be updated on
-  // revisit ("any updates since you applied?") - applied_at is stamped
-  // server-side the first time only, so it stays put across later updates.
+  // Writes to the application, not the letter - the job is what has a status,
+  // and the same job might have been chased by email as well. applied_at is
+  // stamped server-side the first time only, so it stays put across updates.
   const handleStatusChange = async (newStatus: ApplicationStatus) => {
-    if (!selectedLetterId) return;
+    if (!applicationId) return;
     setUpdatingStatus(true);
     try {
-      const response = await fetch(`/api/cover-letters/${selectedLetterId}`, {
+      const response = await fetch(`/api/applications/${applicationId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus })
@@ -310,7 +344,12 @@ function CoverLettersContent() {
         // "Applied" is the moment the product's actual purpose is served, so
         // it gets its own event rather than being buried in a status change.
         if (newStatus === 'applied' && letterStatus === 'draft') {
-          track(EVENTS.APPLICATION_SENT, { hadReview: !!feedback });
+          track(EVENTS.APPLICATION_SENT, {
+            loggedManually: false,
+            hasCv: true,
+            hasCoverLetter: true,
+            hadReview: !!feedback
+          });
         } else {
           track(EVENTS.APPLICATION_OUTCOME_UPDATED, {
             from: letterStatus,
@@ -581,15 +620,24 @@ function CoverLettersContent() {
                   </div>
 
                   {/* Stage 4 of the flow: capture that they actually applied,
-                      then let them log what happened if they revisit later -
-                      applied_at only gets stamped the first time. */}
+                      then let them log what happened if they revisit later.
+                      All of it lands on the application, which is where the
+                      full record of this job lives. */}
                   <div className="mt-4 bg-bg-surface rounded-lg shadow-lg border border-border-hairline p-6">
+                    {applicationId && (
+                      <button
+                        onClick={() => router.push(`/applications?id=${applicationId}`)}
+                        className="font-body text-xs text-text-link hover:underline mb-3 block"
+                      >
+                        See everything for this application &rarr;
+                      </button>
+                    )}
                     {letterStatus === 'draft' ? (
                       <div className="flex items-center justify-between gap-3 flex-wrap">
                         <p className="font-body text-sm text-text-secondary">Sent this one off yet?</p>
                         <button
                           onClick={() => handleStatusChange('applied')}
-                          disabled={updatingStatus || !content.trim()}
+                          disabled={updatingStatus || !content.trim() || !applicationId}
                           className="font-body px-6 py-3 bg-cta-primary text-text-on-cta rounded-lg font-bold hover:opacity-90 transition disabled:opacity-50"
                         >
                           I Applied
@@ -607,7 +655,7 @@ function CoverLettersContent() {
                         </div>
                         <p className="font-body text-xs text-text-secondary mb-2">Any updates?</p>
                         <div className="flex items-center gap-2 flex-wrap">
-                          {(['interviewing', 'offer', 'rejected'] as ApplicationStatus[])
+                          {OUTCOME_STATUSES
                             .filter(s => s !== letterStatus)
                             .map(s => (
                               <button

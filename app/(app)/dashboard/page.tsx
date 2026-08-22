@@ -12,9 +12,11 @@ interface DashboardStatus {
   latestInterviewAt: string | null;
   gettingStartedDismissed: boolean;
   coverLetterCount: number;
+  applicationCount: number;
   appliedCount: number;
   interviewingCount: number;
   offerCount: number;
+  noResponseCount: number;
 }
 
 function DashboardContent() {
@@ -34,9 +36,11 @@ function DashboardContent() {
           cvCount: data.cvCount,
           cvAnalysedCount: data.cvAnalysedCount,
           coverLetterCount: data.coverLetterCount,
+          applicationCount: data.applicationCount,
           appliedCount: data.appliedCount,
           interviewingCount: data.interviewingCount,
           offerCount: data.offerCount,
+          noResponseCount: data.noResponseCount,
           interviewSessionCount: data.interviewSessionCount
         });
       })
@@ -107,9 +111,12 @@ function DashboardContent() {
                   <OutcomeStat label="Got to interview" value={status.interviewingCount} />
                   <OutcomeStat label="Offers" value={status.offerCount} />
                 </div>
-                <p className="font-body text-xs text-text-inverse/70 mt-4">
-                  Update a cover letter&apos;s status when you hear back and this keeps track for you.
-                </p>
+                <button
+                  onClick={() => router.push('/applications')}
+                  className="font-body text-xs text-text-inverse/70 hover:text-text-on-tertiary underline mt-4"
+                >
+                  See all your applications
+                </button>
               </>
             )}
           </div>
@@ -148,7 +155,11 @@ function DashboardContent() {
             }
             icon="✉️"
             iconLabel="Envelope"
-            badge={hasApplied ? `${status?.appliedCount} sent` : hasCoverLetter ? 'Draft' : null}
+            badge={
+              hasCoverLetter
+                ? `${status?.coverLetterCount} written`
+                : null
+            }
             actionLabel={hasCoverLetter ? 'Continue' : 'Get Started'}
             onClick={() => router.push('/cover-letters')}
           />
