@@ -5,6 +5,7 @@ import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import { setUserProgress } from '@/lib/mixpanel';
 
 interface DashboardStatus {
   cvCount: number;
@@ -27,7 +28,21 @@ function DashboardContent() {
   useEffect(() => {
     fetch('/api/dashboard/status')
       .then((res) => (res.ok ? res.json() : null))
-      .then((data) => data && setStatus(data))
+      .then((data) => {
+        if (!data) return;
+        setStatus(data);
+        // The dashboard already fetches the full rollup, so this is the
+        // natural place to keep user-level properties current.
+        setUserProgress({
+          cvCount: data.cvCount,
+          cvAnalysedCount: data.cvAnalysedCount,
+          coverLetterCount: data.coverLetterCount,
+          appliedCount: data.appliedCount,
+          interviewingCount: data.interviewingCount,
+          offerCount: data.offerCount,
+          interviewSessionCount: data.interviewSessionCount
+        });
+      })
       .catch((err) => console.error('Failed to load dashboard status:', err));
   }, []);
 

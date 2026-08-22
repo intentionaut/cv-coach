@@ -8,6 +8,7 @@ import { formatRelativeTime } from '@/lib/format';
 import { useRouter } from 'next/navigation';
 import type { AtsReport } from '@/lib/ats/checks';
 import { parsePartialJson } from '@/lib/partial-json';
+import { EVENTS, track, scoreBand } from '@/lib/analytics/events';
 
 // Type definitions
 interface CVData {
@@ -425,6 +426,11 @@ function CVEditorContent() {
         // upload doesn't auto-analyze (no prior analysis, may want to set
         // a target role first).
         const hadPriorAnalysis = !!analysis;
+        track(EVENTS.CV_UPLOADED, {
+          isFirstUpload: !selectedCvId,
+          isReupload: !!selectedCvId,
+          hasJobDescription: !!jobDescription.trim()
+        });
         setCvData(result.data);
         setAnalysis(null);
         setEditableCVText(result.rawText || '');
@@ -554,6 +560,13 @@ function CVEditorContent() {
 
       const finalAnalysis = parsePartialJson(buffer);
       if (finalAnalysis && typeof finalAnalysis.overallScore === 'number') {
+        track(EVENTS.CV_ANALYSED, {
+          scoreBand: scoreBand(finalAnalysis.overallScore),
+          hasJobDescription: !!jobDescription.trim(),
+          hasRoleFit: !!finalAnalysis.roleFit,
+          isReanalysis: scoreHistory.length > 0,
+          priorAnalyses: scoreHistory.length
+        });
         setAnalysis(finalAnalysis as Analysis);
         setEditableCVText(generateCVText(dataToAnalyze));
         setCvs(prev => prev.map(cv => (
@@ -965,7 +978,17 @@ function CVEditorContent() {
               {atsReport && (
                 <details
                   open={atsOpen}
-                  onToggle={(e) => setAtsOpen((e.currentTarget as HTMLDetailsElement).open)}
+                  onToggle={(e) => {
+                    const open = (e.currentTarget as HTMLDetailsElement).open;
+                    setAtsOpen(open);
+                    if (open) {
+                      track(EVENTS.ATS_CHECKS_VIEWED, {
+                        passed: atsReport.passed,
+                        assessed: atsReport.assessed,
+                        failures: atsReport.checks.filter(c => c.status === 'fail').length
+                      });
+                    }
+                  }}
                   className="group/ats mt-4 bg-bg-surface rounded-lg shadow-lg border border-border-hairline overflow-hidden"
                 >
                   <summary className="cursor-pointer list-none px-5 py-4 flex items-center justify-between gap-3 flex-wrap hover:bg-bg-main transition">

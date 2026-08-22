@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { useRouter } from 'next/navigation';
 import BackToDashboard from '@/components/ui/BackToDashboard';
+import { EVENTS, track } from '@/lib/analytics/events';
 
 interface PracticeSession {
   id: string;
@@ -117,6 +118,11 @@ function CoachingContent() {
 
       if (response.ok) {
         const data = await response.json();
+        track(EVENTS.PRACTICE_STARTED, {
+          mode: practiceType,
+          isRoleSpecific: !!selectedCvId,
+          priorSessions: sessions.length
+        });
         if (practiceType === 'voice') {
           router.push(`/coaching/voice/${data.sessionId}`);
         } else {

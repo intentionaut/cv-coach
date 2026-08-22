@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, Suspense } from 'react';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { EditIcon } from '@/components/ui/icons';
 import { formatRelativeTime } from '@/lib/format';
+import { EVENTS, track } from '@/lib/analytics/events';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { REUSABLE_QUESTIONS } from '@/lib/data/cover-letter-questions';
 import BackToDashboard from '@/components/ui/BackToDashboard';
@@ -244,6 +245,14 @@ function CoverLettersContent() {
       });
       const result = await response.json();
       if (result.success) {
+        track(EVENTS.COVER_LETTER_GENERATED, {
+          hasCompanyName: !!companyName.trim(),
+          hasJobDescription: !!jobDescription.trim(),
+          // How much of the reusable answer bank existed beforehand - the
+          // whole premise is that later letters need fewer questions.
+          reusableAnswersOnHand: Object.keys(existingAnswers).length,
+          newAnswersGiven: Object.values(answerDrafts).filter(v => v?.trim()).length
+        });
         setContent(result.content);
         setCreatingNew(false);
         await loadLetterList();
@@ -270,6 +279,10 @@ function CoverLettersContent() {
       });
       const result = await response.json();
       if (result.success) {
+        track(EVENTS.COVER_LETTER_REVIEWED, {
+          strengths: result.feedback?.strengths?.length ?? 0,
+          questions: result.feedback?.questions?.length ?? 0
+        });
         setFeedback(result.feedback);
       } else {
         alert(`Feedback failed: ${result.error}`);
@@ -295,6 +308,17 @@ function CoverLettersContent() {
         body: JSON.stringify({ status: newStatus })
       });
       if (response.ok) {
+        // "Applied" is the moment the product's actual purpose is served, so
+        // it gets its own event rather than being buried in a status change.
+        if (newStatus === 'applied' && letterStatus === 'draft') {
+          track(EVENTS.APPLICATION_SENT, { hadReview: !!feedback });
+        } else {
+          track(EVENTS.APPLICATION_OUTCOME_UPDATED, {
+            from: letterStatus,
+            to: newStatus,
+            isPositive: newStatus === 'interviewing' || newStatus === 'offer'
+          });
+        }
         setLetterStatus(newStatus);
         if (newStatus === 'applied' && !letterAppliedAt) {
           setLetterAppliedAt(new Date().toISOString());

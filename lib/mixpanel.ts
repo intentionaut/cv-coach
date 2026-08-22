@@ -33,4 +33,59 @@ export function identifyMixpanelUser(userId: string, email?: string | null, name
   }
 }
 
+/**
+ * User-level properties, set from the dashboard status rollup.
+ *
+ * Events tell you what someone did; these tell you who they are *now* - which
+ * is what lets you ask "how do people who've sent an application behave
+ * differently from those who haven't" without reconstructing it from event
+ * history every time.
+ *
+ * Counts and stage only. No CV content, job titles, or company names: those
+ * are the user's, and the product tells them their CV isn't shared.
+ */
+export function setUserProgress(progress: {
+  cvCount: number;
+  cvAnalysedCount: number;
+  coverLetterCount: number;
+  appliedCount: number;
+  interviewingCount: number;
+  offerCount: number;
+  interviewSessionCount: number;
+}) {
+  if (typeof window === 'undefined' || !initialized) return;
+
+  // Furthest point reached, so cohorts can be compared by stage rather than
+  // by raw counts.
+  const stage =
+    progress.offerCount > 0
+      ? 'offer'
+      : progress.interviewingCount > 0
+        ? 'interviewing'
+        : progress.appliedCount > 0
+          ? 'applied'
+          : progress.coverLetterCount > 0
+            ? 'cover_letter'
+            : progress.cvAnalysedCount > 0
+              ? 'cv_analysed'
+              : progress.cvCount > 0
+                ? 'cv_uploaded'
+                : 'signed_up';
+
+  try {
+    mixpanel.people.set({
+      'CV Count': progress.cvCount,
+      'CVs Analysed': progress.cvAnalysedCount,
+      'Cover Letters': progress.coverLetterCount,
+      'Applications Sent': progress.appliedCount,
+      'Interviews Reached': progress.interviewingCount,
+      'Offers': progress.offerCount,
+      'Practice Sessions': progress.interviewSessionCount,
+      'Furthest Stage': stage
+    });
+  } catch {
+    // Never let analytics break the dashboard.
+  }
+}
+
 export default mixpanel;

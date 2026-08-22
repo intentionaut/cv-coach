@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { ChevronDownIcon } from '@/components/ui/icons';
+import { EVENTS, track } from '@/lib/analytics/events';
 import { getGenericPracticeSet, InterviewQuestion } from '@/lib/data/interview-questions';
 
 interface Answer {
@@ -97,6 +98,27 @@ function PracticeSessionContent() {
         setCurrentFeedback(data.feedback);
         setShowingFeedback(true);
 
+        const assessed = data.feedback?.assessedClarity;
+        track(EVENTS.PRACTICE_ANSWER_SUBMITTED, {
+          questionCategory: currentQuestion.category,
+          questionDifficulty: currentQuestion.difficulty,
+          answerLength: currentAnswer.length,
+          selfRated: clarityScore !== null,
+          // The calibration gap itself: negative means they under-rated their
+          // own answer, positive means they over-rated it. Worth tracking in
+          // aggregate - if learners systematically over-rate, that's a
+          // pedagogical finding, not just a per-answer nicety.
+          calibrationDelta:
+            clarityScore !== null && typeof assessed === 'number'
+              ? clarityScore - assessed
+              : null,
+          starApplicable: data.feedback?.starApplicable ?? null,
+          starComplete:
+            data.feedback?.starApplicable && data.feedback?.star
+              ? Object.values(data.feedback.star).every((p: any) => p?.present)
+              : null
+        });
+
         // Deliberately fetched only now, never before submitting: seeing your
         // old answer first would just invite copying it, which defeats the
         // practice. Afterwards it's the clearest evidence of improvement the
@@ -132,6 +154,11 @@ function PracticeSessionContent() {
     setPriorAnswer(null);
 
     if (isLastQuestion) {
+      track(EVENTS.PRACTICE_COMPLETED, {
+        questionsAnswered: answers.length,
+        minutes: Math.round((Date.now() - startTime) / 60000),
+        wasRoleSpecific: !!roleLabel
+      });
       // Go to completion page
       router.push(`/coaching/complete/${sessionId}`);
     } else {
