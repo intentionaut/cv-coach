@@ -13,15 +13,27 @@ interface PracticeSession {
   overall_confidence: number | null;
   overall_clarity: number | null;
   question_count: number;
+  cv_name: string | null;
+  cv_job_title: string | null;
+}
+
+interface CvOption {
+  id: string;
+  name: string;
+  jobTitle: string;
 }
 
 function CoachingContent() {
   const router = useRouter();
   const [sessions, setSessions] = useState<PracticeSession[]>([]);
   const [loading, setLoading] = useState(true);
+  const [cvs, setCvs] = useState<CvOption[]>([]);
+  // '' means general practice, not tied to any particular role.
+  const [selectedCvId, setSelectedCvId] = useState('');
 
   useEffect(() => {
     fetchSessions();
+    fetchCvs();
   }, []);
 
   const fetchSessions = async () => {
@@ -38,14 +50,40 @@ function CoachingContent() {
     }
   };
 
+  // CVs carry the job title/description, so they're what makes a practice
+  // session role-specific. Defaults to the first CV that names a role.
+  const fetchCvs = async () => {
+    try {
+      const response = await fetch('/api/cv');
+      if (!response.ok) return;
+      const data = await response.json();
+      const list: CvOption[] = (data.cvs || []).map((cv: any) => ({
+        id: cv.id,
+        name: cv.name,
+        jobTitle: cv.jobTitle || ''
+      }));
+      setCvs(list);
+      const firstWithRole = list.find(cv => cv.jobTitle.trim());
+      if (firstWithRole) setSelectedCvId(firstWithRole.id);
+    } catch (error) {
+      console.error('Failed to fetch CVs:', error);
+    }
+  };
+
   const startNewSession = async (practiceType: 'written' | 'voice') => {
+    const mode = practiceType === 'voice' ? 'Voice' : 'Written';
+    const chosen = cvs.find(cv => cv.id === selectedCvId);
+    const roleLabel = chosen?.jobTitle?.trim() || chosen?.name;
     try {
       const response = await fetch('/api/interview/sessions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          title: `General Film Industry Practice (${practiceType === 'voice' ? 'Voice' : 'Written'})`,
-          session_type: 'general'
+          title: roleLabel
+            ? `${roleLabel} (${mode})`
+            : `General Film Industry Practice (${mode})`,
+          session_type: selectedCvId ? 'role-specific' : 'general',
+          cv_id: selectedCvId || null
         })
       });
 
@@ -85,6 +123,36 @@ function CoachingContent() {
             <p className="font-body text-text-inverse/75 mb-6">
               Choose how you'd like to practice: answer questions in writing or simulate a real phone interview.
             </p>
+
+            {/* Ties the session to a role, so questions and feedback can be
+                specific to the job rather than generic film-industry ones. */}
+            {cvs.length > 0 && (
+              <div className="mb-6">
+                <label
+                  htmlFor="practice-role"
+                  className="font-body block text-sm font-semibold text-text-on-tertiary mb-2"
+                >
+                  What are you preparing for?
+                </label>
+                <select
+                  id="practice-role"
+                  value={selectedCvId}
+                  onChange={(e) => setSelectedCvId(e.target.value)}
+                  className="font-body w-full max-w-md px-3 py-2 rounded-lg bg-bg-surface text-text-primary text-sm border border-border-hairline focus:outline-none focus:ring-2 focus:ring-accent-secondary"
+                >
+                  {cvs.map(cv => (
+                    <option key={cv.id} value={cv.id}>
+                      {cv.jobTitle.trim() ? `${cv.jobTitle} — using ${cv.name}` : cv.name}
+                    </option>
+                  ))}
+                  <option value="">General film industry practice</option>
+                </select>
+                <p className="font-body text-xs text-text-inverse/75 mt-2">
+                  Practising against one of your CVs lets the feedback connect your answers to that specific role.
+                </p>
+              </div>
+            )}
+
             <div className="flex flex-wrap gap-4">
               {/* Secondary-style: dark surface, light fill, meets contrast at any size (accent-tertiary text on light bg) */}
               <button
@@ -147,6 +215,11 @@ function CoachingContent() {
                     <div className="flex-1">
                       <h4 className="font-display font-bold text-text-primary mb-1">{session.title}</h4>
                       <p className="font-body text-sm text-text-secondary">
+                        {session.cv_name && (
+                          <span className="text-accent-tertiary font-medium">
+                            {session.cv_job_title?.trim() || session.cv_name} •{' '}
+                          </span>
+                        )}
                         {new Date(session.started_at).toLocaleDateString()} • {session.question_count} questions
                         {session.total_time_minutes > 0 && ` • ${session.total_time_minutes} min`}
                       </p>

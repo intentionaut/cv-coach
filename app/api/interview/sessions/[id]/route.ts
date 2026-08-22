@@ -15,13 +15,20 @@ export async function GET(
 
     const { id: sessionId } = await params;
 
-    // Fetch practice session details
+    // Fetch practice session details, including the role context from the
+    // linked CV - this is what lets practice questions and feedback be
+    // specific to the job being prepared for rather than generic.
     const sessionResult = await db.query(
       `SELECT
         ips.*,
-        jr.title as role_title
+        jr.title as role_title,
+        cd.name as cv_name,
+        cd.job_title as cv_job_title,
+        cd.job_description as cv_job_description,
+        cd.summary as cv_summary
        FROM interview_practice_sessions ips
        LEFT JOIN job_roles jr ON ips.role_id = jr.id
+       LEFT JOIN cv_data cd ON ips.cv_id = cd.id
        WHERE ips.id = $1 AND ips.user_id = $2`,
       [sessionId, session.user.id]
     );

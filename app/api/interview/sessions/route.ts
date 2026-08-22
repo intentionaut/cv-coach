@@ -24,12 +24,16 @@ export async function GET(req: NextRequest) {
         ips.overall_clarity,
         ips.role_id,
         jr.title as role_title,
+        ips.cv_id,
+        cd.name as cv_name,
+        cd.job_title as cv_job_title,
         COUNT(is_resp.id) as question_count
        FROM interview_practice_sessions ips
        LEFT JOIN job_roles jr ON ips.role_id = jr.id
+       LEFT JOIN cv_data cd ON ips.cv_id = cd.id
        LEFT JOIN interview_sessions is_resp ON is_resp.practice_session_id = ips.id
        WHERE ips.user_id = $1
-       GROUP BY ips.id, jr.title
+       GROUP BY ips.id, jr.title, cd.name, cd.job_title
        ORDER BY ips.started_at DESC`,
       [session.user.id]
     );
@@ -54,13 +58,34 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { title, session_type, role_id } = await req.json();
+    const { title, session_type, role_id, cv_id } = await req.json();
+
+    // A session can be tied to one of the user's CVs, which is what makes
+    // practice role-specific rather than generic. Ownership-checked so a
+    // session can't be pointed at someone else's CV.
+    let verifiedCvId: string | null = null;
+    if (cv_id) {
+      const owns = await db.query(
+        `SELECT id FROM cv_data WHERE id = $1 AND user_id = $2`,
+        [cv_id, session.user.id]
+      );
+      if (owns.rows.length === 0) {
+        return NextResponse.json({ error: 'CV not found' }, { status: 404 });
+      }
+      verifiedCvId = cv_id;
+    }
 
     const result = await db.query(
-      `INSERT INTO interview_practice_sessions (user_id, title, session_type, role_id)
-       VALUES ($1, $2, $3, $4)
+      `INSERT INTO interview_practice_sessions (user_id, title, session_type, role_id, cv_id)
+       VALUES ($1, $2, $3, $4, $5)
        RETURNING id`,
-      [session.user.id, title, session_type || 'general', role_id || null]
+      [
+        session.user.id,
+        title,
+        session_type || (verifiedCvId ? 'role-specific' : 'general'),
+        role_id || null,
+        verifiedCvId
+      ]
     );
 
     return NextResponse.json({

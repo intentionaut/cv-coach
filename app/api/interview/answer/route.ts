@@ -44,6 +44,29 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Role context is looked up server-side from the session's linked CV
+    // rather than accepted from the client - the client has no business
+    // asserting which role it's being graded against, and this also keeps
+    // job descriptions out of the request payload on every answer.
+    const contextResult = await db.query(
+      `SELECT cd.job_title, cd.job_description, cd.summary
+       FROM interview_practice_sessions ips
+       LEFT JOIN cv_data cd ON ips.cv_id = cd.id
+       WHERE ips.id = $1 AND ips.user_id = $2`,
+      [practice_session_id, session.user.id]
+    );
+    if (contextResult.rows.length === 0) {
+      return NextResponse.json({ error: 'Session not found' }, { status: 404 });
+    }
+    const ctx = contextResult.rows[0];
+    const roleContext = ctx?.job_title
+      ? `\nThis candidate is preparing specifically for: ${ctx.job_title}${
+          ctx.job_description ? `\n\nThe role's description:\n${ctx.job_description}` : ''
+        }${
+          ctx.summary ? `\n\nTheir CV summary, for context on what they can draw on:\n${ctx.summary}` : ''
+        }\n\nWhere it's genuinely relevant, connect your feedback to what this specific role needs - but don't force it if the answer stands on its own.\n`
+      : '';
+
     // Get AI feedback on the answer
     const feedbackMessage = await anthropic.messages.create({
       model,
@@ -55,6 +78,7 @@ export async function POST(req: NextRequest) {
 
 Question: ${question}
 ${question_category ? `Category: ${question_category}` : ''}
+${roleContext}
 
 Candidate's Answer:
 ${written_answer}

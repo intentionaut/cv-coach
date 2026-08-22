@@ -26,12 +26,28 @@ function PracticeSessionContent() {
   const [currentFeedback, setCurrentFeedback] = useState<any>(null);
   const [submitting, setSubmitting] = useState(false);
   const [startTime] = useState(Date.now());
+  const [roleLabel, setRoleLabel] = useState<string | null>(null);
 
   useEffect(() => {
     // Load questions for this session
     const practiceQuestions = getGenericPracticeSet(6);
     setQuestions(practiceQuestions);
-  }, []);
+
+    // Surface which role this session is tied to, so the user can see the
+    // practice is connected to a specific job rather than generic.
+    (async () => {
+      try {
+        const response = await fetch(`/api/interview/sessions/${sessionId}`);
+        if (!response.ok) return;
+        const data = await response.json();
+        const s = data.session;
+        const label = s?.cv_job_title?.trim() || s?.cv_name || null;
+        setRoleLabel(label);
+      } catch (error) {
+        console.error('Failed to load session context:', error);
+      }
+    })();
+  }, [sessionId]);
 
   const currentQuestion = questions[currentIndex];
   const isLastQuestion = currentIndex === questions.length - 1;
@@ -114,7 +130,9 @@ function PracticeSessionContent() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="font-display text-xl font-bold text-text-primary">Interview Practice Session</h1>
+              <h1 className="font-display text-xl font-bold text-text-primary">
+                {roleLabel ? `Practising for ${roleLabel}` : 'Interview Practice Session'}
+              </h1>
               <p className="font-body text-sm text-text-secondary">
                 Question {currentIndex + 1} of {questions.length}
               </p>

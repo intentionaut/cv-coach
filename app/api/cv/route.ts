@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
     const { maxCvs } = getTierLimits(tier);
 
     const result = await db.query(
-      `SELECT cd.id, cd.name, cd.summary, cd.updated_at,
+      `SELECT cd.id, cd.name, cd.summary, cd.job_title, cd.updated_at,
         EXISTS(
           SELECT 1 FROM coaching_recommendations cr
           WHERE cr.cv_id = cd.id AND cr.type = 'cv_analysis'
@@ -38,6 +38,7 @@ export async function GET(req: NextRequest) {
         id: row.id,
         name: row.name,
         summary: row.summary || '',
+        jobTitle: row.job_title || '',
         updatedAt: row.updated_at,
         hasAnalysis: row.has_analysis,
         score: row.score
